@@ -1,6 +1,17 @@
-import { Alert, Box, Button, CircularProgress, Grid, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Box, Grid, Stack, TextField } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { LearningActivityView } from '../components/LearningActivityView';
+import {
+  ActionButton,
+  EmptyState,
+  ErrorState,
+  InfoCard,
+  LoadingState,
+  PageHeader,
+  ProgressCard,
+  SectionCard,
+  StatusChip,
+} from '../components/ui';
 import {
   useContinueLearning,
   useLearningState,
@@ -10,6 +21,7 @@ import {
   useSubmitQuickCheck,
   useSubmitRetry,
 } from '../hooks/useLearning';
+import { spacing } from '../theme/tokens';
 import type { LearningState } from '../types/learning';
 
 const DEFAULT_USER_ID = 'demo-user';
@@ -19,7 +31,11 @@ function parsePracticeInput(input: string): { booleanAnswer: boolean | null; sel
   const booleanAnswer =
     normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'y' || normalized === 'да'
       ? true
-      : normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'n' || normalized === 'нет'
+      : normalized === 'false' ||
+          normalized === '0' ||
+          normalized === 'no' ||
+          normalized === 'n' ||
+          normalized === 'нет'
         ? false
         : null;
 
@@ -35,7 +51,7 @@ function buildStateSummary(state: LearningState): string {
   const topic = state.context.topicName ?? '-';
   const concept = state.context.conceptName ?? '-';
   const progress = `${state.progress.conceptOrder ?? '-'}/${state.progress.totalConcepts ?? '-'}`;
-  return `Тема: ${topic} | Концепт: ${concept} | Прогресс: ${progress}`;
+  return `Topic: ${topic} | Concept: ${concept} | Progress: ${progress}`;
 }
 
 export function LearningPage() {
@@ -92,12 +108,15 @@ export function LearningPage() {
   };
 
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={spacing.section}>
       <Grid size={{ xs: 12, md: 8 }}>
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Typography variant="h5">Learning State</Typography>
-            <Stack direction="row" spacing={1}>
+        <SectionCard
+          title="Learning"
+          action={<StatusChip label={state?.currentActivity.type ?? 'IDLE'} tone={state ? 'info' : 'default'} />}
+        >
+          <Stack spacing={spacing.section}>
+            <PageHeader title="Learning State" subtitle="Backend-driven runtime view" />
+            <Stack direction="row" spacing={1.5}>
               <TextField
                 label="User ID"
                 value={userId}
@@ -105,56 +124,58 @@ export function LearningPage() {
                 size="small"
                 fullWidth
               />
-              <Button variant="contained" onClick={() => startMutation.mutate()} disabled={isPending || !userId.trim()}>
+              <ActionButton onClick={() => startMutation.mutate()} disabled={isPending || !userId.trim()}>
                 Start
-              </Button>
+              </ActionButton>
             </Stack>
 
-            {isPending ? <CircularProgress size={24} /> : null}
-            {error ? (
-              <Alert severity="error">
-                {error instanceof Error ? error.message : 'Неизвестная ошибка'}
-              </Alert>
-            ) : null}
+            {isPending ? <LoadingState message="Loading state..." /> : null}
+            {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
 
             {state ? (
               <>
-                <Alert severity="info">{buildStateSummary(state)}</Alert>
+                <InfoCard label="Session" value={buildStateSummary(state)} />
                 <LearningActivityView activity={state.currentActivity} />
 
                 {state.currentActivity.type === 'LEARNING_CARD' ? (
-                  <Button variant="contained" onClick={() => continueMutation.mutate()} disabled={isPending}>
-                    Продолжить
-                  </Button>
+                  <ActionButton onClick={() => continueMutation.mutate()} disabled={isPending}>
+                    Continue
+                  </ActionButton>
                 ) : null}
 
                 {canSubmitInput ? (
                   <Stack direction="row" spacing={1}>
                     <TextField
-                      label="Ответ"
+                      label="Answer"
                       value={input}
                       onChange={(event) => setInput(event.target.value)}
                       fullWidth
                     />
-                    <Button variant="contained" onClick={handleSubmit} disabled={isPending || !input.trim()}>
+                    <ActionButton onClick={handleSubmit} disabled={isPending || !input.trim()}>
                       Submit
-                    </Button>
+                    </ActionButton>
                   </Stack>
                 ) : null}
               </>
             ) : (
-              <Typography color="text.secondary">Нажмите Start, чтобы начать обучение.</Typography>
+              <EmptyState message="Click Start to begin learning." />
             )}
           </Stack>
-        </Paper>
+        </SectionCard>
       </Grid>
       <Grid size={{ xs: 12, md: 4 }}>
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="h6">Raw JSON</Typography>
-          <Box component="pre" sx={{ overflow: 'auto', fontSize: 12, mt: 1 }}>
-            {state ? JSON.stringify(state, null, 2) : 'Нет состояния'}
-          </Box>
-        </Paper>
+        <Stack spacing={spacing.stack}>
+          <ProgressCard
+            title="Concept Progress"
+            current={state?.progress.conceptOrder ?? null}
+            total={state?.progress.totalConcepts ?? null}
+          />
+          <SectionCard title="Raw JSON">
+            <Box component="pre" sx={{ overflow: 'auto', fontSize: 12, mt: 1, mb: 0 }}>
+              {state ? JSON.stringify(state, null, 2) : 'No state yet'}
+            </Box>
+          </SectionCard>
+        </Stack>
       </Grid>
     </Grid>
   );
