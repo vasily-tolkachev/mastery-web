@@ -38,13 +38,14 @@ export function AppLayout({ children }: PropsWithChildren) {
       <Toolbar sx={{ minHeight: 64 }} />
 
       <Box
+        component="div"
         sx={{
           display: 'grid',
           gridTemplateColumns: '260px 1fr',
           minHeight: 'calc(100vh - 64px)',
         }}
       >
-        <Paper square elevation={0} sx={{ borderRight: 1, borderColor: 'divider' }}>
+        <Paper component="nav" aria-label="Primary navigation" square elevation={0} sx={{ borderRight: 1, borderColor: 'divider' }}>
           <List dense disablePadding>
             {sidebarItems.map((item, index) => (
               <Box key={item.label}>
@@ -52,6 +53,7 @@ export function AppLayout({ children }: PropsWithChildren) {
                   component={Link}
                   to={item.path}
                   selected={isActive(item.path)}
+                  aria-label={`Go to ${item.label}`}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.label} />
@@ -62,7 +64,7 @@ export function AppLayout({ children }: PropsWithChildren) {
           </List>
         </Paper>
 
-        <Box sx={{ p: 3 }}>
+        <Box component="main" sx={{ p: 3 }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
             Product Shell
           </Typography>

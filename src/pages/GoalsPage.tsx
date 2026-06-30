@@ -72,7 +72,7 @@ export function GoalsPage() {
                   <Divider sx={{ my: 1 }} />
                   <Stack spacing={1}>
                     <InfoCard label="Description" value={goal.description} />
-                    <ActionButton onClick={() => handleSelectTemplate(goal)}>Use Goal</ActionButton>
+                    <ActionButton aria-label={`Use goal ${goal.title}`} onClick={() => handleSelectTemplate(goal)}>Use Goal</ActionButton>
                   </Stack>
                 </Box>
               ))}
@@ -86,21 +86,22 @@ export function GoalsPage() {
               <Stack spacing={1.5}>
                 <TextField
                   label="Your Goal"
+                  slotProps={{ htmlInput: { 'aria-label': 'Custom goal input' } }}
                   value={customGoal}
                   onChange={(event) => setCustomGoal(event.target.value)}
                   multiline
                   minRows={3}
                   placeholder="Example: Learn Java architecture deeply for backend platform work."
                 />
-                <ActionButton onClick={handleCreateGoal}>Create Goal</ActionButton>
+                <ActionButton aria-label="Create custom goal" onClick={handleCreateGoal}>Create Goal</ActionButton>
               </Stack>
             </SectionCard>
 
             <SectionCard title="Current Choice">
               <InfoCard label="Status" value={goalHint} />
               <Stack direction="row" spacing={1.5} sx={{ mt: 1.5 }}>
-                <ActionButton onClick={() => navigate('/programs')}>Open Programs</ActionButton>
-                <ActionButton onClick={() => navigate('/learning')}>Open Learning</ActionButton>
+                <ActionButton aria-label="Open programs page" onClick={() => navigate('/programs')}>Open Programs</ActionButton>
+                <ActionButton aria-label="Open learning page" onClick={() => navigate('/learning')}>Open Learning</ActionButton>
               </Stack>
             </SectionCard>
           </Stack>

@@ -1,7 +1,9 @@
 import { Grid, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import {
   EmptyState,
+  ErrorState,
   InfoCard,
+  LoadingState,
   PageHeader,
   ProgressCard,
   SectionCard,
@@ -39,6 +41,8 @@ function buildRecommendation(activityType: string | undefined): string {
 export function ProgressPage() {
   const learningStateQuery = useLearningState(DEFAULT_USER_ID);
   const state = learningStateQuery.data;
+  const isLoading = learningStateQuery.isLoading;
+  const error = learningStateQuery.error;
 
   return (
     <Stack spacing={2}>
@@ -47,6 +51,9 @@ export function ProgressPage() {
         subtitle="Track learning progression, not only statistics."
         actions={<StatusChip label={state?.currentActivity.type ?? 'NO_SESSION'} tone={state ? 'info' : 'default'} />}
       />
+
+      {isLoading ? <LoadingState message="Loading progress..." /> : null}
+      {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>

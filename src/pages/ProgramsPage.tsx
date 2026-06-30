@@ -1,6 +1,9 @@
 import { Grid, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import {
+  EmptyState,
+  ErrorState,
   InfoCard,
+  LoadingState,
   PageHeader,
   ProgressCard,
   SectionCard,
@@ -53,6 +56,8 @@ function renderTree(nodes: ProgramNode[], level = 0) {
 export function ProgramsPage() {
   const learningStateQuery = useLearningState(DEFAULT_USER_ID);
   const state = learningStateQuery.data;
+  const isLoading = learningStateQuery.isLoading;
+  const error = learningStateQuery.error;
 
   return (
     <Stack spacing={2}>
@@ -61,6 +66,9 @@ export function ProgramsPage() {
         subtitle="Goal -> Program -> Concepts -> MicroConcepts"
         actions={<StatusChip label={state?.currentActivity.type ?? 'NO_SESSION'} tone={state ? 'info' : 'default'} />}
       />
+
+      {isLoading ? <LoadingState message="Loading program state..." /> : null}
+      {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>
@@ -79,11 +87,15 @@ export function ProgramsPage() {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={2}>
             <SectionCard title="Current Position">
-              <Stack spacing={1}>
-                <InfoCard label="Current Topic" value={state?.context.topicName ?? 'Not started'} />
-                <InfoCard label="Current Concept" value={state?.context.conceptName ?? 'Not started'} />
-                <InfoCard label="Current MicroConcept" value={state?.context.microConceptName ?? 'Not started'} />
-              </Stack>
+              {state ? (
+                <Stack spacing={1}>
+                  <InfoCard label="Current Topic" value={state.context.topicName ?? 'Not started'} />
+                  <InfoCard label="Current Concept" value={state.context.conceptName ?? 'Not started'} />
+                  <InfoCard label="Current MicroConcept" value={state.context.microConceptName ?? 'Not started'} />
+                </Stack>
+              ) : (
+                <EmptyState message="No active program position yet." />
+              )}
             </SectionCard>
 
             <ProgressCard

@@ -147,12 +147,13 @@ export function LearningPage() {
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <TextField
                   label="User ID"
+                  slotProps={{ htmlInput: { 'aria-label': 'Learning user id input' } }}
                   value={userId}
                   onChange={(event) => setUserId(event.target.value)}
                   size="small"
                   fullWidth
                 />
-                <ActionButton onClick={() => startMutation.mutate()} disabled={isPending || !userId.trim()}>
+                <ActionButton aria-label="Start learning" onClick={() => startMutation.mutate()} disabled={isPending || !userId.trim()}>
                   Start
                 </ActionButton>
               </Stack>
@@ -160,7 +161,7 @@ export function LearningPage() {
               <Divider />
 
               {state?.currentActivity.type === 'LEARNING_CARD' ? (
-                <ActionButton onClick={() => continueMutation.mutate()} disabled={isPending}>
+                <ActionButton aria-label="Continue learning flow" onClick={() => continueMutation.mutate()} disabled={isPending}>
                   Continue
                 </ActionButton>
               ) : null}
@@ -169,11 +170,12 @@ export function LearningPage() {
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <TextField
                     label="Answer"
+                    slotProps={{ htmlInput: { 'aria-label': 'Learning answer input' } }}
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
                     fullWidth
                   />
-                  <ActionButton onClick={handleSubmit} disabled={isPending || !input.trim()}>
+                  <ActionButton aria-label="Submit learning answer" onClick={handleSubmit} disabled={isPending || !input.trim()}>
                     Submit
                   </ActionButton>
                 </Stack>
