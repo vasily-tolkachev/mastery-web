@@ -1,4 +1,4 @@
-import { Box, Grid, Stack, TextField } from '@mui/material';
+import { Divider, Grid, Stack, TextField } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { LearningActivityView } from '../components/LearningActivityView';
 import {
@@ -29,13 +29,13 @@ const DEFAULT_USER_ID = 'demo-user';
 function parsePracticeInput(input: string): { booleanAnswer: boolean | null; selectedOptions: number[] } {
   const normalized = input.trim().toLowerCase();
   const booleanAnswer =
-    normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'y' || normalized === 'да'
+    normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'y' || normalized === 'da'
       ? true
       : normalized === 'false' ||
           normalized === '0' ||
           normalized === 'no' ||
           normalized === 'n' ||
-          normalized === 'нет'
+          normalized === 'net'
         ? false
         : null;
 
@@ -47,11 +47,9 @@ function parsePracticeInput(input: string): { booleanAnswer: boolean | null; sel
   return { booleanAnswer, selectedOptions };
 }
 
-function buildStateSummary(state: LearningState): string {
-  const topic = state.context.topicName ?? '-';
-  const concept = state.context.conceptName ?? '-';
-  const progress = `${state.progress.conceptOrder ?? '-'}/${state.progress.totalConcepts ?? '-'}`;
-  return `Topic: ${topic} | Concept: ${concept} | Progress: ${progress}`;
+function getActivityTitle(state: LearningState | undefined): string {
+  if (!state) return 'IDLE';
+  return state.currentActivity.type.replace('_', ' ');
 }
 
 export function LearningPage() {
@@ -91,8 +89,7 @@ export function LearningPage() {
       return;
     }
     if (state.currentActivity.type === 'PRACTICE') {
-      const practicePayload = parsePracticeInput(input);
-      await practiceMutation.mutateAsync(practicePayload);
+      await practiceMutation.mutateAsync(parsePracticeInput(input));
       setInput('');
       return;
     }
@@ -109,72 +106,97 @@ export function LearningPage() {
 
   return (
     <Grid container spacing={spacing.section}>
-      <Grid size={{ xs: 12, md: 8 }}>
-        <SectionCard
-          title="Learning"
-          action={<StatusChip label={state?.currentActivity.type ?? 'IDLE'} tone={state ? 'info' : 'default'} />}
-        >
-          <Stack spacing={spacing.section}>
-            <PageHeader title="Learning State" subtitle="Backend-driven runtime view" />
-            <Stack direction="row" spacing={1.5}>
-              <TextField
-                label="User ID"
-                value={userId}
-                onChange={(event) => setUserId(event.target.value)}
-                size="small"
-                fullWidth
-              />
-              <ActionButton onClick={() => startMutation.mutate()} disabled={isPending || !userId.trim()}>
-                Start
-              </ActionButton>
-            </Stack>
+      <Grid size={{ xs: 12, lg: 8.5 }}>
+        <Stack spacing={spacing.section}>
+          <PageHeader
+            title="Learning Workspace"
+            subtitle="Core runtime screen"
+            actions={<StatusChip label={getActivityTitle(state)} tone={state ? 'info' : 'default'} />}
+          />
 
-            {isPending ? <LoadingState message="Loading state..." /> : null}
+          <SectionCard title="Context">
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+                <InfoCard label="Topic" value={state?.context.topicName ?? '-'} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+                <InfoCard label="Concept" value={state?.context.conceptName ?? '-'} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+                <InfoCard label="MicroConcept" value={state?.context.microConceptName ?? '-'} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+                <InfoCard
+                  label="Progress"
+                  value={`${state?.progress.conceptOrder ?? 0}/${state?.progress.totalConcepts ?? 0}`}
+                  hint={`Answered: ${state?.progress.answeredCount ?? 0}`}
+                />
+              </Grid>
+            </Grid>
+          </SectionCard>
+
+          <SectionCard title="Current Activity">
+            {isPending ? <LoadingState message="Loading learning state..." /> : null}
             {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
+            {!state && !isPending && !error ? <EmptyState message="Press Start to begin learning." /> : null}
+            {state ? <LearningActivityView activity={state.currentActivity} /> : null}
+          </SectionCard>
 
-            {state ? (
-              <>
-                <InfoCard label="Session" value={buildStateSummary(state)} />
-                <LearningActivityView activity={state.currentActivity} />
+          <SectionCard title="Action Area">
+            <Stack spacing={1.5}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <TextField
+                  label="User ID"
+                  value={userId}
+                  onChange={(event) => setUserId(event.target.value)}
+                  size="small"
+                  fullWidth
+                />
+                <ActionButton onClick={() => startMutation.mutate()} disabled={isPending || !userId.trim()}>
+                  Start
+                </ActionButton>
+              </Stack>
 
-                {state.currentActivity.type === 'LEARNING_CARD' ? (
-                  <ActionButton onClick={() => continueMutation.mutate()} disabled={isPending}>
-                    Continue
+              <Divider />
+
+              {state?.currentActivity.type === 'LEARNING_CARD' ? (
+                <ActionButton onClick={() => continueMutation.mutate()} disabled={isPending}>
+                  Continue
+                </ActionButton>
+              ) : null}
+
+              {canSubmitInput ? (
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                  <TextField
+                    label="Answer"
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    fullWidth
+                  />
+                  <ActionButton onClick={handleSubmit} disabled={isPending || !input.trim()}>
+                    Submit
                   </ActionButton>
-                ) : null}
-
-                {canSubmitInput ? (
-                  <Stack direction="row" spacing={1}>
-                    <TextField
-                      label="Answer"
-                      value={input}
-                      onChange={(event) => setInput(event.target.value)}
-                      fullWidth
-                    />
-                    <ActionButton onClick={handleSubmit} disabled={isPending || !input.trim()}>
-                      Submit
-                    </ActionButton>
-                  </Stack>
-                ) : null}
-              </>
-            ) : (
-              <EmptyState message="Click Start to begin learning." />
-            )}
-          </Stack>
-        </SectionCard>
+                </Stack>
+              ) : null}
+            </Stack>
+          </SectionCard>
+        </Stack>
       </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <Stack spacing={spacing.stack}>
+
+      <Grid size={{ xs: 12, lg: 3.5 }}>
+        <Stack spacing={spacing.section}>
           <ProgressCard
             title="Concept Progress"
             current={state?.progress.conceptOrder ?? null}
             total={state?.progress.totalConcepts ?? null}
           />
-          <SectionCard title="Raw JSON">
-            <Box component="pre" sx={{ overflow: 'auto', fontSize: 12, mt: 1, mb: 0 }}>
-              {state ? JSON.stringify(state, null, 2) : 'No state yet'}
-            </Box>
-          </SectionCard>
+          <ProgressCard
+            title="MicroConcept Progress"
+            current={state?.progress.microConceptOrder ?? null}
+            total={state?.progress.totalMicroConcepts ?? null}
+          />
+          <InfoCard label="Next Step" value={state?.currentActivity.type ?? 'Start Learning'} />
+          <InfoCard label="Session ID" value={state?.sessionId ?? '-'} hint={`Schema v${state?.schemaVersion ?? '-'}`} />
         </Stack>
       </Grid>
     </Grid>
