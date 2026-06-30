@@ -41,33 +41,49 @@ export function AppLayout({ children }: PropsWithChildren) {
         component="div"
         sx={{
           display: 'grid',
-          gridTemplateColumns: '260px 1fr',
+          gridTemplateColumns: { xs: '1fr', md: '260px 1fr' },
           minHeight: 'calc(100vh - 64px)',
         }}
       >
-        <Paper component="nav" aria-label="Primary navigation" square elevation={0} sx={{ borderRight: 1, borderColor: 'divider' }}>
-          <List dense disablePadding>
+        <Paper
+          component="nav"
+          aria-label="Primary navigation"
+          square
+          elevation={0}
+          sx={{
+            borderRight: { xs: 0, md: 1 },
+            borderBottom: { xs: 1, md: 0 },
+            borderColor: 'divider',
+          }}
+        >
+          <List
+            dense
+            disablePadding
+            sx={{
+              display: { xs: 'flex', md: 'block' },
+              overflowX: { xs: 'auto', md: 'visible' },
+              whiteSpace: { xs: 'nowrap', md: 'normal' },
+            }}
+          >
             {sidebarItems.map((item, index) => (
-              <Box key={item.label}>
+              <Box key={item.label} sx={{ minWidth: { xs: 128, md: 'auto' } }}>
                 <ListItemButton
                   component={Link}
                   to={item.path}
                   selected={isActive(item.path)}
                   aria-label={`Go to ${item.label}`}
+                  aria-current={isActive(item.path) ? 'page' : undefined}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.label} />
                 </ListItemButton>
-                {index === 3 ? <Divider /> : null}
+                {index === 3 ? <Divider sx={{ display: { xs: 'none', md: 'block' } }} /> : null}
               </Box>
             ))}
           </List>
         </Paper>
 
-        <Box component="main" sx={{ p: 3 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-            Product Shell
-          </Typography>
+        <Box component="main" sx={{ p: { xs: 2, md: 3 } }}>
           {children}
         </Box>
       </Box>

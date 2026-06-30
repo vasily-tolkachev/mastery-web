@@ -67,7 +67,7 @@ export function HomePage() {
           <SectionCard
             title="Continue Learning"
             action={
-              <ActionButton onClick={() => navigate('/learning')}>
+              <ActionButton aria-label="Open learning workspace" onClick={() => navigate('/learning')}>
                 Open Learning
               </ActionButton>
             }
@@ -88,7 +88,7 @@ export function HomePage() {
           <SectionCard
             title="Current Program"
             action={
-              <ActionButton onClick={() => navigate('/programs')}>
+              <ActionButton aria-label="Open programs overview" onClick={() => navigate('/programs')}>
                 View Program
               </ActionButton>
             }
@@ -122,7 +122,7 @@ export function HomePage() {
           <SectionCard
             title="Recent Programs"
             action={
-              <ActionButton onClick={() => startMutation.mutate()} disabled={isPending}>
+              <ActionButton aria-label="Start learning from home" onClick={() => startMutation.mutate()} disabled={isPending}>
                 Start Learning
               </ActionButton>
             }

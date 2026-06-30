@@ -99,7 +99,7 @@ export function GoalsPage() {
 
             <SectionCard title="Current Choice">
               <InfoCard label="Status" value={goalHint} />
-              <Stack direction="row" spacing={1.5} sx={{ mt: 1.5 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
                 <ActionButton aria-label="Open programs page" onClick={() => navigate('/programs')}>Open Programs</ActionButton>
                 <ActionButton aria-label="Open learning page" onClick={() => navigate('/learning')}>Open Learning</ActionButton>
               </Stack>
