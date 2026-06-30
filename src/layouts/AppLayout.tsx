@@ -6,17 +6,22 @@ import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
 import { AppBar, Box, Divider, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography } from '@mui/material';
 import type { PropsWithChildren } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const sidebarItems = [
-  { label: 'Home', icon: <HomeRoundedIcon fontSize="small" /> },
-  { label: 'Learning', icon: <SchoolRoundedIcon fontSize="small" /> },
-  { label: 'Programs', icon: <MenuBookRoundedIcon fontSize="small" /> },
-  { label: 'Progress', icon: <InsightsRoundedIcon fontSize="small" /> },
-  { label: 'Goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
-  { label: 'Settings', icon: <SettingsRoundedIcon fontSize="small" /> },
+  { label: 'Home', path: '/home', icon: <HomeRoundedIcon fontSize="small" /> },
+  { label: 'Learning', path: '/learning', icon: <SchoolRoundedIcon fontSize="small" /> },
+  { label: 'Programs', path: '/programs', icon: <MenuBookRoundedIcon fontSize="small" /> },
+  { label: 'Progress', path: '/progress', icon: <InsightsRoundedIcon fontSize="small" /> },
+  { label: 'Goals', path: '/goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
+  { label: 'Settings', path: '/settings', icon: <SettingsRoundedIcon fontSize="small" /> },
 ] as const;
 
 export function AppLayout({ children }: PropsWithChildren) {
+  const location = useLocation();
+  const isActive = (path: string) =>
+    location.pathname === path || (path !== '/home' && location.pathname.startsWith(`${path}/`));
+
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
       <AppBar position="fixed" color="default" elevation={1}>
@@ -43,7 +48,11 @@ export function AppLayout({ children }: PropsWithChildren) {
           <List dense disablePadding>
             {sidebarItems.map((item, index) => (
               <Box key={item.label}>
-                <ListItemButton selected={item.label === 'Learning'}>
+                <ListItemButton
+                  component={NavLink}
+                  to={item.path}
+                  selected={isActive(item.path)}
+                >
                   <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.label} />
                 </ListItemButton>
