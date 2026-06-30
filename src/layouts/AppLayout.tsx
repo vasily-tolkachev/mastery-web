@@ -6,7 +6,7 @@ import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
 import { AppBar, Box, Divider, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography } from '@mui/material';
 import type { PropsWithChildren } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const sidebarItems = [
   { label: 'Home', path: '/home', icon: <HomeRoundedIcon fontSize="small" /> },
@@ -49,7 +49,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             {sidebarItems.map((item, index) => (
               <Box key={item.label}>
                 <ListItemButton
-                  component={NavLink}
+                  component={Link}
                   to={item.path}
                   selected={isActive(item.path)}
                 >
