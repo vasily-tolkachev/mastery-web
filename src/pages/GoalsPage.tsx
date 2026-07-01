@@ -1,112 +1,78 @@
-import { Box, Divider, Grid, Stack, TextField, Typography } from '@mui/material';
+import { Box, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  ActionButton,
-  InfoCard,
-  PageHeader,
-  SectionCard,
-  StatusChip,
-} from '../components/ui';
-
-type GoalTemplate = {
-  id: string;
-  title: string;
-  description: string;
-  status: 'Recommended' | 'Planned';
-};
-
-const templates: GoalTemplate[] = [
-  {
-    id: 'astronomy',
-    title: 'Understand Earth-Moon-Sun Mechanics',
-    description: 'Build conceptual mastery of gravity, orbits and lunar phases.',
-    status: 'Recommended',
-  },
-  {
-    id: 'spring',
-    title: 'Master Spring Core',
-    description: 'Dependency injection, bean lifecycle, configuration and testing.',
-    status: 'Planned',
-  },
-  {
-    id: 'sql',
-    title: 'Practical SQL for Product Analytics',
-    description: 'From filtering and joins to cohort and retention analysis.',
-    status: 'Planned',
-  },
-];
+import { ActionButton, EmptyState, ErrorState, LoadingState, PageHeader, SectionCard, StatusChip } from '../components/ui';
+import { useCreateGoal, useGoals } from '../hooks/useGoals';
 
 export function GoalsPage() {
-  const navigate = useNavigate();
-  const [customGoal, setCustomGoal] = useState('');
-  const [goalHint, setGoalHint] = useState('Goal is not selected yet.');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
 
-  const handleSelectTemplate = (goal: GoalTemplate) => {
-    setGoalHint(`Selected goal: ${goal.title}`);
-  };
+  const goalsQuery = useGoals();
+  const createGoalMutation = useCreateGoal();
 
-  const handleCreateGoal = () => {
-    if (!customGoal.trim()) {
-      setGoalHint('Enter goal text first.');
-      return;
-    }
-    setGoalHint(`Custom goal prepared: ${customGoal.trim()}`);
-    setCustomGoal('');
+  const handleCreate = async () => {
+    if (!title.trim()) return;
+    await createGoalMutation.mutateAsync({
+      title: title.trim(),
+      description: description.trim() || title.trim(),
+    });
+    setTitle('');
+    setDescription('');
   };
 
   return (
     <Stack spacing={2}>
-      <PageHeader title="Goals" subtitle="Choose a goal or create your own." />
+      <PageHeader title="Goals" subtitle="Create and manage learning goals." />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <SectionCard title="Choose Goal">
-            <Stack spacing={1.5}>
-              {templates.map((goal) => (
-                <Box key={goal.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle2">{goal.title}</Typography>
-                    <StatusChip label={goal.status} tone={goal.status === 'Recommended' ? 'success' : 'info'} />
-                  </Box>
-                  <Divider sx={{ my: 1 }} />
-                  <Stack spacing={1}>
-                    <InfoCard label="Description" value={goal.description} />
-                    <ActionButton aria-label={`Use goal ${goal.title}`} onClick={() => handleSelectTemplate(goal)}>Use Goal</ActionButton>
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
-          </SectionCard>
-        </Grid>
+      <SectionCard title="Create Goal">
+        <Stack spacing={1.5}>
+          <TextField
+            label="Title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Become Java Backend Developer"
+          />
+          <TextField
+            label="Description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Optional details"
+            multiline
+            minRows={2}
+          />
+          <ActionButton
+            aria-label="Create goal"
+            onClick={handleCreate}
+            disabled={createGoalMutation.isPending || !title.trim()}
+          >
+            + Create Goal
+          </ActionButton>
+        </Stack>
+      </SectionCard>
 
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Stack spacing={2}>
-            <SectionCard title="Create Goal">
-              <Stack spacing={1.5}>
-                <TextField
-                  label="Your Goal"
-                  slotProps={{ htmlInput: { 'aria-label': 'Custom goal input' } }}
-                  value={customGoal}
-                  onChange={(event) => setCustomGoal(event.target.value)}
-                  multiline
-                  minRows={3}
-                  placeholder="Example: Learn Java architecture deeply for backend platform work."
-                />
-                <ActionButton aria-label="Create custom goal" onClick={handleCreateGoal}>Create Goal</ActionButton>
+      <SectionCard title="Goals List">
+        {goalsQuery.isLoading ? <LoadingState message="Loading goals..." /> : null}
+        {goalsQuery.error ? (
+          <ErrorState message={goalsQuery.error instanceof Error ? goalsQuery.error.message : 'Failed to load goals'} />
+        ) : null}
+        {!goalsQuery.isLoading && !goalsQuery.error && !goalsQuery.data?.length ? (
+          <EmptyState message="No goals yet. Create your first goal." />
+        ) : null}
+
+        <Stack spacing={1.5}>
+          {(goalsQuery.data ?? []).map((goal) => (
+            <Box key={goal.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                <Typography variant="subtitle2">{goal.title}</Typography>
+                <StatusChip label={goal.status} tone={goal.status === 'ACTIVE' ? 'success' : 'default'} />
               </Stack>
-            </SectionCard>
-
-            <SectionCard title="Current Choice">
-              <InfoCard label="Status" value={goalHint} />
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
-                <ActionButton aria-label="Open programs page" onClick={() => navigate('/programs')}>Open Programs</ActionButton>
-                <ActionButton aria-label="Open learning page" onClick={() => navigate('/learning')}>Open Learning</ActionButton>
-              </Stack>
-            </SectionCard>
-          </Stack>
-        </Grid>
-      </Grid>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {goal.description}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+      </SectionCard>
     </Stack>
   );
 }
