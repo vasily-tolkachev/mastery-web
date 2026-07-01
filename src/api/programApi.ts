@@ -37,6 +37,10 @@ function normalizeConcept(value: unknown): ProgramConcept {
   return {
     conceptId: toNullableNumber(raw.conceptId),
     title: String(raw.title ?? ''),
+    description: String(raw.description ?? ''),
+    estimatedTimeMinutes: toNumber(raw.estimatedTimeMinutes, 0),
+    difficulty: String(raw.difficulty ?? ''),
+    prerequisites: Array.isArray(raw.prerequisites) ? raw.prerequisites.map((item) => String(item)) : [],
     microConcepts: microConceptsRaw.map(normalizeMicroConcept),
   };
 }
@@ -47,6 +51,9 @@ function normalizeMicroConcept(value: unknown): ProgramMicroConcept {
     microConceptId: toNullableNumber(raw.microConceptId),
     title: String(raw.title ?? ''),
     sortOrder: toNullableNumber(raw.sortOrder),
+    completed: Boolean(raw.completed),
+    current: Boolean(raw.current),
+    locked: Boolean(raw.locked),
   };
 }
 

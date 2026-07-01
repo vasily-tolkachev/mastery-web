@@ -20,7 +20,26 @@ type MicroStatus = 'completed' | 'current' | 'locked';
 
 function buildMicroStatusMap(program: LearningProgram | undefined, currentMicroConceptId: number | null) {
   const map = new Map<number, MicroStatus>();
-  if (!program || currentMicroConceptId === null) {
+  if (!program) {
+    return map;
+  }
+
+  const backendHasStatuses = program.concepts.some((concept) =>
+    concept.microConcepts.some((micro) => micro.completed || micro.current || micro.locked),
+  );
+  if (backendHasStatuses) {
+    program.concepts.forEach((concept) => {
+      concept.microConcepts.forEach((micro) => {
+        if (micro.microConceptId === null) return;
+        if (micro.completed) map.set(micro.microConceptId, 'completed');
+        else if (micro.current) map.set(micro.microConceptId, 'current');
+        else map.set(micro.microConceptId, 'locked');
+      });
+    });
+    return map;
+  }
+
+  if (currentMicroConceptId === null) {
     return map;
   }
 
@@ -76,6 +95,12 @@ function buildRoadmapItems(program: LearningProgram | undefined) {
   );
 }
 
+function formatHours(minutes: number): string {
+  const hours = minutes / 60;
+  const value = Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
+  return `${value} hours`;
+}
+
 export function ProgramsPage() {
   const learningStateQuery = useLearningState(DEFAULT_USER_ID);
   const programQuery = useCurrentProgram(DEFAULT_USER_ID);
@@ -87,6 +112,25 @@ export function ProgramsPage() {
   const error = learningStateQuery.error ?? programQuery.error;
   const microStatusMap = buildMicroStatusMap(program, state?.context.microConceptId ?? null);
   const roadmapItems = buildRoadmapItems(program);
+  const totalConcepts = program?.progress.totalConcepts ?? 0;
+  const totalMicroConcepts = program?.progress.totalMicroConcepts ?? 0;
+  const completedMicroConcepts = program
+    ? program.concepts.flatMap((concept) => concept.microConcepts).filter((micro) => micro.completed).length
+    : 0;
+  const completedConcepts = program
+    ? program.concepts.filter(
+        (concept) => concept.microConcepts.length > 0 && concept.microConcepts.every((micro) => micro.completed),
+      ).length
+    : 0;
+  const completionPercent =
+    totalMicroConcepts > 0 ? Math.round((completedMicroConcepts / totalMicroConcepts) * 100) : 0;
+  const totalEstimatedMinutes = program
+    ? program.concepts.reduce((sum, concept) => sum + Math.max(0, concept.estimatedTimeMinutes), 0)
+    : 0;
+  const remainingMinutes = Math.max(
+    0,
+    totalEstimatedMinutes - Math.round((totalEstimatedMinutes * completionPercent) / 100),
+  );
 
   return (
     <Stack spacing={2}>
@@ -131,7 +175,12 @@ export function ProgramsPage() {
                                     component={RouterLink}
                                     to={`/programs/concepts/${concept.conceptId}`}
                                     variant="body1"
-                                    sx={{ fontWeight: 500, textDecoration: 'none', color: 'primary.main' }}
+                                    sx={{
+                                      fontWeight: 500,
+                                      textDecoration: 'none',
+                                      color: 'primary.main',
+                                      '&:hover': { textDecoration: 'underline' },
+                                    }}
                                   >
                                     {`${conceptSymbol(conceptStatuses)} ${concept.title}`}
                                   </Typography>
@@ -182,7 +231,7 @@ export function ProgramsPage() {
                           </ListItem>
                           {index < roadmapItems.length - 1 ? (
                             <Typography variant="caption" color="text.secondary" sx={{ pl: 1 }}>
-                              |
+                              v
                             </Typography>
                           ) : null}
                         </Stack>
@@ -199,6 +248,15 @@ export function ProgramsPage() {
 
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={2}>
+            <SectionCard title="Program Statistics">
+              <Stack spacing={1}>
+                <InfoCard label="Concepts" value={`${completedConcepts} / ${totalConcepts}`} />
+                <InfoCard label="Micro Concepts" value={`${completedMicroConcepts} / ${totalMicroConcepts}`} />
+                <InfoCard label="Estimated completion" value={`${completionPercent}%`} />
+                <InfoCard label="Estimated remaining time" value={formatHours(remainingMinutes)} />
+              </Stack>
+            </SectionCard>
+
             <SectionCard title="Current Position">
               {state ? (
                 <Stack spacing={1}>
