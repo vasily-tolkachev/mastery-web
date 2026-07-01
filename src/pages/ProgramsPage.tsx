@@ -10,54 +10,67 @@ import {
   StatusChip,
 } from '../components/ui';
 import { useLearningState } from '../hooks/useLearning';
+import { useCurrentProgram } from '../hooks/useProgram';
+import type { LearningProgram } from '../types/program';
 
 const DEFAULT_USER_ID = 'demo-user';
 
-type ProgramNode = {
-  name: string;
-  children?: ProgramNode[];
-};
+type MicroStatus = 'completed' | 'current' | 'locked';
 
-const mockProgramTree: ProgramNode[] = [
-  {
-    name: 'Concept 1: Gravitational Basics',
-    children: [
-      { name: 'MicroConcept 1.1: Gravity and Mass' },
-      { name: 'MicroConcept 1.2: Orbital Motion' },
-    ],
-  },
-  {
-    name: 'Concept 2: Earth and Moon',
-    children: [
-      { name: 'MicroConcept 2.1: Tides and Gravity' },
-      { name: 'MicroConcept 2.2: Phases of the Moon' },
-    ],
-  },
-  {
-    name: 'Concept 3: Solar System Dynamics',
-    children: [
-      { name: 'MicroConcept 3.1: Why Earth Does Not Fall into the Sun' },
-      { name: 'MicroConcept 3.2: Stable Orbits' },
-    ],
-  },
-];
+function buildMicroStatusMap(program: LearningProgram | undefined, currentMicroConceptId: number | null) {
+  const map = new Map<number, MicroStatus>();
+  if (!program || currentMicroConceptId === null) {
+    return map;
+  }
 
-function renderTree(nodes: ProgramNode[], level = 0) {
-  return nodes.map((node) => (
-    <Stack key={`${level}-${node.name}`} spacing={0.5} sx={{ ml: level * 2 }}>
-      <ListItem disableGutters dense>
-        <ListItemText primary={node.name} />
-      </ListItem>
-      {node.children ? renderTree(node.children, level + 1) : null}
-    </Stack>
-  ));
+  const orderedMicroIds = program.concepts
+    .flatMap((concept) => concept.microConcepts)
+    .map((microConcept) => microConcept.microConceptId)
+    .filter((id): id is number => id !== null);
+
+  const currentIndex = orderedMicroIds.indexOf(currentMicroConceptId);
+  if (currentIndex < 0) {
+    return map;
+  }
+
+  orderedMicroIds.forEach((id, index) => {
+    if (index < currentIndex) {
+      map.set(id, 'completed');
+      return;
+    }
+    if (index === currentIndex) {
+      map.set(id, 'current');
+      return;
+    }
+    map.set(id, 'locked');
+  });
+
+  return map;
+}
+
+function conceptSymbol(statuses: MicroStatus[]): string {
+  if (!statuses.length) return '○';
+  if (statuses.every((status) => status === 'completed')) return '✔';
+  if (statuses.some((status) => status === 'current' || status === 'completed')) return '►';
+  return '○';
+}
+
+function microSymbol(status: MicroStatus | undefined): string {
+  if (status === 'completed') return '✔';
+  if (status === 'current') return '►';
+  return '○';
 }
 
 export function ProgramsPage() {
   const learningStateQuery = useLearningState(DEFAULT_USER_ID);
+  const programQuery = useCurrentProgram(DEFAULT_USER_ID);
+
   const state = learningStateQuery.data;
-  const isLoading = learningStateQuery.isLoading;
-  const error = learningStateQuery.error;
+  const program = programQuery.data;
+
+  const isLoading = learningStateQuery.isLoading || programQuery.isLoading;
+  const error = learningStateQuery.error ?? programQuery.error;
+  const microStatusMap = buildMicroStatusMap(program, state?.context.microConceptId ?? null);
 
   return (
     <Stack spacing={2}>
@@ -67,20 +80,63 @@ export function ProgramsPage() {
         actions={<StatusChip label={state?.currentActivity.type ?? 'NO_SESSION'} tone={state ? 'info' : 'default'} />}
       />
 
-      {isLoading ? <LoadingState message="Loading program state..." /> : null}
+      {isLoading ? <LoadingState message="Loading program..." /> : null}
       {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <SectionCard title="Program Overview">
-            <Stack spacing={2}>
-              <InfoCard label="Goal" value="Understand Earth-Moon-Sun mechanics" />
-              <InfoCard label="Program" value="Astronomy Foundations (Mock)" />
-              <Stack spacing={0.5}>
-                <Typography variant="subtitle2">Concept Tree</Typography>
-                <List dense>{renderTree(mockProgramTree)}</List>
+            {!program ? (
+              <EmptyState message="Program is not available yet." />
+            ) : (
+              <Stack spacing={2}>
+                <InfoCard label="Goal" value={program.goalTitle || 'Not specified'} />
+                <InfoCard label="Program" value={program.title || 'Untitled program'} />
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle2">Concept Tree</Typography>
+                  <List dense disablePadding>
+                    {program.concepts.map((concept) => {
+                      const conceptStatuses = concept.microConcepts
+                        .map((microConcept) =>
+                          microConcept.microConceptId === null
+                            ? undefined
+                            : microStatusMap.get(microConcept.microConceptId),
+                        )
+                        .map((status) => status ?? 'locked');
+
+                      return (
+                        <Stack key={concept.conceptId ?? concept.title} spacing={0.25}>
+                          <ListItem disableGutters dense>
+                            <ListItemText
+                              primary={`${conceptSymbol(conceptStatuses)} ${concept.title}`}
+                              primaryTypographyProps={{ variant: 'body1' }}
+                            />
+                          </ListItem>
+
+                          {concept.microConcepts.map((microConcept) => (
+                            <ListItem
+                              key={microConcept.microConceptId ?? `${concept.conceptId}-${microConcept.title}`}
+                              disableGutters
+                              dense
+                              sx={{ pl: 3 }}
+                            >
+                              <ListItemText
+                                primary={`${microSymbol(
+                                  microConcept.microConceptId === null
+                                    ? undefined
+                                    : microStatusMap.get(microConcept.microConceptId),
+                                )} ${microConcept.title}`}
+                                primaryTypographyProps={{ variant: 'body2' }}
+                              />
+                            </ListItem>
+                          ))}
+                        </Stack>
+                      );
+                    })}
+                  </List>
+                </Stack>
               </Stack>
-            </Stack>
+            )}
           </SectionCard>
         </Grid>
 
