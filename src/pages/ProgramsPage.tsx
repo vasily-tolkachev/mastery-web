@@ -49,16 +49,30 @@ function buildMicroStatusMap(program: LearningProgram | undefined, currentMicroC
 }
 
 function conceptSymbol(statuses: MicroStatus[]): string {
-  if (!statuses.length) return '○';
-  if (statuses.every((status) => status === 'completed')) return '✔';
-  if (statuses.some((status) => status === 'current' || status === 'completed')) return '►';
-  return '○';
+  if (!statuses.length) return '[ ]';
+  if (statuses.every((status) => status === 'completed')) return '[#]';
+  if (statuses.some((status) => status === 'current' || status === 'completed')) return '[>]';
+  return '[ ]';
 }
 
 function microSymbol(status: MicroStatus | undefined): string {
-  if (status === 'completed') return '✔';
-  if (status === 'current') return '►';
-  return '○';
+  if (status === 'completed') return '[#]';
+  if (status === 'current') return '[>]';
+  return '[ ]';
+}
+
+function buildRoadmapItems(program: LearningProgram | undefined) {
+  if (!program) {
+    return [];
+  }
+
+  return program.concepts.flatMap((concept) =>
+    concept.microConcepts.map((microConcept) => ({
+      id: microConcept.microConceptId,
+      conceptTitle: concept.title,
+      microTitle: microConcept.title,
+    })),
+  );
 }
 
 export function ProgramsPage() {
@@ -71,6 +85,7 @@ export function ProgramsPage() {
   const isLoading = learningStateQuery.isLoading || programQuery.isLoading;
   const error = learningStateQuery.error ?? programQuery.error;
   const microStatusMap = buildMicroStatusMap(program, state?.context.microConceptId ?? null);
+  const roadmapItems = buildRoadmapItems(program);
 
   return (
     <Stack spacing={2}>
@@ -92,6 +107,7 @@ export function ProgramsPage() {
               <Stack spacing={2}>
                 <InfoCard label="Goal" value={program.goalTitle || 'Not specified'} />
                 <InfoCard label="Program" value={program.title || 'Untitled program'} />
+
                 <Stack spacing={0.5}>
                   <Typography variant="subtitle2">Concept Tree</Typography>
                   <List dense disablePadding>
@@ -134,6 +150,33 @@ export function ProgramsPage() {
                       );
                     })}
                   </List>
+                </Stack>
+
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle2">Roadmap</Typography>
+                  {roadmapItems.length ? (
+                    <List dense disablePadding>
+                      {roadmapItems.map((item, index) => (
+                        <Stack key={item.id ?? `${item.conceptTitle}-${item.microTitle}-${index}`} spacing={0}>
+                          <ListItem disableGutters dense>
+                            <ListItemText
+                              primary={`${microSymbol(item.id === null ? undefined : microStatusMap.get(item.id))} ${item.microTitle}`}
+                              secondary={item.conceptTitle}
+                              primaryTypographyProps={{ variant: 'body2' }}
+                              secondaryTypographyProps={{ variant: 'caption' }}
+                            />
+                          </ListItem>
+                          {index < roadmapItems.length - 1 ? (
+                            <Typography variant="caption" color="text.secondary" sx={{ pl: 1 }}>
+                              |
+                            </Typography>
+                          ) : null}
+                        </Stack>
+                      ))}
+                    </List>
+                  ) : (
+                    <EmptyState message="Roadmap will appear when program steps are available." />
+                  )}
                 </Stack>
               </Stack>
             )}
