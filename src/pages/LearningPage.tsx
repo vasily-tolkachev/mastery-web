@@ -21,6 +21,7 @@ import {
   useSubmitQuickCheck,
   useSubmitRetry,
 } from '../hooks/useLearning';
+import { useCurrentProgram } from '../hooks/useProgram';
 import { spacing } from '../theme/tokens';
 import type { LearningState } from '../types/learning';
 
@@ -57,6 +58,7 @@ export function LearningPage() {
   const [input, setInput] = useState('');
 
   const learningStateQuery = useLearningState(userId);
+  const currentProgramQuery = useCurrentProgram(userId);
   const startMutation = useStartLearning(userId);
   const submitAnswerMutation = useSubmitAnswer(userId);
   const continueMutation = useContinueLearning(userId);
@@ -65,8 +67,10 @@ export function LearningPage() {
   const retryMutation = useSubmitRetry(userId);
 
   const state = learningStateQuery.data;
+  const program = currentProgramQuery.data;
   const isPending =
     learningStateQuery.isLoading ||
+    currentProgramQuery.isLoading ||
     startMutation.isPending ||
     submitAnswerMutation.isPending ||
     continueMutation.isPending ||
@@ -74,7 +78,11 @@ export function LearningPage() {
     quickCheckMutation.isPending ||
     retryMutation.isPending;
 
-  const error = learningStateQuery.error ?? startMutation.error ?? submitAnswerMutation.error;
+  const error =
+    learningStateQuery.error ??
+    currentProgramQuery.error ??
+    startMutation.error ??
+    submitAnswerMutation.error;
 
   const canSubmitInput = useMemo(() => {
     if (!state) return false;
@@ -116,6 +124,12 @@ export function LearningPage() {
 
           <SectionCard title="Context">
             <Grid container spacing={1.5}>
+              <Grid size={{ xs: 12 }}>
+                <InfoCard
+                  label="Learning Path"
+                  value={`${program?.goalTitle ?? 'Goal not set'} -> ${program?.title ?? 'Program not set'} -> ${state?.context.conceptName ?? 'Concept not started'} -> ${state?.context.microConceptName ?? 'MicroConcept not started'}`}
+                />
+              </Grid>
               <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
                 <InfoCard label="Topic" value={state?.context.topicName ?? '-'} />
               </Grid>

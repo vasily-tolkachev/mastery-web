@@ -1,4 +1,5 @@
 import { Grid, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   EmptyState,
   ErrorState,
@@ -124,7 +125,20 @@ export function ProgramsPage() {
                         <Stack key={concept.conceptId ?? concept.title} spacing={0.25}>
                           <ListItem disableGutters dense>
                             <ListItemText
-                              primary={`${conceptSymbol(conceptStatuses)} ${concept.title}`}
+                              primary={
+                                concept.conceptId !== null ? (
+                                  <Typography
+                                    component={RouterLink}
+                                    to={`/programs/concepts/${concept.conceptId}`}
+                                    variant="body1"
+                                    sx={{ fontWeight: 500, textDecoration: 'none', color: 'primary.main' }}
+                                  >
+                                    {`${conceptSymbol(conceptStatuses)} ${concept.title}`}
+                                  </Typography>
+                                ) : (
+                                  `${conceptSymbol(conceptStatuses)} ${concept.title}`
+                                )
+                              }
                               primaryTypographyProps={{ variant: 'body1' }}
                             />
                           </ListItem>
