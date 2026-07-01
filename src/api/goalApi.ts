@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../config/env';
-import type { CreateGoalRequest, Goal } from '../types/goal';
+import type { CreateGoalRequest, Goal, GoalResolutionStatus } from '../types/goal';
 
 export async function createGoal(payload: CreateGoalRequest): Promise<Goal> {
   const response = await fetch(`${API_BASE_URL}/goals`, {
@@ -23,6 +23,17 @@ export async function getGoals(): Promise<Goal[]> {
   return raw.map(normalizeGoal);
 }
 
+export async function getGoalResolutionStatus(goalId: number): Promise<GoalResolutionStatus | null> {
+  const response = await fetch(`${API_BASE_URL}/goals/${goalId}/resolution-status`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load goal resolution status (${response.status})`);
+  }
+  return normalizeGoalResolutionStatus(await response.json());
+}
+
 function normalizeGoal(value: unknown): Goal {
   const raw = (value ?? {}) as Record<string, unknown>;
   return {
@@ -31,5 +42,16 @@ function normalizeGoal(value: unknown): Goal {
     description: String(raw.description ?? ''),
     status: (raw.status as Goal['status']) ?? 'ACTIVE',
     createdAt: String(raw.createdAt ?? ''),
+  };
+}
+
+function normalizeGoalResolutionStatus(value: unknown): GoalResolutionStatus {
+  const raw = (value ?? {}) as Record<string, unknown>;
+  return {
+    goalId: Number(raw.goalId ?? 0),
+    stage: (raw.stage as GoalResolutionStatus['stage']) ?? 'QUEUED',
+    progressPercent: Number(raw.progressPercent ?? 0),
+    message: String(raw.message ?? ''),
+    updatedAt: String(raw.updatedAt ?? ''),
   };
 }

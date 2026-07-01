@@ -12,3 +12,18 @@ export interface CreateGoalRequest {
   title: string;
   description: string;
 }
+
+export type GoalResolutionStage =
+  | 'QUEUED'
+  | 'SEARCHING_LIBRARY'
+  | 'GENERATING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export interface GoalResolutionStatus {
+  goalId: number;
+  stage: GoalResolutionStage;
+  progressPercent: number;
+  message: string;
+  updatedAt: string;
+}

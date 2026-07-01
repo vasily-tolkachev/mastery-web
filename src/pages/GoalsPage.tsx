@@ -1,7 +1,42 @@
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import { ActionButton, EmptyState, ErrorState, LoadingState, PageHeader, SectionCard, StatusChip } from '../components/ui';
-import { useCreateGoal, useGoals } from '../hooks/useGoals';
+import { useCreateGoal, useGoalResolutionStatus, useGoals } from '../hooks/useGoals';
+import type { Goal } from '../types/goal';
+
+function GoalResolutionBadge({ goalId }: { goalId: number }) {
+  const statusQuery = useGoalResolutionStatus(goalId);
+  const status = statusQuery.data;
+
+  if (!status) {
+    return <StatusChip label="QUEUED" tone="default" />;
+  }
+
+  const tone =
+    status.stage === 'COMPLETED' ? 'success' : status.stage === 'FAILED' ? 'error' : 'info';
+  return <StatusChip label={`${status.stage} ${status.progressPercent}%`} tone={tone} />;
+}
+
+function GoalCard({ goal }: { goal: Goal }) {
+  const statusQuery = useGoalResolutionStatus(goal.id);
+
+  return (
+    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+        <Typography variant="subtitle2">{goal.title}</Typography>
+        <GoalResolutionBadge goalId={goal.id} />
+      </Stack>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        {goal.description}
+      </Typography>
+      {statusQuery.data?.message ? (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: 'block' }}>
+          {statusQuery.data.message}
+        </Typography>
+      ) : null}
+    </Box>
+  );
+}
 
 export function GoalsPage() {
   const [title, setTitle] = useState('');
@@ -61,15 +96,7 @@ export function GoalsPage() {
 
         <Stack spacing={1.5}>
           {(goalsQuery.data ?? []).map((goal) => (
-            <Box key={goal.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                <Typography variant="subtitle2">{goal.title}</Typography>
-                <StatusChip label={goal.status} tone={goal.status === 'ACTIVE' ? 'success' : 'default'} />
-              </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {goal.description}
-              </Typography>
-            </Box>
+            <GoalCard key={goal.id} goal={goal} />
           ))}
         </Stack>
       </SectionCard>
