@@ -24,13 +24,16 @@ function GoalCard({
   goal,
   onStart,
   isStarting,
+  startError,
 }: {
   goal: Goal;
   onStart: (goalId: number) => void;
   isStarting: boolean;
+  startError?: string;
 }) {
   const statusQuery = useGoalResolutionStatus(goal.id);
   const programQuery = useGoalProgram(goal.id);
+  const canStart = statusQuery.data?.stage === 'COMPLETED';
 
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
@@ -67,11 +70,21 @@ function GoalCard({
         <ActionButton
           aria-label={`Start goal ${goal.title}`}
           onClick={() => onStart(goal.id)}
-          disabled={isStarting}
+          disabled={isStarting || !canStart}
         >
           Start
         </ActionButton>
       </Stack>
+      {!canStart ? (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+          Start is available after generation is completed.
+        </Typography>
+      ) : null}
+      {startError ? (
+        <Typography variant="caption" color="error.main" sx={{ mt: 0.5, display: 'block' }}>
+          {startError}
+        </Typography>
+      ) : null}
     </Box>
   );
 }
@@ -80,6 +93,7 @@ export function GoalsPage() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [startErrorByGoalId, setStartErrorByGoalId] = useState<Record<number, string>>({});
 
   const goalsQuery = useGoals();
   const createGoalMutation = useCreateGoal();
@@ -96,8 +110,18 @@ export function GoalsPage() {
   };
 
   const handleStartGoal = async (goalId: number) => {
-    await startGoalMutation.mutateAsync(goalId);
-    navigate('/learning');
+    setStartErrorByGoalId((previous) => {
+      const next = { ...previous };
+      delete next[goalId];
+      return next;
+    });
+    try {
+      await startGoalMutation.mutateAsync(goalId);
+      navigate('/learning');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to start goal';
+      setStartErrorByGoalId((previous) => ({ ...previous, [goalId]: message }));
+    }
   };
 
   return (
@@ -146,6 +170,7 @@ export function GoalsPage() {
               goal={goal}
               onStart={handleStartGoal}
               isStarting={startGoalMutation.isPending}
+              startError={startErrorByGoalId[goal.id]}
             />
           ))}
         </Stack>
