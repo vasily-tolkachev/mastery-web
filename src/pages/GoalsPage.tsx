@@ -1,8 +1,11 @@
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ActionButton, EmptyState, ErrorState, LoadingState, PageHeader, SectionCard, StatusChip } from '../components/ui';
-import { useCreateGoal, useGoalResolutionStatus, useGoals } from '../hooks/useGoals';
+import { useCreateGoal, useGoalProgram, useGoalResolutionStatus, useGoals, useStartGoal } from '../hooks/useGoals';
 import type { Goal } from '../types/goal';
+
+const DEFAULT_USER_ID = 'demo-user';
 
 function GoalResolutionBadge({ goalId }: { goalId: number }) {
   const statusQuery = useGoalResolutionStatus(goalId);
@@ -17,8 +20,17 @@ function GoalResolutionBadge({ goalId }: { goalId: number }) {
   return <StatusChip label={`${status.stage} ${status.progressPercent}%`} tone={tone} />;
 }
 
-function GoalCard({ goal }: { goal: Goal }) {
+function GoalCard({
+  goal,
+  onStart,
+  isStarting,
+}: {
+  goal: Goal;
+  onStart: (goalId: number) => void;
+  isStarting: boolean;
+}) {
   const statusQuery = useGoalResolutionStatus(goal.id);
+  const programQuery = useGoalProgram(goal.id);
 
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
@@ -34,16 +46,44 @@ function GoalCard({ goal }: { goal: Goal }) {
           {statusQuery.data.message}
         </Typography>
       ) : null}
+      {programQuery.data ? (
+        <Stack spacing={0.25} sx={{ mt: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Program: {programQuery.data.title || programQuery.data.programId}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Origin: {programQuery.data.origin ?? 'GOAL_BASED'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Concepts: {programQuery.data.progress.totalConcepts} | Micro: {programQuery.data.progress.totalMicroConcepts}
+          </Typography>
+        </Stack>
+      ) : (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          Program: not linked yet
+        </Typography>
+      )}
+      <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
+        <ActionButton
+          aria-label={`Start goal ${goal.title}`}
+          onClick={() => onStart(goal.id)}
+          disabled={isStarting}
+        >
+          Start
+        </ActionButton>
+      </Stack>
     </Box>
   );
 }
 
 export function GoalsPage() {
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
   const goalsQuery = useGoals();
   const createGoalMutation = useCreateGoal();
+  const startGoalMutation = useStartGoal(DEFAULT_USER_ID);
 
   const handleCreate = async () => {
     if (!title.trim()) return;
@@ -53,6 +93,11 @@ export function GoalsPage() {
     });
     setTitle('');
     setDescription('');
+  };
+
+  const handleStartGoal = async (goalId: number) => {
+    await startGoalMutation.mutateAsync(goalId);
+    navigate('/learning');
   };
 
   return (
@@ -96,7 +141,12 @@ export function GoalsPage() {
 
         <Stack spacing={1.5}>
           {(goalsQuery.data ?? []).map((goal) => (
-            <GoalCard key={goal.id} goal={goal} />
+            <GoalCard
+              key={goal.id}
+              goal={goal}
+              onStart={handleStartGoal}
+              isStarting={startGoalMutation.isPending}
+            />
           ))}
         </Stack>
       </SectionCard>

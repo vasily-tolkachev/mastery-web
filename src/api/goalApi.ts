@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../config/env';
-import type { CreateGoalRequest, Goal, GoalResolutionStatus } from '../types/goal';
+import type { CreateGoalRequest, Goal, GoalResolutionStatus, GoalStartResult } from '../types/goal';
+import type { LearningProgram } from '../types/program';
 
 export async function createGoal(payload: CreateGoalRequest): Promise<Goal> {
   const response = await fetch(`${API_BASE_URL}/goals`, {
@@ -32,6 +33,47 @@ export async function getGoalResolutionStatus(goalId: number): Promise<GoalResol
     throw new Error(`Failed to load goal resolution status (${response.status})`);
   }
   return normalizeGoalResolutionStatus(await response.json());
+}
+
+export async function startGoal(goalId: number, userId: string): Promise<GoalStartResult> {
+  const response = await fetch(`${API_BASE_URL}/goals/${goalId}/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to start goal (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    goalId: Number(raw.goalId ?? 0),
+    programId: String(raw.programId ?? ''),
+    status: String(raw.status ?? ''),
+  };
+}
+
+export async function getGoalProgram(goalId: number): Promise<LearningProgram | null> {
+  const response = await fetch(`${API_BASE_URL}/goals/${goalId}/program`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load goal program (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  const progressRaw = (raw.progress ?? {}) as Record<string, unknown>;
+  return {
+    programId: String(raw.programId ?? ''),
+    goalId: raw.goalId === null || raw.goalId === undefined ? null : Number(raw.goalId),
+    origin: String(raw.origin ?? 'GOAL_BASED'),
+    title: String(raw.title ?? ''),
+    goalTitle: String(raw.goalTitle ?? ''),
+    concepts: [],
+    progress: {
+      totalConcepts: Number(progressRaw.totalConcepts ?? 0),
+      totalMicroConcepts: Number(progressRaw.totalMicroConcepts ?? 0),
+    },
+  };
 }
 
 function normalizeGoal(value: unknown): Goal {

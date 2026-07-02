@@ -24,6 +24,8 @@ export interface ProgramProgress {
 
 export interface LearningProgram {
   programId: string;
+  goalId?: number | null;
+  origin?: 'GOAL_BASED' | 'LIBRARY' | string;
   title: string;
   goalTitle: string;
   concepts: ProgramConcept[];

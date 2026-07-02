@@ -27,3 +27,9 @@ export interface GoalResolutionStatus {
   message: string;
   updatedAt: string;
 }
+
+export interface GoalStartResult {
+  goalId: number;
+  programId: string;
+  status: string;
+}
