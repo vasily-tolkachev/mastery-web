@@ -37,7 +37,11 @@ function GoalCard({
 
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ justifyContent: 'space-between', alignItems: 'center' }}
+      >
         <Typography variant="subtitle2">{goal.title}</Typography>
         <GoalResolutionBadge goalId={goal.id} />
       </Stack>

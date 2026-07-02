@@ -188,7 +188,6 @@ export function ProgramsPage() {
                                   `${conceptSymbol(conceptStatuses)} ${concept.title}`
                                 )
                               }
-                              primaryTypographyProps={{ variant: 'body1' }}
                             />
                           </ListItem>
 
@@ -205,7 +204,6 @@ export function ProgramsPage() {
                                     ? undefined
                                     : microStatusMap.get(microConcept.microConceptId),
                                 )} ${microConcept.title}`}
-                                primaryTypographyProps={{ variant: 'body2' }}
                               />
                             </ListItem>
                           ))}
@@ -223,10 +221,12 @@ export function ProgramsPage() {
                         <Stack key={item.id ?? `${item.conceptTitle}-${item.microTitle}-${index}`} spacing={0}>
                           <ListItem disableGutters dense>
                             <ListItemText
-                              primary={`${microSymbol(item.id === null ? undefined : microStatusMap.get(item.id))} ${item.microTitle}`}
-                              secondary={item.conceptTitle}
-                              primaryTypographyProps={{ variant: 'body2' }}
-                              secondaryTypographyProps={{ variant: 'caption' }}
+                              primary={
+                                <Typography variant="body2">
+                                  {`${microSymbol(item.id === null ? undefined : microStatusMap.get(item.id))} ${item.microTitle}`}
+                                </Typography>
+                              }
+                              secondary={<Typography variant="caption">{item.conceptTitle}</Typography>}
                             />
                           </ListItem>
                           {index < roadmapItems.length - 1 ? (
