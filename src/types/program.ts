@@ -31,3 +31,21 @@ export interface LearningProgram {
   concepts: ProgramConcept[];
   progress: ProgramProgress;
 }
+
+export type LearningProgramStatus = 'CREATED' | 'GENERATING' | 'READY' | 'FAILED';
+
+export interface ProgramGenerationStatus {
+  programId: number;
+  status: LearningProgramStatus;
+  updatedAt: string;
+}
+
+export interface ProgramRecord {
+  id: number;
+  title: string;
+  description: string;
+  status: LearningProgramStatus;
+  origin: 'GOAL_BASED' | string;
+  createdAt: string;
+  updatedAt: string;
+}

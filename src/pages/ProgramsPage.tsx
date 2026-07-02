@@ -1,4 +1,5 @@
 import { Grid, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
+import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   EmptyState,
@@ -11,7 +12,8 @@ import {
   StatusChip,
 } from '../components/ui';
 import { useLearningState } from '../hooks/useLearning';
-import { useCurrentProgram } from '../hooks/useProgram';
+import { useGoalProgram } from '../hooks/useGoals';
+import { useCurrentProgram, useProgramStatus, useProgramTree } from '../hooks/useProgram';
 import type { LearningProgram } from '../types/program';
 
 const DEFAULT_USER_ID = 'demo-user';
@@ -102,14 +104,35 @@ function formatHours(minutes: number): string {
 }
 
 export function ProgramsPage() {
+  const activeGoalId = useMemo(() => {
+    const raw = localStorage.getItem('active-goal-id');
+    if (!raw) return 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }, []);
+
+  const goalProgramQuery = useGoalProgram(activeGoalId);
+  const selectedProgramId = useMemo(() => {
+    const programId = Number(goalProgramQuery.data?.programId ?? 0);
+    return Number.isFinite(programId) && programId > 0 ? programId : 0;
+  }, [goalProgramQuery.data?.programId]);
+
+  const programStatusQuery = useProgramStatus(selectedProgramId);
+  const programTreeQuery = useProgramTree(selectedProgramId);
   const learningStateQuery = useLearningState(DEFAULT_USER_ID);
-  const programQuery = useCurrentProgram(DEFAULT_USER_ID);
+  const currentProgramQuery = useCurrentProgram(DEFAULT_USER_ID);
+  const programQuery = programTreeQuery.data ? programTreeQuery : currentProgramQuery;
 
   const state = learningStateQuery.data;
   const program = programQuery.data;
+  const programStatus = programStatusQuery.data?.status;
 
-  const isLoading = learningStateQuery.isLoading || programQuery.isLoading;
-  const error = learningStateQuery.error ?? programQuery.error;
+  const isLoading =
+    learningStateQuery.isLoading ||
+    programQuery.isLoading ||
+    goalProgramQuery.isLoading ||
+    (selectedProgramId > 0 && programStatusQuery.isLoading);
+  const error = learningStateQuery.error ?? programQuery.error ?? goalProgramQuery.error ?? programStatusQuery.error;
   const microStatusMap = buildMicroStatusMap(program, state?.context.microConceptId ?? null);
   const roadmapItems = buildRoadmapItems(program);
   const totalConcepts = program?.progress.totalConcepts ?? 0;
@@ -137,11 +160,22 @@ export function ProgramsPage() {
       <PageHeader
         title="Programs"
         subtitle="Goal -> Program -> Concepts -> MicroConcepts"
-        actions={<StatusChip label={state?.currentActivity.type ?? 'NO_SESSION'} tone={state ? 'info' : 'default'} />}
+        actions={
+          <StatusChip
+            label={programStatus ?? state?.currentActivity.type ?? 'NO_SESSION'}
+            tone={programStatus === 'FAILED' ? 'error' : programStatus === 'READY' ? 'success' : state ? 'info' : 'default'}
+          />
+        }
       />
 
       {isLoading ? <LoadingState message="Loading program..." /> : null}
       {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
+      {!isLoading && !error && (programStatus === 'CREATED' || programStatus === 'GENERATING') ? (
+        <LoadingState message="Generating..." />
+      ) : null}
+      {!isLoading && !error && programStatus === 'FAILED' ? (
+        <ErrorState message="Program generation failed." />
+      ) : null}
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>

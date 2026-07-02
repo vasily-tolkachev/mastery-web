@@ -1,5 +1,11 @@
 import { API_BASE_URL } from '../config/env';
-import type { LearningProgram, ProgramConcept, ProgramMicroConcept } from '../types/program';
+import type {
+  LearningProgram,
+  ProgramConcept,
+  ProgramGenerationStatus,
+  ProgramMicroConcept,
+  ProgramRecord,
+} from '../types/program';
 
 export async function getCurrentProgram(userId: string): Promise<LearningProgram> {
   const response = await fetch(
@@ -11,6 +17,44 @@ export async function getCurrentProgram(userId: string): Promise<LearningProgram
 
   const data = await response.json();
   return normalizeLearningProgram(data);
+}
+
+export async function getProgramById(programId: number): Promise<ProgramRecord | null> {
+  const response = await fetch(`${API_BASE_URL}/programs/${programId}`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch program (${response.status})`);
+  }
+  return normalizeProgramRecord(await response.json());
+}
+
+export async function getProgramTree(programId: number): Promise<LearningProgram | null> {
+  const response = await fetch(`${API_BASE_URL}/programs/${programId}/tree`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch program tree (${response.status})`);
+  }
+  return normalizeLearningProgram(await response.json());
+}
+
+export async function getProgramStatus(programId: number): Promise<ProgramGenerationStatus | null> {
+  const response = await fetch(`${API_BASE_URL}/programs/${programId}/status`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch program status (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    programId: toNumber(raw.programId, 0),
+    status: String(raw.status ?? 'CREATED') as ProgramGenerationStatus['status'],
+    updatedAt: String(raw.updatedAt ?? ''),
+  };
 }
 
 function normalizeLearningProgram(value: unknown): LearningProgram {
@@ -27,6 +71,19 @@ function normalizeLearningProgram(value: unknown): LearningProgram {
       totalConcepts: toNumber(progressRaw.totalConcepts, 0),
       totalMicroConcepts: toNumber(progressRaw.totalMicroConcepts, 0),
     },
+  };
+}
+
+function normalizeProgramRecord(value: unknown): ProgramRecord {
+  const raw = (value ?? {}) as Record<string, unknown>;
+  return {
+    id: toNumber(raw.id, 0),
+    title: String(raw.title ?? ''),
+    description: String(raw.description ?? ''),
+    status: String(raw.status ?? 'CREATED') as ProgramRecord['status'],
+    origin: String(raw.origin ?? 'GOAL_BASED') as ProgramRecord['origin'],
+    createdAt: String(raw.createdAt ?? ''),
+    updatedAt: String(raw.updatedAt ?? ''),
   };
 }
 
