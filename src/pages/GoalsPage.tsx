@@ -117,6 +117,7 @@ export function GoalsPage() {
     });
     try {
       await startGoalMutation.mutateAsync(goalId);
+      localStorage.setItem('active-goal-id', String(goalId));
       navigate('/learning');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to start goal';

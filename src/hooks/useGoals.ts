@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createGoal, getGoalProgram, getGoalResolutionStatus, getGoals, startGoal } from '../api/goalApi';
+import { createGoal, getGoalById, getGoalProgram, getGoalResolutionStatus, getGoals, startGoal } from '../api/goalApi';
 import type { Goal, GoalResolutionStatus } from '../types/goal';
 import type { LearningProgram } from '../types/program';
 
@@ -50,5 +50,13 @@ export function useGoalProgram(goalId: number) {
       const data = query.state.data as LearningProgram | null | undefined;
       return data ? false : 1500;
     },
+  });
+}
+
+export function useGoal(goalId: number) {
+  return useQuery({
+    queryKey: ['goal', goalId],
+    queryFn: () => getGoalById(goalId),
+    enabled: goalId > 0,
   });
 }

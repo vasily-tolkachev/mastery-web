@@ -1,5 +1,6 @@
 import { Divider, Grid, Stack, TextField } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LearningActivityView } from '../components/LearningActivityView';
 import {
   ActionButton,
@@ -21,6 +22,7 @@ import {
   useSubmitQuickCheck,
   useSubmitRetry,
 } from '../hooks/useLearning';
+import { useGoal, useGoalProgram } from '../hooks/useGoals';
 import { useCurrentProgram } from '../hooks/useProgram';
 import { spacing } from '../theme/tokens';
 import type { LearningState } from '../types/learning';
@@ -54,11 +56,20 @@ function getActivityTitle(state: LearningState | undefined): string {
 }
 
 export function LearningPage() {
+  const navigate = useNavigate();
   const [userId, setUserId] = useState(DEFAULT_USER_ID);
   const [input, setInput] = useState('');
+  const activeGoalId = useMemo(() => {
+    const raw = localStorage.getItem('active-goal-id');
+    if (!raw) return 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }, []);
 
   const learningStateQuery = useLearningState(userId);
   const currentProgramQuery = useCurrentProgram(userId);
+  const goalQuery = useGoal(activeGoalId);
+  const goalProgramQuery = useGoalProgram(activeGoalId);
   const startMutation = useStartLearning(userId);
   const submitAnswerMutation = useSubmitAnswer(userId);
   const continueMutation = useContinueLearning(userId);
@@ -67,10 +78,13 @@ export function LearningPage() {
   const retryMutation = useSubmitRetry(userId);
 
   const state = learningStateQuery.data;
-  const program = currentProgramQuery.data;
+  const program = goalProgramQuery.data ?? currentProgramQuery.data;
+  const activeGoal = goalQuery.data;
   const isPending =
     learningStateQuery.isLoading ||
     currentProgramQuery.isLoading ||
+    goalProgramQuery.isLoading ||
+    goalQuery.isLoading ||
     startMutation.isPending ||
     submitAnswerMutation.isPending ||
     continueMutation.isPending ||
@@ -81,6 +95,8 @@ export function LearningPage() {
   const error =
     learningStateQuery.error ??
     currentProgramQuery.error ??
+    goalProgramQuery.error ??
+    goalQuery.error ??
     startMutation.error ??
     submitAnswerMutation.error;
 
@@ -112,6 +128,10 @@ export function LearningPage() {
     }
   };
 
+  const clearActiveGoal = () => {
+    localStorage.removeItem('active-goal-id');
+  };
+
   return (
     <Grid container spacing={spacing.section}>
       <Grid size={{ xs: 12, lg: 8.5 }}>
@@ -126,8 +146,27 @@ export function LearningPage() {
             <Grid container spacing={1.5}>
               <Grid size={{ xs: 12 }}>
                 <InfoCard
+                  label="Active Goal"
+                  value={activeGoal?.title ?? (activeGoalId > 0 ? `Goal #${activeGoalId}` : 'Not selected')}
+                  hint={
+                    activeGoalId > 0
+                      ? `Goal ID: ${activeGoalId}`
+                      : 'Select and start a goal from Goals page'
+                  }
+                />
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 1 }}>
+                  <ActionButton aria-label="Back to goals" onClick={() => navigate('/goals')}>
+                    Back to Goals
+                  </ActionButton>
+                  <ActionButton aria-label="Clear active goal" onClick={clearActiveGoal}>
+                    Clear Active Goal
+                  </ActionButton>
+                </Stack>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <InfoCard
                   label="Learning Path"
-                  value={`${program?.goalTitle ?? 'Goal not set'} -> ${program?.title ?? 'Program not set'} -> ${state?.context.conceptName ?? 'Concept not started'} -> ${state?.context.microConceptName ?? 'MicroConcept not started'}`}
+                  value={`${activeGoal?.title ?? program?.goalTitle ?? 'Goal not set'} -> ${program?.title ?? 'Program not set'} -> ${state?.context.conceptName ?? 'Concept not started'} -> ${state?.context.microConceptName ?? 'MicroConcept not started'}`}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, xl: 3 }}>

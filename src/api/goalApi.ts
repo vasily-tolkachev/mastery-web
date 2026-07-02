@@ -52,6 +52,17 @@ export async function startGoal(goalId: number, userId: string): Promise<GoalSta
   };
 }
 
+export async function getGoalById(goalId: number): Promise<Goal | null> {
+  const response = await fetch(`${API_BASE_URL}/goals/${goalId}`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load goal (${response.status})`);
+  }
+  return normalizeGoal(await response.json());
+}
+
 export async function getGoalProgram(goalId: number): Promise<LearningProgram | null> {
   const response = await fetch(`${API_BASE_URL}/goals/${goalId}/program`);
   if (response.status === 404) {
