@@ -4,12 +4,10 @@ import { useParams } from 'react-router-dom';
 import { EmptyState, ErrorState, InfoCard, LoadingState, PageHeader, SectionCard } from '../components/ui';
 import { useCurrentProgram } from '../hooks/useProgram';
 
-const DEFAULT_USER_ID = 'demo-user';
-
 export function ConceptPage() {
   const params = useParams<{ conceptId: string }>();
   const conceptId = params.conceptId ? Number(params.conceptId) : null;
-  const programQuery = useCurrentProgram(DEFAULT_USER_ID);
+  const programQuery = useCurrentProgram();
 
   const concept = useMemo(() => {
     if (!programQuery.data || conceptId === null || Number.isNaN(conceptId)) {

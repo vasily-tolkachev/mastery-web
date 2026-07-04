@@ -1,5 +1,5 @@
 import { Grid, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   EmptyState,
@@ -12,11 +12,9 @@ import {
   StatusChip,
 } from '../components/ui';
 import { useLearningState } from '../hooks/useLearning';
-import { useGoalProgram } from '../hooks/useGoals';
+import { useGoal, useGoalProgram } from '../hooks/useGoals';
 import { useCurrentProgram, useProgramStatus, useProgramTree } from '../hooks/useProgram';
 import type { LearningProgram } from '../types/program';
-
-const DEFAULT_USER_ID = 'demo-user';
 
 type MicroStatus = 'completed' | 'current' | 'locked';
 
@@ -104,37 +102,52 @@ function formatHours(minutes: number): string {
 }
 
 export function ProgramsPage() {
-  const activeGoalId = useMemo(() => {
+  const [activeGoalId, setActiveGoalId] = useState(() => {
     const raw = localStorage.getItem('active-goal-id');
     if (!raw) return 0;
     const parsed = Number(raw);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-  }, []);
+  });
 
+  const goalQuery = useGoal(activeGoalId);
   const goalProgramQuery = useGoalProgram(activeGoalId);
   const selectedProgramId = useMemo(() => {
     const programId = Number(goalProgramQuery.data?.programId ?? 0);
     return Number.isFinite(programId) && programId > 0 ? programId : 0;
   }, [goalProgramQuery.data?.programId]);
 
-  const programStatusQuery = useProgramStatus(selectedProgramId);
   const programTreeQuery = useProgramTree(selectedProgramId);
-  const learningStateQuery = useLearningState(DEFAULT_USER_ID);
-  const currentProgramQuery = useCurrentProgram(DEFAULT_USER_ID);
-  const programQuery = programTreeQuery.data ? programTreeQuery : currentProgramQuery;
+  const learningStateQuery = useLearningState();
+  const currentProgramQuery = useCurrentProgram();
+  const programQuery = selectedProgramId > 0 ? programTreeQuery : currentProgramQuery;
+  const hasProgramData = Boolean(programQuery.data ?? currentProgramQuery.data);
+  const programStatusQuery = useProgramStatus(selectedProgramId, !hasProgramData);
 
   const state = learningStateQuery.data;
-  const program = programQuery.data;
+  const program = programQuery.data ?? currentProgramQuery.data;
+  const programForView = program ?? undefined;
   const programStatus = programStatusQuery.data?.status;
+  const hasProgramDataForView = Boolean(program);
 
-  const isLoading =
+  const isLoading = !hasProgramDataForView && (
     learningStateQuery.isLoading ||
     programQuery.isLoading ||
     goalProgramQuery.isLoading ||
-    (selectedProgramId > 0 && programStatusQuery.isLoading);
-  const error = learningStateQuery.error ?? programQuery.error ?? goalProgramQuery.error ?? programStatusQuery.error;
-  const microStatusMap = buildMicroStatusMap(program, state?.context.microConceptId ?? null);
-  const roadmapItems = buildRoadmapItems(program);
+    (selectedProgramId > 0 && programStatusQuery.isLoading)
+  );
+  const error = hasProgramDataForView
+    ? null
+    : learningStateQuery.error ?? programQuery.error ?? goalProgramQuery.error ?? programStatusQuery.error;
+
+  useEffect(() => {
+    if (activeGoalId <= 0) return;
+    if (goalQuery.isSuccess && goalQuery.data === null) {
+      localStorage.removeItem('active-goal-id');
+      setActiveGoalId(0);
+    }
+  }, [activeGoalId, goalQuery.data, goalQuery.isSuccess]);
+  const microStatusMap = buildMicroStatusMap(programForView, state?.context.microConceptId ?? null);
+  const roadmapItems = buildRoadmapItems(programForView);
   const totalConcepts = program?.progress.totalConcepts ?? 0;
   const totalMicroConcepts = program?.progress.totalMicroConcepts ?? 0;
   const completedMicroConcepts = program

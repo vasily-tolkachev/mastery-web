@@ -4,9 +4,11 @@ import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
-import { AppBar, Box, Divider, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography } from '@mui/material';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import { AppBar, Box, Divider, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography } from '@mui/material';
 import type { PropsWithChildren } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 
 const sidebarItems = [
   { label: 'Home', path: '/home', icon: <HomeRoundedIcon fontSize="small" /> },
@@ -18,6 +20,7 @@ const sidebarItems = [
 ] as const;
 
 export function AppLayout({ children }: PropsWithChildren) {
+  const { logout } = useAuth();
   const location = useLocation();
   const isActive = (path: string) =>
     location.pathname === path || (path !== '/home' && location.pathname.startsWith(`${path}/`));
@@ -31,6 +34,11 @@ export function AppLayout({ children }: PropsWithChildren) {
             <Typography variant="h6" component="div">
               Mastery
             </Typography>
+          </Box>
+          <Box sx={{ ml: 'auto' }}>
+            <IconButton aria-label="Logout" onClick={logout}>
+              <LogoutRoundedIcon fontSize="small" />
+            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>

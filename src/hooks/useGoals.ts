@@ -35,9 +35,9 @@ export function useGoalResolutionStatus(goalId: number) {
   });
 }
 
-export function useStartGoal(userId: string) {
+export function useStartGoal() {
   return useMutation({
-    mutationFn: (goalId: number) => startGoal(goalId, userId),
+    mutationFn: (goalId: number) => startGoal(goalId),
   });
 }
 

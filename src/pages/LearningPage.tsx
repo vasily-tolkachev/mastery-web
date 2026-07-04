@@ -1,5 +1,5 @@
 import { Divider, Grid, Stack, TextField } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LearningActivityView } from '../components/LearningActivityView';
 import {
@@ -26,8 +26,6 @@ import { useGoal, useGoalProgram } from '../hooks/useGoals';
 import { useCurrentProgram } from '../hooks/useProgram';
 import { spacing } from '../theme/tokens';
 import type { LearningState } from '../types/learning';
-
-const DEFAULT_USER_ID = 'demo-user';
 
 function parsePracticeInput(input: string): { booleanAnswer: boolean | null; selectedOptions: number[] } {
   const normalized = input.trim().toLowerCase();
@@ -57,29 +55,36 @@ function getActivityTitle(state: LearningState | undefined): string {
 
 export function LearningPage() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState(DEFAULT_USER_ID);
   const [input, setInput] = useState('');
-  const activeGoalId = useMemo(() => {
+  const [activeGoalId, setActiveGoalId] = useState(() => {
     const raw = localStorage.getItem('active-goal-id');
     if (!raw) return 0;
     const parsed = Number(raw);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-  }, []);
+  });
 
-  const learningStateQuery = useLearningState(userId);
-  const currentProgramQuery = useCurrentProgram(userId);
+  const learningStateQuery = useLearningState();
+  const currentProgramQuery = useCurrentProgram();
   const goalQuery = useGoal(activeGoalId);
   const goalProgramQuery = useGoalProgram(activeGoalId);
-  const startMutation = useStartLearning(userId);
-  const submitAnswerMutation = useSubmitAnswer(userId);
-  const continueMutation = useContinueLearning(userId);
-  const practiceMutation = useSubmitPractice(userId);
-  const quickCheckMutation = useSubmitQuickCheck(userId);
-  const retryMutation = useSubmitRetry(userId);
+  const startMutation = useStartLearning();
+  const submitAnswerMutation = useSubmitAnswer();
+  const continueMutation = useContinueLearning();
+  const practiceMutation = useSubmitPractice();
+  const quickCheckMutation = useSubmitQuickCheck();
+  const retryMutation = useSubmitRetry();
 
   const state = learningStateQuery.data;
   const program = goalProgramQuery.data ?? currentProgramQuery.data;
   const activeGoal = goalQuery.data;
+
+  useEffect(() => {
+    if (activeGoalId <= 0) return;
+    if (goalQuery.isSuccess && goalQuery.data === null) {
+      localStorage.removeItem('active-goal-id');
+      setActiveGoalId(0);
+    }
+  }, [activeGoalId, goalQuery.data, goalQuery.isSuccess]);
   const isPending =
     learningStateQuery.isLoading ||
     currentProgramQuery.isLoading ||
@@ -130,6 +135,7 @@ export function LearningPage() {
 
   const clearActiveGoal = () => {
     localStorage.removeItem('active-goal-id');
+    setActiveGoalId(0);
   };
 
   return (
@@ -198,15 +204,7 @@ export function LearningPage() {
           <SectionCard title="Action Area">
             <Stack spacing={1.5}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                <TextField
-                  label="User ID"
-                  slotProps={{ htmlInput: { 'aria-label': 'Learning user id input' } }}
-                  value={userId}
-                  onChange={(event) => setUserId(event.target.value)}
-                  size="small"
-                  fullWidth
-                />
-                <ActionButton aria-label="Start learning" onClick={() => startMutation.mutate()} disabled={isPending || !userId.trim()}>
+                <ActionButton aria-label="Start learning" onClick={() => startMutation.mutate()} disabled={isPending}>
                   Start
                 </ActionButton>
               </Stack>

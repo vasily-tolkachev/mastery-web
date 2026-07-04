@@ -5,6 +5,7 @@ import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App';
+import { AuthProvider } from './auth/AuthContext';
 
 const queryClient = new QueryClient();
 const theme = createTheme({
@@ -18,9 +19,11 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,

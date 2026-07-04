@@ -10,72 +10,72 @@ import {
 } from '../api/learningApi';
 import type { LearningState } from '../types/learning';
 
-const LEARNING_STATE_QUERY_KEY = (userId: string) => ['learning-state', userId];
+const LEARNING_STATE_QUERY_KEY = ['learning-state'];
 
-export function useLearningState(userId: string) {
+export function useLearningState() {
   return useQuery({
-    queryKey: LEARNING_STATE_QUERY_KEY(userId),
-    queryFn: () => getLearningState(userId),
+    queryKey: LEARNING_STATE_QUERY_KEY,
+    queryFn: () => getLearningState(),
   });
 }
 
-export function useStartLearning(userId: string) {
+export function useStartLearning() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => startLearning({ userId }),
+    mutationFn: () => startLearning({}),
     onSuccess: (state) => {
-      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY(userId), state);
+      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },
   });
 }
 
-export function useSubmitAnswer(userId: string) {
+export function useSubmitAnswer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (answer: string) => submitAnswer({ userId, answer }),
+    mutationFn: (answer: string) => submitAnswer({ answer }),
     onSuccess: (state) => {
-      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY(userId), state);
+      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },
   });
 }
 
-export function useContinueLearning(userId: string) {
+export function useContinueLearning() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => continueLearning({ userId }),
+    mutationFn: () => continueLearning({}),
     onSuccess: (state) => {
-      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY(userId), state);
+      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },
   });
 }
 
-export function useSubmitPractice(userId: string) {
+export function useSubmitPractice() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: { booleanAnswer: boolean | null; selectedOptions: number[] }) =>
-      submitPractice({ userId, ...payload }),
+      submitPractice({ ...payload }),
     onSuccess: (state) => {
-      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY(userId), state);
+      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },
   });
 }
 
-export function useSubmitQuickCheck(userId: string) {
+export function useSubmitQuickCheck() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (answer: string) => submitQuickCheck({ userId, answer }),
+    mutationFn: (answer: string) => submitQuickCheck({ answer }),
     onSuccess: (state) => {
-      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY(userId), state);
+      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },
   });
 }
 
-export function useSubmitRetry(userId: string) {
+export function useSubmitRetry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (answer: string) => submitRetry({ userId, answer }),
+    mutationFn: (answer: string) => submitRetry({ answer }),
     onSuccess: (state) => {
-      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY(userId), state);
+      queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },
   });
 }

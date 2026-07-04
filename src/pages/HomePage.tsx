@@ -1,5 +1,5 @@
 import { Grid, Stack } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ActionButton,
@@ -13,8 +13,6 @@ import {
   StatusChip,
 } from '../components/ui';
 import { useLearningState, useStartLearning } from '../hooks/useLearning';
-
-const DEFAULT_USER_ID = 'demo-user';
 
 function mapNextAction(activityType: string | undefined): string {
   switch (activityType) {
@@ -36,10 +34,9 @@ function mapNextAction(activityType: string | undefined): string {
 }
 
 export function HomePage() {
-  const [userId] = useState(DEFAULT_USER_ID);
   const navigate = useNavigate();
-  const stateQuery = useLearningState(userId);
-  const startMutation = useStartLearning(userId);
+  const stateQuery = useLearningState();
+  const startMutation = useStartLearning();
 
   const state = stateQuery.data;
   const isPending = stateQuery.isLoading || startMutation.isPending;

@@ -11,8 +11,6 @@ import {
 } from '../components/ui';
 import { useLearningState } from '../hooks/useLearning';
 
-const DEFAULT_USER_ID = 'demo-user';
-
 const mockHistory = [
   'Completed: Gravity and Mass basics',
   'Completed: Orbital motion intuition',
@@ -39,7 +37,7 @@ function buildRecommendation(activityType: string | undefined): string {
 }
 
 export function ProgressPage() {
-  const learningStateQuery = useLearningState(DEFAULT_USER_ID);
+  const learningStateQuery = useLearningState();
   const state = learningStateQuery.data;
   const isLoading = learningStateQuery.isLoading;
   const error = learningStateQuery.error;

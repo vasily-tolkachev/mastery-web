@@ -5,8 +5,6 @@ import { ActionButton, EmptyState, ErrorState, LoadingState, PageHeader, Section
 import { useCreateGoal, useGoalProgram, useGoalResolutionStatus, useGoals, useStartGoal } from '../hooks/useGoals';
 import type { Goal } from '../types/goal';
 
-const DEFAULT_USER_ID = 'demo-user';
-
 function GoalResolutionBadge({ goalId }: { goalId: number }) {
   const statusQuery = useGoalResolutionStatus(goalId);
   const status = statusQuery.data;
@@ -101,7 +99,7 @@ export function GoalsPage() {
 
   const goalsQuery = useGoals();
   const createGoalMutation = useCreateGoal();
-  const startGoalMutation = useStartGoal(DEFAULT_USER_ID);
+  const startGoalMutation = useStartGoal();
 
   const handleCreate = async () => {
     if (!title.trim()) return;

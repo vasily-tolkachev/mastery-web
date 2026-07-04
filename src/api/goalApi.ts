@@ -1,9 +1,10 @@
 import { API_BASE_URL } from '../config/env';
+import { authFetch } from './http';
 import type { CreateGoalRequest, Goal, GoalResolutionStatus, GoalStartResult } from '../types/goal';
 import type { LearningProgram } from '../types/program';
 
 export async function createGoal(payload: CreateGoalRequest): Promise<Goal> {
-  const response = await fetch(`${API_BASE_URL}/goals`, {
+  const response = await authFetch(`${API_BASE_URL}/goals`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -15,7 +16,7 @@ export async function createGoal(payload: CreateGoalRequest): Promise<Goal> {
 }
 
 export async function getGoals(): Promise<Goal[]> {
-  const response = await fetch(`${API_BASE_URL}/goals`);
+  const response = await authFetch(`${API_BASE_URL}/goals`);
   if (!response.ok) {
     throw new Error(`Failed to load goals (${response.status})`);
   }
@@ -25,7 +26,7 @@ export async function getGoals(): Promise<Goal[]> {
 }
 
 export async function getGoalResolutionStatus(goalId: number): Promise<GoalResolutionStatus | null> {
-  const response = await fetch(`${API_BASE_URL}/goals/${goalId}/resolution-status`);
+  const response = await authFetch(`${API_BASE_URL}/goals/${goalId}/resolution-status`);
   if (response.status === 404) {
     return null;
   }
@@ -35,11 +36,10 @@ export async function getGoalResolutionStatus(goalId: number): Promise<GoalResol
   return normalizeGoalResolutionStatus(await response.json());
 }
 
-export async function startGoal(goalId: number, userId: string): Promise<GoalStartResult> {
-  const response = await fetch(`${API_BASE_URL}/goals/${goalId}/start`, {
+export async function startGoal(goalId: number): Promise<GoalStartResult> {
+  const response = await authFetch(`${API_BASE_URL}/goals/${goalId}/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId }),
   });
   if (!response.ok) {
     throw new Error(`Failed to start goal (${response.status})`);
@@ -53,7 +53,7 @@ export async function startGoal(goalId: number, userId: string): Promise<GoalSta
 }
 
 export async function getGoalById(goalId: number): Promise<Goal | null> {
-  const response = await fetch(`${API_BASE_URL}/goals/${goalId}`);
+  const response = await authFetch(`${API_BASE_URL}/goals/${goalId}`);
   if (response.status === 404) {
     return null;
   }
@@ -64,7 +64,7 @@ export async function getGoalById(goalId: number): Promise<Goal | null> {
 }
 
 export async function getGoalProgram(goalId: number): Promise<LearningProgram | null> {
-  const response = await fetch(`${API_BASE_URL}/goals/${goalId}/program`);
+  const response = await authFetch(`${API_BASE_URL}/goals/${goalId}/program`);
   if (response.status === 404) {
     return null;
   }
