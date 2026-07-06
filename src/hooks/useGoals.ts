@@ -41,11 +41,11 @@ export function useStartGoal() {
   });
 }
 
-export function useGoalProgram(goalId: number) {
+export function useGoalProgram(goalId: number, enabled = true) {
   return useQuery({
     queryKey: ['goal-program', goalId],
     queryFn: () => getGoalProgram(goalId),
-    enabled: goalId > 0,
+    enabled: enabled && goalId > 0,
     refetchInterval: (query) => {
       const data = query.state.data as LearningProgram | null | undefined;
       return data ? false : 1500;

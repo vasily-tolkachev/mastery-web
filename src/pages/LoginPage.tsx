@@ -18,6 +18,8 @@ declare global {
 }
 
 const GOOGLE_SCRIPT_ID = 'google-gsi-client';
+let googleInitialized = false;
+let googleCredentialHandler: ((credential: string) => void) | null = null;
 
 function loadGoogleScript(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -37,12 +39,32 @@ function loadGoogleScript(): Promise<void> {
   });
 }
 
+async function waitForGoogleIdentitySdk(timeoutMs = 5000): Promise<void> {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (window.google?.accounts?.id) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error('Google Identity SDK is not available.');
+}
+
 export function LoginPage() {
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    googleCredentialHandler = async (credential: string) => {
+      try {
+        await loginWithGoogle(credential);
+        navigate('/home', { replace: true });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Login failed');
+      }
+    };
+
     const mount = async () => {
       setError(null);
       if (!GOOGLE_CLIENT_ID) {
@@ -51,25 +73,24 @@ export function LoginPage() {
       }
       try {
         await loadGoogleScript();
+        await waitForGoogleIdentitySdk();
         const target = document.getElementById('google-signin-button');
         if (!target || !window.google?.accounts?.id) {
           setError('Google Identity SDK is not available.');
           return;
         }
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: async (response) => {
-            try {
+        if (!googleInitialized) {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response) => {
               if (!response.credential) {
-                throw new Error('Google did not return id token');
+                return;
               }
-              await loginWithGoogle(response.credential);
-              navigate('/home', { replace: true });
-            } catch (e) {
-              setError(e instanceof Error ? e.message : 'Login failed');
-            }
-          },
-        });
+              void googleCredentialHandler?.(response.credential);
+            },
+          });
+          googleInitialized = true;
+        }
         target.innerHTML = '';
         window.google.accounts.id.renderButton(target, {
           theme: 'outline',
@@ -82,6 +103,9 @@ export function LoginPage() {
       }
     };
     void mount();
+    return () => {
+      googleCredentialHandler = null;
+    };
   }, [loginWithGoogle, navigate]);
 
   return (

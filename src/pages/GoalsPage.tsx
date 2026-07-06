@@ -30,7 +30,8 @@ function GoalCard({
   startError?: string;
 }) {
   const statusQuery = useGoalResolutionStatus(goal.id);
-  const programQuery = useGoalProgram(goal.id);
+  const shouldLoadProgram = statusQuery.data?.stage === 'COMPLETED';
+  const programQuery = useGoalProgram(goal.id, shouldLoadProgram);
   const canStart = statusQuery.data?.stage === 'COMPLETED';
 
   return (
