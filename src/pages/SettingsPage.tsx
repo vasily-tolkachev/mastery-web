@@ -1,7 +1,9 @@
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { getAuthProfile, updateAuthProfile } from '../api/authApi';
 import { useAuth } from '../auth/AuthContext';
 import { ActionButton, PageHeader, SectionCard } from '../components/ui';
 import { useProfile, useUpdateProfile } from '../hooks/useProfile';
@@ -11,6 +13,20 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const profileQuery = useProfile();
   const updateProfileMutation = useUpdateProfile();
+  const authProfileQuery = useQuery({
+    queryKey: ['auth-profile'],
+    queryFn: getAuthProfile,
+  });
+  const syncUpdateProfileMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const trimmedName = name.trim();
+      const [coreProfile] = await Promise.all([
+        updateProfileMutation.mutateAsync({ displayName: trimmedName }),
+        updateAuthProfile(trimmedName),
+      ]);
+      return coreProfile;
+    },
+  });
   const [displayName, setDisplayName] = useState('');
 
   const handleLogout = () => {
@@ -26,7 +42,9 @@ export function SettingsPage() {
 
   const handleSaveProfile = async () => {
     if (!displayName.trim()) return;
-    await updateProfileMutation.mutateAsync({ displayName: displayName.trim() });
+    await syncUpdateProfileMutation.mutateAsync(displayName);
+    void profileQuery.refetch();
+    void authProfileQuery.refetch();
   };
 
   return (
@@ -40,12 +58,22 @@ export function SettingsPage() {
               {profileQuery.error instanceof Error ? profileQuery.error.message : 'Failed to load profile'}
             </Alert>
           ) : null}
+          {authProfileQuery.error ? (
+            <Alert severity="error">
+              {authProfileQuery.error instanceof Error ? authProfileQuery.error.message : 'Failed to load auth profile'}
+            </Alert>
+          ) : null}
           {updateProfileMutation.error ? (
             <Alert severity="error">
               {updateProfileMutation.error instanceof Error ? updateProfileMutation.error.message : 'Failed to update profile'}
             </Alert>
           ) : null}
-          {updateProfileMutation.isSuccess ? (
+          {syncUpdateProfileMutation.error ? (
+            <Alert severity="error">
+              {syncUpdateProfileMutation.error instanceof Error ? syncUpdateProfileMutation.error.message : 'Failed to update profile'}
+            </Alert>
+          ) : null}
+          {syncUpdateProfileMutation.isSuccess ? (
             <Alert severity="success">Profile updated.</Alert>
           ) : null}
           <TextField
@@ -53,16 +81,16 @@ export function SettingsPage() {
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             placeholder="Learner"
-            disabled={profileQuery.isLoading || updateProfileMutation.isPending}
+            disabled={profileQuery.isLoading || syncUpdateProfileMutation.isPending}
           />
           <TextField
-            label="Profile ID"
-            value={profileQuery.data?.id ?? ''}
+            label="Email"
+            value={authProfileQuery.data?.email ?? ''}
             disabled
           />
           <TextField
-            label="Created At"
-            value={profileQuery.data?.createdAt ? new Date(profileQuery.data.createdAt).toLocaleString() : ''}
+            label="Joined"
+            value={authProfileQuery.data?.createdAt ? new Date(authProfileQuery.data.createdAt).toLocaleString() : ''}
             disabled
           />
           <TextField
@@ -74,7 +102,7 @@ export function SettingsPage() {
             <ActionButton
               aria-label="Save profile"
               onClick={() => void handleSaveProfile()}
-              disabled={!displayName.trim() || updateProfileMutation.isPending}
+              disabled={!displayName.trim() || syncUpdateProfileMutation.isPending}
             >
               Save
             </ActionButton>
