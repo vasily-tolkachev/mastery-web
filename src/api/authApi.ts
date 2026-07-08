@@ -1,4 +1,3 @@
-import { AUTH_API_BASE_URL } from '../config/env';
 import { getAccessToken } from '../auth/tokenStorage';
 
 export interface TokenResponse {
@@ -16,7 +15,7 @@ export interface AuthUserProfile {
 }
 
 export async function loginWithGoogleIdToken(idToken: string): Promise<TokenResponse> {
-  const response = await fetch(`${AUTH_API_BASE_URL}/api/auth/login`, {
+  const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -31,7 +30,7 @@ export async function loginWithGoogleIdToken(idToken: string): Promise<TokenResp
 }
 
 export async function getAuthProfile(): Promise<AuthUserProfile> {
-  const response = await authApiFetch(`${AUTH_API_BASE_URL}/api/profile`);
+  const response = await authApiFetch('/api/profile');
   if (!response.ok) {
     throw new Error(`Failed to load auth profile (${response.status})`);
   }
@@ -39,7 +38,7 @@ export async function getAuthProfile(): Promise<AuthUserProfile> {
 }
 
 export async function updateAuthProfile(displayName: string): Promise<AuthUserProfile> {
-  const response = await authApiFetch(`${AUTH_API_BASE_URL}/api/profile`, {
+  const response = await authApiFetch('/api/profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ displayName }),
