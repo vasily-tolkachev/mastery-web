@@ -32,6 +32,8 @@ jobs:
       - name: Build
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          VITE_API_BASE_URL: /api
+          VITE_AUTH_API_BASE_URL: /api/auth
         run: npm run build
 
   docker-publish:
@@ -58,6 +60,8 @@ jobs:
           file: Dockerfile
           build-args: |
             VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            VITE_API_BASE_URL=/api
+            VITE_AUTH_API_BASE_URL=/api/auth
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
