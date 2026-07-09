@@ -1,4 +1,3 @@
-import { API_BASE_URL } from '../config/env';
 import { authFetch } from './http';
 import type {
   LearningProgram,
@@ -9,7 +8,7 @@ import type {
 } from '../types/program';
 
 export async function getCurrentProgram(): Promise<LearningProgram> {
-  const response = await authFetch(`${API_BASE_URL}/api/programs/current`);
+  const response = await authFetch('/api/programs/current');
   if (!response.ok) {
     throw new Error(`Failed to fetch current program (${response.status})`);
   }
@@ -19,7 +18,7 @@ export async function getCurrentProgram(): Promise<LearningProgram> {
 }
 
 export async function getProgramById(programId: number): Promise<ProgramRecord | null> {
-  const response = await authFetch(`${API_BASE_URL}/programs/${programId}`);
+  const response = await authFetch(`/api/programs/${programId}`);
   if (response.status === 404) {
     return null;
   }
@@ -30,7 +29,7 @@ export async function getProgramById(programId: number): Promise<ProgramRecord |
 }
 
 export async function getProgramTree(programId: number): Promise<LearningProgram | null> {
-  const response = await authFetch(`${API_BASE_URL}/programs/${programId}/tree`);
+  const response = await authFetch(`/api/programs/${programId}/tree`);
   if (response.status === 404) {
     return null;
   }
@@ -41,7 +40,7 @@ export async function getProgramTree(programId: number): Promise<LearningProgram
 }
 
 export async function getProgramStatus(programId: number): Promise<ProgramGenerationStatus | null> {
-  const response = await authFetch(`${API_BASE_URL}/programs/${programId}/status`);
+  const response = await authFetch(`/api/programs/${programId}/status`);
   if (response.status === 404) {
     return null;
   }

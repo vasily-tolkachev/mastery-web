@@ -1,9 +1,8 @@
-import { API_BASE_URL } from '../config/env';
 import { authFetch } from './http';
 import type { UpdateUserProfileRequest, UserProfile } from '../types/profile';
 
 export async function getProfile(): Promise<UserProfile> {
-  const response = await authFetch(`${API_BASE_URL}/api/profile`);
+  const response = await authFetch('/api/profile');
   if (!response.ok) {
     throw new Error(`Failed to load profile (${response.status})`);
   }
@@ -11,7 +10,7 @@ export async function getProfile(): Promise<UserProfile> {
 }
 
 export async function updateProfile(payload: UpdateUserProfileRequest): Promise<UserProfile> {
-  const response = await authFetch(`${API_BASE_URL}/api/profile`, {
+  const response = await authFetch('/api/profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

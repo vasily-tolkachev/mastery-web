@@ -1,4 +1,3 @@
-import { API_BASE_URL } from '../config/env';
 import { authFetch } from './http';
 import type { LearningState } from '../types/learning';
 
@@ -14,7 +13,7 @@ export interface PracticeRequest {
 }
 
 export async function getLearningState(): Promise<LearningState> {
-  const response = await authFetch(`${API_BASE_URL}/api/learning/state`);
+  const response = await authFetch('/api/learning/state');
   if (!response.ok) {
     throw new Error(`Failed to fetch learning state (${response.status})`);
   }
@@ -59,7 +58,7 @@ export async function submitRetry(
 }
 
 async function postLearningState(path: string, body: unknown): Promise<LearningState> {
-  const response = await authFetch(`${API_BASE_URL}${path}`, {
+  const response = await authFetch(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
