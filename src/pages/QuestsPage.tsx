@@ -16,6 +16,7 @@ export function QuestsPage() {
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [game, setGame] = useState<QuestGameView | null>(null);
+  const [showCatalog, setShowCatalog] = useState(false);
   const [busy, setBusy] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,6 +59,7 @@ export function QuestsPage() {
       const response = await startQuest(questId);
       setSessionId(response.sessionId);
       setGame(response.game);
+      setShowCatalog(false);
       localStorage.setItem(QUEST_SESSION_ID_KEY, response.sessionId);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to start quest');
@@ -105,6 +107,7 @@ export function QuestsPage() {
       setUploadMessage(`Uploaded: ${uploaded.title} (${uploaded.id})`);
       setSelectedFile(null);
       await loadQuests(false);
+      setShowCatalog(true);
     } catch (e) {
       setUploadMessage(e instanceof Error ? e.message : 'Failed to upload quest');
     } finally {
@@ -122,7 +125,7 @@ export function QuestsPage() {
 
       {error ? <ErrorState message={error} /> : null}
 
-      {!game ? (
+      {!game || showCatalog ? (
         <SectionCard title="Upload Quest File">
           <Stack spacing={1.5}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
@@ -151,7 +154,7 @@ export function QuestsPage() {
         </SectionCard>
       ) : null}
 
-      {!game ? (
+      {!game || showCatalog ? (
         <SectionCard title="Available Quests">
           {!quests.length ? <EmptyState message="No quests available." /> : null}
           <Stack spacing={1.5}>
@@ -228,10 +231,23 @@ export function QuestsPage() {
               >
                 Restart
               </Button>
+              <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)}>
+                Back to quests
+              </Button>
             </Stack>
           </Stack>
         </SectionCard>
       )}
+
+      {game && showCatalog ? (
+        <SectionCard title={`Current Quest: ${game.title}`}>
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" onClick={() => setShowCatalog(false)}>
+              Return to game
+            </Button>
+          </Stack>
+        </SectionCard>
+      ) : null}
     </Stack>
   );
 }
