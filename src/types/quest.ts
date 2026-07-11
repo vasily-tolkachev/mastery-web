@@ -10,11 +10,21 @@ export type QuestOption = {
 
 export type QuestGameView = {
   title: string;
+  nodeId: string;
+  nodeTitle: string;
   text: string;
   options: QuestOption[];
   inventory: string[];
   variables: Record<string, string>;
+  visitedNodes: string[];
+  canGoBack: boolean;
   finished: boolean;
+};
+
+export type QuestMapView = {
+  currentNodeId: string;
+  visited: string[];
+  available: string[];
 };
 
 export type StartQuestResponse = {

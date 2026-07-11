@@ -1,5 +1,5 @@
 import { authFetch } from './http';
-import type { QuestGameView, QuestSummary, StartQuestResponse, UploadQuestResponse } from '../types/quest';
+import type { QuestGameView, QuestMapView, QuestSummary, StartQuestResponse, UploadQuestResponse } from '../types/quest';
 
 export async function getQuests(): Promise<QuestSummary[]> {
   const response = await authFetch('/api/quests');
@@ -44,6 +44,30 @@ export async function chooseQuestOption(sessionId: string, optionId: string): Pr
     throw new Error(`Failed to choose option (${response.status})`);
   }
   return normalizeGameView(await response.json());
+}
+
+export async function goBackQuest(sessionId: string): Promise<QuestGameView> {
+  const response = await authFetch(`/api/quests/sessions/${sessionId}/back`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to go back (${response.status})`);
+  }
+  return normalizeGameView(await response.json());
+}
+
+export async function getQuestMap(sessionId: string): Promise<QuestMapView> {
+  const response = await authFetch(`/api/quests/sessions/${sessionId}/map`);
+  if (!response.ok) {
+    throw new Error(`Failed to load quest map (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    currentNodeId: String(raw.currentNodeId ?? ''),
+    visited: (Array.isArray(raw.visited) ? raw.visited : []).map((value) => String(value)),
+    available: (Array.isArray(raw.available) ? raw.available : []).map((value) => String(value)),
+  };
 }
 
 export async function uploadQuestFile(file: File): Promise<UploadQuestResponse> {
@@ -92,6 +116,8 @@ function normalizeGameView(value: unknown): QuestGameView {
     : {};
   return {
     title: String(raw.title ?? ''),
+    nodeId: String(raw.nodeId ?? ''),
+    nodeTitle: String(raw.nodeTitle ?? ''),
     text: String(raw.text ?? ''),
     options: optionsRaw.map((option) => {
       const optionRaw = (option ?? {}) as Record<string, unknown>;
@@ -104,6 +130,8 @@ function normalizeGameView(value: unknown): QuestGameView {
     variables: Object.fromEntries(
       Object.entries(variablesRaw).map(([key, value]) => [key, String(value)]),
     ),
+    visitedNodes: (Array.isArray(raw.visitedNodes) ? raw.visitedNodes : []).map((value) => String(value)),
+    canGoBack: Boolean(raw.canGoBack),
     finished: Boolean(raw.finished),
   };
 }
