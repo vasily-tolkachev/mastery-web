@@ -98,8 +98,12 @@ export function QuestsPage() {
                 key={quest.id}
                 sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}
               >
-                <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
-                  <Stack direction="row" spacing={1} alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <AutoStoriesRoundedIcon fontSize="small" color="primary" />
                     <Typography variant="subtitle2">{quest.title}</Typography>
                   </Stack>
