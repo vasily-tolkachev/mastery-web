@@ -28,8 +28,8 @@ export function AppLayout({ children }: PropsWithChildren) {
     location.pathname === path || (path !== '/home' && location.pathname.startsWith(`${path}/`));
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
-      <AppBar position="fixed" color="default" elevation={1}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+      <AppBar position="fixed" color="transparent" elevation={0}>
         <Toolbar sx={{ minHeight: 64 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <SchoolRoundedIcon fontSize="small" color="primary" />
@@ -64,6 +64,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             borderRight: { xs: 0, md: 1 },
             borderBottom: { xs: 1, md: 0 },
             borderColor: 'divider',
+            backgroundColor: 'background.paper',
           }}
         >
           <List
@@ -93,7 +94,7 @@ export function AppLayout({ children }: PropsWithChildren) {
           </List>
         </Paper>
 
-        <Box component="main" sx={{ p: { xs: 2, md: 3 } }}>
+        <Box component="main" sx={{ p: { xs: 2, md: 3 }, backgroundColor: 'background.default' }}>
           {children}
         </Box>
       </Box>

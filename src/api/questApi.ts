@@ -86,6 +86,10 @@ function normalizeQuestSummary(value: unknown): QuestSummary {
 function normalizeGameView(value: unknown): QuestGameView {
   const raw = (value ?? {}) as Record<string, unknown>;
   const optionsRaw = Array.isArray(raw.options) ? raw.options : [];
+  const inventoryRaw = Array.isArray(raw.inventory) ? raw.inventory : [];
+  const variablesRaw = raw.variables && typeof raw.variables === 'object'
+    ? (raw.variables as Record<string, unknown>)
+    : {};
   return {
     title: String(raw.title ?? ''),
     text: String(raw.text ?? ''),
@@ -96,6 +100,10 @@ function normalizeGameView(value: unknown): QuestGameView {
         text: String(optionRaw.text ?? ''),
       };
     }),
+    inventory: inventoryRaw.map((item) => String(item)),
+    variables: Object.fromEntries(
+      Object.entries(variablesRaw).map(([key, value]) => [key, String(value)]),
+    ),
     finished: Boolean(raw.finished),
   };
 }

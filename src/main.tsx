@@ -10,7 +10,45 @@ import { AuthProvider } from './auth/AuthContext';
 const queryClient = new QueryClient();
 const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: 'dark',
+    primary: { main: '#4fc3f7' },
+    secondary: { main: '#9fa8da' },
+    background: {
+      default: '#0b1020',
+      paper: '#111831',
+    },
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  typography: {
+    fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          borderColor: 'rgba(117, 137, 170, 0.24)',
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          backgroundColor: '#111831',
+          borderBottom: '1px solid rgba(117, 137, 170, 0.24)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        outlined: {
+          borderColor: 'rgba(117, 137, 170, 0.4)',
+        },
+      },
+    },
   },
 });
 

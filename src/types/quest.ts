@@ -12,6 +12,8 @@ export type QuestGameView = {
   title: string;
   text: string;
   options: QuestOption[];
+  inventory: string[];
+  variables: Record<string, string>;
   finished: boolean;
 };
 

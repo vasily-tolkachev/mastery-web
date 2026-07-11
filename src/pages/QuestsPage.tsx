@@ -1,7 +1,9 @@
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import FileUploadRoundedIcon from '@mui/icons-material/FileUploadRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import MemoryRoundedIcon from '@mui/icons-material/MemoryRounded';
+import { Box, Button, Divider, Grid, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { chooseQuestOption, getQuestSession, getQuests, startQuest, uploadQuestFile } from '../api/questApi';
@@ -188,55 +190,107 @@ export function QuestsPage() {
         </SectionCard>
       ) : (
         <SectionCard title={game.title}>
-          <Stack spacing={2}>
-            <Box
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 2,
-                p: 2,
-                minHeight: 160,
-                backgroundColor: '#111827',
-              }}
-            >
-              <Typography variant="body1" sx={{ color: '#f3f4f6', whiteSpace: 'pre-wrap' }}>
-                {game.text}
-              </Typography>
-            </Box>
-
-            <Stack spacing={1}>
-              {game.options.map((option) => (
-                <Button
-                  key={option.id}
-                  variant="outlined"
-                  onClick={() => handleChoose(option.id)}
-                  disabled={busy || game.finished}
-                  sx={{ justifyContent: 'flex-start' }}
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, lg: 8 }}>
+              <Stack spacing={2}>
+                <Box
+                  sx={{
+                    border: 1,
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    p: 2,
+                    minHeight: 180,
+                    backgroundColor: 'background.default',
+                  }}
                 >
-                  {option.text}
-                </Button>
-              ))}
-              {!game.options.length ? (
-                <Typography variant="body2" color="text.secondary">
-                  Quest finished.
-                </Typography>
-              ) : null}
-            </Stack>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {game.text}
+                  </Typography>
+                </Box>
 
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="text"
-                startIcon={<RefreshRoundedIcon fontSize="small" />}
-                disabled={busy}
-                onClick={handleRestart}
-              >
-                Restart
-              </Button>
-              <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)}>
-                Back to quests
-              </Button>
-            </Stack>
-          </Stack>
+                <Stack spacing={1}>
+                  {game.options.map((option) => (
+                    <Button
+                      key={option.id}
+                      variant="outlined"
+                      onClick={() => handleChoose(option.id)}
+                      disabled={busy || game.finished}
+                      sx={{ justifyContent: 'flex-start' }}
+                    >
+                      {option.text}
+                    </Button>
+                  ))}
+                  {!game.options.length ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Quest finished.
+                    </Typography>
+                  ) : null}
+                </Stack>
+
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="text"
+                    startIcon={<RefreshRoundedIcon fontSize="small" />}
+                    disabled={busy}
+                    onClick={handleRestart}
+                  >
+                    Restart
+                  </Button>
+                  <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)}>
+                    Back to quests
+                  </Button>
+                </Stack>
+              </Stack>
+            </Grid>
+
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <Stack spacing={1.5}>
+                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+                    <Inventory2RoundedIcon fontSize="small" color="primary" />
+                    <Typography variant="subtitle2">Inventory</Typography>
+                  </Stack>
+                  <Divider sx={{ mb: 1 }} />
+                  {game.inventory.length ? (
+                    <Stack spacing={0.75}>
+                      {game.inventory.map((item) => (
+                        <Typography key={item} variant="body2">
+                          {item}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Empty
+                    </Typography>
+                  )}
+                </Box>
+
+                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+                    <MemoryRoundedIcon fontSize="small" color="primary" />
+                    <Typography variant="subtitle2">Variables</Typography>
+                  </Stack>
+                  <Divider sx={{ mb: 1 }} />
+                  {Object.keys(game.variables).length ? (
+                    <Stack spacing={0.75}>
+                      {Object.entries(game.variables)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([name, value]) => (
+                          <Typography key={name} variant="body2">
+                            {name}: {value}
+                          </Typography>
+                        ))}
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No variables
+                    </Typography>
+                  )}
+                </Box>
+              </Stack>
+            </Grid>
+          </Grid>
         </SectionCard>
       )}
 
