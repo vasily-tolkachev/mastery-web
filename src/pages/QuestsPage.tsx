@@ -36,6 +36,7 @@ export function QuestsPage() {
             const savedGame = await getQuestSession(savedSessionId);
             setSessionId(savedSessionId);
             setGame(savedGame);
+            setShowCatalog(true);
           } catch {
             localStorage.removeItem(QUEST_SESSION_ID_KEY);
           }
