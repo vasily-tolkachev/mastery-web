@@ -26,7 +26,7 @@ export default function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/" element={<Navigate to="/quests" replace />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/learning" element={<LearningPage />} />
         <Route path="/programs" element={<ProgramsPage />} />
@@ -35,7 +35,7 @@ export default function App() {
         <Route path="/quests" element={<QuestsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<Navigate to="/quests" replace />} />
       </Routes>
     </AppLayout>
   );
