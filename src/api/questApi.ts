@@ -1,5 +1,5 @@
 import { authFetch } from './http';
-import type { QuestGameView, QuestSummary, StartQuestResponse } from '../types/quest';
+import type { QuestGameView, QuestSummary, StartQuestResponse, UploadQuestResponse } from '../types/quest';
 
 export async function getQuests(): Promise<QuestSummary[]> {
   const response = await authFetch('/api/quests');
@@ -44,6 +44,35 @@ export async function chooseQuestOption(sessionId: string, optionId: string): Pr
     throw new Error(`Failed to choose option (${response.status})`);
   }
   return normalizeGameView(await response.json());
+}
+
+export async function uploadQuestFile(file: File): Promise<UploadQuestResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await authFetch('/api/quests', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let details = `Failed to upload quest (${response.status})`;
+    try {
+      const errorBody = (await response.json()) as Record<string, unknown>;
+      if (typeof errorBody.message === 'string' && errorBody.message.trim().length > 0) {
+        details = errorBody.message;
+      }
+    } catch {
+      // ignore invalid error payloads
+    }
+    throw new Error(details);
+  }
+
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    id: String(raw.id ?? ''),
+    title: String(raw.title ?? ''),
+  };
 }
 
 function normalizeQuestSummary(value: unknown): QuestSummary {

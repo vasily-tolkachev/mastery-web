@@ -19,3 +19,8 @@ export type StartQuestResponse = {
   sessionId: string;
   game: QuestGameView;
 };
+
+export type UploadQuestResponse = {
+  id: string;
+  title: string;
+};

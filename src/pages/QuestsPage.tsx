@@ -1,8 +1,10 @@
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
+import FileUploadRoundedIcon from '@mui/icons-material/FileUploadRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { chooseQuestOption, getQuestSession, getQuests, startQuest } from '../api/questApi';
+import type { ChangeEvent } from 'react';
+import { chooseQuestOption, getQuestSession, getQuests, startQuest, uploadQuestFile } from '../api/questApi';
 import type { QuestGameView, QuestSummary } from '../types/quest';
 import { EmptyState, ErrorState, LoadingState, PageHeader, SectionCard } from '../components/ui';
 
@@ -15,15 +17,18 @@ export function QuestsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [game, setGame] = useState<QuestGameView | null>(null);
   const [busy, setBusy] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const [questList] = await Promise.all([getQuests()]);
-        setQuests(questList);
+  const loadQuests = async (includeSavedSession: boolean) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [questList] = await Promise.all([getQuests()]);
+      setQuests(questList);
 
+      if (includeSavedSession) {
         const savedSessionId = localStorage.getItem(QUEST_SESSION_ID_KEY);
         if (savedSessionId) {
           try {
@@ -34,13 +39,16 @@ export function QuestsPage() {
             localStorage.removeItem(QUEST_SESSION_ID_KEY);
           }
         }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load quests');
-      } finally {
-        setLoading(false);
       }
-    };
-    void load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load quests');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadQuests(true);
   }, []);
 
   const handleStartQuest = async (questId: string) => {
@@ -79,6 +87,31 @@ export function QuestsPage() {
     await handleStartQuest(quest.id);
   };
 
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setSelectedFile(file);
+    setUploadMessage(null);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setUploadMessage('Please choose a .quest file first.');
+      return;
+    }
+    try {
+      setUploading(true);
+      setUploadMessage(null);
+      const uploaded = await uploadQuestFile(selectedFile);
+      setUploadMessage(`Uploaded: ${uploaded.title} (${uploaded.id})`);
+      setSelectedFile(null);
+      await loadQuests(false);
+    } catch (e) {
+      setUploadMessage(e instanceof Error ? e.message : 'Failed to upload quest');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return <LoadingState message="Loading quests..." />;
   }
@@ -88,6 +121,35 @@ export function QuestsPage() {
       <PageHeader title="Quests" subtitle="Interactive text adventures." />
 
       {error ? <ErrorState message={error} /> : null}
+
+      {!game ? (
+        <SectionCard title="Upload Quest File">
+          <Stack spacing={1.5}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
+              <Button variant="outlined" component="label" disabled={uploading}>
+                Select .quest
+                <input hidden type="file" accept=".quest,text/plain" onChange={handleFileChange} />
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<FileUploadRoundedIcon fontSize="small" />}
+                onClick={handleUpload}
+                disabled={!selectedFile || uploading}
+              >
+                Upload
+              </Button>
+              <Typography variant="body2" color="text.secondary">
+                {selectedFile ? selectedFile.name : 'No file selected'}
+              </Typography>
+            </Stack>
+            {uploadMessage ? (
+              <Typography variant="body2" color="text.secondary">
+                {uploadMessage}
+              </Typography>
+            ) : null}
+          </Stack>
+        </SectionCard>
+      ) : null}
 
       {!game ? (
         <SectionCard title="Available Quests">
