@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { chooseQuestOption, getQuestMap, getQuestSession, getQuests, goBackQuest, startQuest, uploadQuestFile } from '../api/questApi';
 import type { QuestGameView, QuestMapView, QuestSummary } from '../types/quest';
+import { WorldMap } from '../components/quest/WorldMap';
 import { EmptyState, ErrorState, LoadingState, PageHeader, SectionCard } from '../components/ui';
 
 const QUEST_SESSION_ID_KEY = 'quest-session-id';
@@ -334,17 +335,19 @@ export function QuestsPage() {
                     <Typography variant="subtitle2">World Map</Typography>
                   </Stack>
                   <Divider sx={{ mb: 1 }} />
-                  <Stack spacing={1}>
-                    <Typography variant="caption" color="text.secondary">
-                      Current: {worldMap?.currentNodeId ?? game.nodeId}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Visited: {(worldMap?.visited ?? game.visitedNodes).join(', ') || 'none'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Available: {(worldMap?.available ?? []).join(', ') || 'none'}
-                    </Typography>
-                  </Stack>
+                  <Box sx={{ height: { xs: 320, md: 460 }, minHeight: 320, maxHeight: 520 }}>
+                    <WorldMap
+                      currentNodeId={worldMap?.currentNodeId ?? game.nodeId}
+                      visited={worldMap?.visited ?? game.visitedNodes}
+                      available={worldMap?.available ?? []}
+                      onNodeClick={(nodeId) => {
+                        const mappedOption = game.options.find((option) => option.id === nodeId);
+                        if (mappedOption && worldMap?.available.includes(nodeId)) {
+                          void handleChoose(mappedOption.id);
+                        }
+                      }}
+                    />
+                  </Box>
                 </Box>
               </Stack>
             </Grid>
