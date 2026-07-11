@@ -4,6 +4,7 @@ import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
+import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { AppBar, Box, Divider, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography } from '@mui/material';
 import type { PropsWithChildren } from 'react';
@@ -15,6 +16,7 @@ const sidebarItems = [
   { label: 'Learning', path: '/learning', icon: <SchoolRoundedIcon fontSize="small" /> },
   { label: 'Programs', path: '/programs', icon: <MenuBookRoundedIcon fontSize="small" /> },
   { label: 'Progress', path: '/progress', icon: <InsightsRoundedIcon fontSize="small" /> },
+  { label: 'Quests', path: '/quests', icon: <AutoStoriesRoundedIcon fontSize="small" /> },
   { label: 'Goals', path: '/goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
   { label: 'Settings', path: '/settings', icon: <SettingsRoundedIcon fontSize="small" /> },
 ] as const;

@@ -8,6 +8,7 @@ import { LearningPage } from './pages/LearningPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProgramsPage } from './pages/ProgramsPage';
 import { ProgressPage } from './pages/ProgressPage';
+import { QuestsPage } from './pages/QuestsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/programs" element={<ProgramsPage />} />
         <Route path="/programs/concepts/:conceptId" element={<ConceptPage />} />
         <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/quests" element={<QuestsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
