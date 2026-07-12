@@ -18,6 +18,7 @@ export function QuestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentQuestId, setCurrentQuestId] = useState<string | null>(null);
   const [game, setGame] = useState<QuestGameView | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -49,6 +50,7 @@ export function QuestsPage() {
       setError(null);
       const response = await startQuest(questId);
       setSessionId(response.sessionId);
+      setCurrentQuestId(questId);
       setGame(response.game);
       setShowCatalog(false);
       setSessions(await getMyQuestSessions());
@@ -79,7 +81,9 @@ export function QuestsPage() {
       setBusy(true);
       setError(null);
       const response = await proceedQuestSession(targetSessionId);
+      const targetSession = sessions.find((item) => item.sessionId === targetSessionId);
       setSessionId(response.sessionId);
+      setCurrentQuestId(targetSession?.questId ?? null);
       setGame(response.game);
       setShowCatalog(false);
     } catch (e) {
@@ -90,10 +94,8 @@ export function QuestsPage() {
   };
 
   const handleRestart = async () => {
-    if (!game) return;
-    const quest = quests.find((item) => item.title === game.title) ?? quests[0];
-    if (!quest) return;
-    await handleStartQuest(quest.id);
+    if (!currentQuestId) return;
+    await handleStartQuest(currentQuestId);
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
