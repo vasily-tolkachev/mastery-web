@@ -1,6 +1,5 @@
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import FileUploadRoundedIcon from '@mui/icons-material/FileUploadRounded';
-import KeyboardBackspaceRoundedIcon from '@mui/icons-material/KeyboardBackspaceRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
@@ -8,12 +7,10 @@ import MemoryRoundedIcon from '@mui/icons-material/MemoryRounded';
 import { Box, Button, Divider, Grid, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { chooseQuestOption, getQuestMap, getQuestSession, getQuests, goBackQuest, startQuest, uploadQuestFile } from '../api/questApi';
-import type { QuestGameView, QuestMapView, QuestSummary } from '../types/quest';
+import { chooseQuestOption, getQuests, startQuest, uploadQuestFile } from '../api/questApi';
+import type { QuestGameView, QuestSummary } from '../types/quest';
 import { WorldMap } from '../components/quest/WorldMap';
 import { EmptyState, ErrorState, LoadingState, PageHeader, SectionCard } from '../components/ui';
-
-const QUEST_SESSION_ID_KEY = 'quest-session-id';
 
 export function QuestsPage() {
   const [quests, setQuests] = useState<QuestSummary[]>([]);
@@ -22,34 +19,17 @@ export function QuestsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [game, setGame] = useState<QuestGameView | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
-  const [worldMap, setWorldMap] = useState<QuestMapView | null>(null);
   const [busy, setBusy] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
-  const loadQuests = async (includeSavedSession: boolean) => {
+  const loadQuests = async () => {
     try {
       setLoading(true);
       setError(null);
       const [questList] = await Promise.all([getQuests()]);
       setQuests(questList);
-
-      if (includeSavedSession) {
-        const savedSessionId = localStorage.getItem(QUEST_SESSION_ID_KEY);
-        if (savedSessionId) {
-          try {
-            const savedGame = await getQuestSession(savedSessionId);
-            const savedMap = await getQuestMap(savedSessionId);
-            setSessionId(savedSessionId);
-            setGame(savedGame);
-            setWorldMap(savedMap);
-            setShowCatalog(true);
-          } catch {
-            localStorage.removeItem(QUEST_SESSION_ID_KEY);
-          }
-        }
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load quests');
     } finally {
@@ -58,7 +38,7 @@ export function QuestsPage() {
   };
 
   useEffect(() => {
-    void loadQuests(true);
+    void loadQuests();
   }, []);
 
   const handleStartQuest = async (questId: string) => {
@@ -66,12 +46,9 @@ export function QuestsPage() {
       setBusy(true);
       setError(null);
       const response = await startQuest(questId);
-      const map = await getQuestMap(response.sessionId);
       setSessionId(response.sessionId);
       setGame(response.game);
-      setWorldMap(map);
       setShowCatalog(false);
-      localStorage.setItem(QUEST_SESSION_ID_KEY, response.sessionId);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to start quest');
     } finally {
@@ -85,27 +62,9 @@ export function QuestsPage() {
       setBusy(true);
       setError(null);
       const nextGame = await chooseQuestOption(sessionId, optionId);
-      const map = await getQuestMap(sessionId);
       setGame(nextGame);
-      setWorldMap(map);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to choose option');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleBack = async () => {
-    if (!sessionId) return;
-    try {
-      setBusy(true);
-      setError(null);
-      const previousGame = await goBackQuest(sessionId);
-      const map = await getQuestMap(sessionId);
-      setGame(previousGame);
-      setWorldMap(map);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to go back');
     } finally {
       setBusy(false);
     }
@@ -135,7 +94,7 @@ export function QuestsPage() {
       const uploaded = await uploadQuestFile(selectedFile);
       setUploadMessage(`Uploaded: ${uploaded.title} (${uploaded.id})`);
       setSelectedFile(null);
-      await loadQuests(false);
+      await loadQuests();
       setShowCatalog(true);
     } catch (e) {
       setUploadMessage(e instanceof Error ? e.message : 'Failed to upload quest');
@@ -262,14 +221,6 @@ export function QuestsPage() {
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="text"
-                    startIcon={<KeyboardBackspaceRoundedIcon fontSize="small" />}
-                    disabled={busy || !game.canGoBack}
-                    onClick={handleBack}
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    variant="text"
                     startIcon={<RefreshRoundedIcon fontSize="small" />}
                     disabled={busy}
                     onClick={handleRestart}
@@ -337,15 +288,10 @@ export function QuestsPage() {
                   <Divider sx={{ mb: 1 }} />
                   <Box sx={{ height: { xs: 320, md: 460 }, minHeight: 320, maxHeight: 520 }}>
                     <WorldMap
-                      currentNodeId={worldMap?.currentNodeId ?? game.nodeId}
-                      visited={worldMap?.visited ?? game.visitedNodes}
-                      available={worldMap?.available ?? []}
-                      onNodeClick={(nodeId) => {
-                        const mappedOption = game.options.find((option) => option.id === nodeId);
-                        if (mappedOption && worldMap?.available.includes(nodeId)) {
-                          void handleChoose(mappedOption.id);
-                        }
-                      }}
+                      currentNodeId={game.nodeId}
+                      visited={game.visitedNodes}
+                      available={[]}
+                      onNodeClick={() => {}}
                     />
                   </Box>
                 </Box>

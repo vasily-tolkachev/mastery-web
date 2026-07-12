@@ -21,12 +21,6 @@ export type QuestGameView = {
   finished: boolean;
 };
 
-export type QuestMapView = {
-  currentNodeId: string;
-  visited: string[];
-  available: string[];
-};
-
 export type StartQuestResponse = {
   sessionId: string;
   game: QuestGameView;

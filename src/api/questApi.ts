@@ -1,5 +1,5 @@
 import { authFetch } from './http';
-import type { QuestGameView, QuestMapView, QuestSummary, StartQuestResponse, UploadQuestResponse } from '../types/quest';
+import type { QuestGameView, QuestSummary, StartQuestResponse, UploadQuestResponse } from '../types/quest';
 
 export async function getQuests(): Promise<QuestSummary[]> {
   const response = await authFetch('/api/quests');
@@ -12,7 +12,7 @@ export async function getQuests(): Promise<QuestSummary[]> {
 }
 
 export async function startQuest(questId: string): Promise<StartQuestResponse> {
-  const response = await authFetch(`/api/quests/${questId}/start`, {
+  const response = await authFetch(`/api/quests/${questId}/play`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -26,48 +26,15 @@ export async function startQuest(questId: string): Promise<StartQuestResponse> {
   };
 }
 
-export async function getQuestSession(sessionId: string): Promise<QuestGameView> {
-  const response = await authFetch(`/api/quests/sessions/${sessionId}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load quest session (${response.status})`);
-  }
-  return normalizeGameView(await response.json());
-}
-
 export async function chooseQuestOption(sessionId: string, optionId: string): Promise<QuestGameView> {
-  const response = await authFetch(`/api/quests/sessions/${sessionId}/choose`, {
+  const response = await authFetch(`/api/quests/sessions/${sessionId}/options/${optionId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ optionId }),
   });
   if (!response.ok) {
     throw new Error(`Failed to choose option (${response.status})`);
   }
   return normalizeGameView(await response.json());
-}
-
-export async function goBackQuest(sessionId: string): Promise<QuestGameView> {
-  const response = await authFetch(`/api/quests/sessions/${sessionId}/back`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to go back (${response.status})`);
-  }
-  return normalizeGameView(await response.json());
-}
-
-export async function getQuestMap(sessionId: string): Promise<QuestMapView> {
-  const response = await authFetch(`/api/quests/sessions/${sessionId}/map`);
-  if (!response.ok) {
-    throw new Error(`Failed to load quest map (${response.status})`);
-  }
-  const raw = (await response.json()) as Record<string, unknown>;
-  return {
-    currentNodeId: String(raw.currentNodeId ?? ''),
-    visited: (Array.isArray(raw.visited) ? raw.visited : []).map((value) => String(value)),
-    available: (Array.isArray(raw.available) ? raw.available : []).map((value) => String(value)),
-  };
 }
 
 export async function uploadQuestFile(file: File): Promise<UploadQuestResponse> {
