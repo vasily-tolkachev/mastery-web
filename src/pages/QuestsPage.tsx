@@ -355,7 +355,7 @@ export function QuestsPage() {
                   <Box component="pre" sx={{ m: 0, p: 1, borderRadius: 1, bgcolor: 'background.default', overflowX: 'auto' }}>
                     {JSON.stringify(session.gameState.variables, null, 2)}
                   </Box>
-                  <Stack direction="row" justifyContent="flex-end">
+                  <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
                     <Button size="small" variant="contained" disabled={busy} onClick={() => handleProceed(session.sessionId)}>
                       Proceed
                     </Button>
