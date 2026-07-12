@@ -70,15 +70,15 @@ function getSystemMode(): PaletteMode {
 export function AppThemeProvider({ children }: PropsWithChildren) {
   const [modeSetting, setModeSetting] = useState<ThemeModeSetting>(() => {
     const raw = localStorage.getItem(MODE_KEY);
-    return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'system';
+    return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'dark';
   });
   const [accent, setAccent] = useState<ThemeAccent>(() => {
     const raw = localStorage.getItem(ACCENT_KEY);
-    return raw && raw in accents ? (raw as ThemeAccent) : 'cyan';
+    return raw && raw in accents ? (raw as ThemeAccent) : 'violet';
   });
   const [darkTheme, setDarkTheme] = useState<DarkTheme>(() => {
     const raw = localStorage.getItem(DARK_THEME_KEY);
-    return raw && raw in darkThemes ? (raw as DarkTheme) : 'midnight';
+    return raw && raw in darkThemes ? (raw as DarkTheme) : 'graphite';
   });
   const [systemMode, setSystemMode] = useState<PaletteMode>(() => getSystemMode());
 
@@ -121,12 +121,25 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
           fontSize: 16,
         },
         components: {
+          MuiButtonBase: {
+            defaultProps: {
+              disableRipple: true,
+            },
+            styleOverrides: {
+              root: {
+                WebkitTapHighlightColor: 'transparent',
+              },
+            },
+          },
           MuiButton: {
             styleOverrides: {
               root: {
                 minHeight: 56,
                 textTransform: 'none',
                 fontSize: '1rem',
+                '&:active': {
+                  transform: 'none',
+                },
               },
             },
           },

@@ -6,7 +6,7 @@ import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import { AppBar, Box, Divider, FormControl, IconButton, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Divider, FormControl, IconButton, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Toolbar, Typography, useMediaQuery, useTheme } from '@mui/material';
 import type { PropsWithChildren } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -26,39 +26,72 @@ export function AppLayout({ children }: PropsWithChildren) {
   const { logout } = useAuth();
   const { modeSetting, accent, darkTheme, setModeSetting, setAccent, setDarkTheme } = useAppTheme();
   const location = useLocation();
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const isActive = (path: string) =>
     location.pathname === path || (path !== '/home' && location.pathname.startsWith(`${path}/`));
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
       <AppBar position="fixed" color="transparent" elevation={0}>
-        <Toolbar sx={{ minHeight: { xs: 112, sm: 64 }, alignItems: { xs: 'flex-start', sm: 'center' }, py: { xs: 1, sm: 0 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Toolbar
+          sx={{
+            minHeight: { xs: 140, sm: 64 },
+            alignItems: { xs: 'stretch', sm: 'center' },
+            py: { xs: 1, sm: 0 },
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
             <SchoolRoundedIcon fontSize="small" color="primary" />
             <Typography variant="h6" component="div">
               Mastery
             </Typography>
           </Box>
-          <Box sx={{ ml: 'auto', display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <FormControl size="small" sx={{ minWidth: { xs: 122, sm: 98 } }}>
+          <Box
+            sx={{
+              ml: { xs: 0, sm: 'auto' },
+              width: { xs: '100%', sm: 'auto' },
+              display: 'flex',
+              gap: 1,
+              alignItems: 'center',
+              flexWrap: 'nowrap',
+              justifyContent: { xs: 'space-between', sm: 'flex-end' },
+              minWidth: 0,
+            }}
+          >
+            <FormControl size="small" sx={{ minWidth: 0, flex: { xs: 1, sm: '0 0 auto' }, maxWidth: { sm: 110 } }}>
               <InputLabel id="theme-mode-label">Mode</InputLabel>
               <Select
                 labelId="theme-mode-label"
                 label="Mode"
                 value={modeSetting}
+                native={isMobile}
                 onChange={(e) => setModeSetting(e.target.value as 'system' | 'light' | 'dark')}
               >
-                <MenuItem value="system">System</MenuItem>
-                <MenuItem value="light">Light</MenuItem>
-                <MenuItem value="dark">Dark</MenuItem>
+                {isMobile ? (
+                  <>
+                    <option value="system">System</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </>
+                ) : (
+                  <>
+                    <MenuItem value="system">System</MenuItem>
+                    <MenuItem value="light">Light</MenuItem>
+                    <MenuItem value="dark">Dark</MenuItem>
+                  </>
+                )}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: { xs: 132, sm: 104 } }}>
+            <FormControl size="small" sx={{ minWidth: 0, flex: { xs: 1, sm: '0 0 auto' }, maxWidth: { sm: 120 } }}>
               <InputLabel id="theme-accent-label">Theme</InputLabel>
               <Select
                 labelId="theme-accent-label"
                 label="Theme"
                 value={accent}
+                native={isMobile}
                 onChange={(e) =>
                   setAccent(
                     e.target.value as
@@ -79,38 +112,73 @@ export function AppLayout({ children }: PropsWithChildren) {
                   )
                 }
               >
-                <MenuItem value="cyan">Cyan</MenuItem>
-                <MenuItem value="indigo">Indigo</MenuItem>
-                <MenuItem value="emerald">Emerald</MenuItem>
-                <MenuItem value="amber">Amber</MenuItem>
-                <MenuItem value="rose">Rose</MenuItem>
-                <MenuItem value="slate">Slate</MenuItem>
-                <MenuItem value="violet">Violet</MenuItem>
-                <MenuItem value="teal">Teal</MenuItem>
-                <MenuItem value="sky">Sky</MenuItem>
-                <MenuItem value="lime">Lime</MenuItem>
-                <MenuItem value="orange">Orange</MenuItem>
-                <MenuItem value="fuchsia">Fuchsia</MenuItem>
-                <MenuItem value="red">Red</MenuItem>
-                <MenuItem value="blue">Blue</MenuItem>
+                {isMobile ? (
+                  <>
+                    <option value="cyan">Cyan</option>
+                    <option value="indigo">Indigo</option>
+                    <option value="emerald">Emerald</option>
+                    <option value="amber">Amber</option>
+                    <option value="rose">Rose</option>
+                    <option value="slate">Slate</option>
+                    <option value="violet">Violet</option>
+                    <option value="teal">Teal</option>
+                    <option value="sky">Sky</option>
+                    <option value="lime">Lime</option>
+                    <option value="orange">Orange</option>
+                    <option value="fuchsia">Fuchsia</option>
+                    <option value="red">Red</option>
+                    <option value="blue">Blue</option>
+                  </>
+                ) : (
+                  <>
+                    <MenuItem value="cyan">Cyan</MenuItem>
+                    <MenuItem value="indigo">Indigo</MenuItem>
+                    <MenuItem value="emerald">Emerald</MenuItem>
+                    <MenuItem value="amber">Amber</MenuItem>
+                    <MenuItem value="rose">Rose</MenuItem>
+                    <MenuItem value="slate">Slate</MenuItem>
+                    <MenuItem value="violet">Violet</MenuItem>
+                    <MenuItem value="teal">Teal</MenuItem>
+                    <MenuItem value="sky">Sky</MenuItem>
+                    <MenuItem value="lime">Lime</MenuItem>
+                    <MenuItem value="orange">Orange</MenuItem>
+                    <MenuItem value="fuchsia">Fuchsia</MenuItem>
+                    <MenuItem value="red">Red</MenuItem>
+                    <MenuItem value="blue">Blue</MenuItem>
+                  </>
+                )}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: { xs: 136, sm: 116 } }}>
+            <FormControl size="small" sx={{ minWidth: 0, flex: { xs: 1, sm: '0 0 auto' }, maxWidth: { sm: 130 } }}>
               <InputLabel id="theme-dark-label">Dark</InputLabel>
               <Select
                 labelId="theme-dark-label"
                 label="Dark"
                 value={darkTheme}
+                native={isMobile}
                 onChange={(e) =>
                   setDarkTheme(e.target.value as 'midnight' | 'graphite' | 'ocean' | 'forest' | 'violet' | 'espresso')
                 }
               >
-                <MenuItem value="midnight">Midnight</MenuItem>
-                <MenuItem value="graphite">Graphite</MenuItem>
-                <MenuItem value="ocean">Ocean</MenuItem>
-                <MenuItem value="forest">Forest</MenuItem>
-                <MenuItem value="violet">Violet</MenuItem>
-                <MenuItem value="espresso">Espresso</MenuItem>
+                {isMobile ? (
+                  <>
+                    <option value="midnight">Midnight</option>
+                    <option value="graphite">Graphite</option>
+                    <option value="ocean">Ocean</option>
+                    <option value="forest">Forest</option>
+                    <option value="violet">Violet</option>
+                    <option value="espresso">Espresso</option>
+                  </>
+                ) : (
+                  <>
+                    <MenuItem value="midnight">Midnight</MenuItem>
+                    <MenuItem value="graphite">Graphite</MenuItem>
+                    <MenuItem value="ocean">Ocean</MenuItem>
+                    <MenuItem value="forest">Forest</MenuItem>
+                    <MenuItem value="violet">Violet</MenuItem>
+                    <MenuItem value="espresso">Espresso</MenuItem>
+                  </>
+                )}
               </Select>
             </FormControl>
             <IconButton aria-label="Logout" onClick={logout}>
@@ -120,14 +188,16 @@ export function AppLayout({ children }: PropsWithChildren) {
         </Toolbar>
       </AppBar>
 
-      <Toolbar sx={{ minHeight: { xs: 112, sm: 64 } }} />
+      <Toolbar sx={{ minHeight: { xs: 140, sm: 64 } }} />
 
       <Box
         component="div"
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', md: '260px 1fr' },
-          minHeight: { xs: 'calc(100vh - 112px)', sm: 'calc(100vh - 64px)' },
+          minHeight: { xs: 'calc(100vh - 140px)', sm: 'calc(100vh - 64px)' },
+          maxWidth: '100vw',
+          overflowX: 'hidden',
         }}
       >
         <Paper
@@ -152,7 +222,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             }}
           >
             {sidebarItems.map((item, index) => (
-              <Box key={item.label} sx={{ minWidth: { xs: 128, md: 'auto' } }}>
+              <Box key={item.label} sx={{ minWidth: { xs: 108, md: 'auto' } }}>
                 <ListItemButton
                   component={Link}
                   to={item.path}
@@ -177,7 +247,7 @@ export function AppLayout({ children }: PropsWithChildren) {
           </List>
         </Paper>
 
-        <Box component="main" sx={{ p: { xs: 2, md: 3 }, backgroundColor: 'background.default' }}>
+        <Box component="main" sx={{ p: { xs: 2, md: 3 }, backgroundColor: 'background.default', maxWidth: '100%', overflowX: 'hidden' }}>
           {children}
         </Box>
       </Box>
