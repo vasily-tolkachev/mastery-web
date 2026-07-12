@@ -45,28 +45,29 @@ export function AppLayout({ children }: PropsWithChildren) {
       <AppBar position="fixed" color="transparent" elevation={0}>
         <Toolbar
           sx={{
-            minHeight: { xs: 140, sm: 64 },
-            alignItems: { xs: 'stretch', sm: 'center' },
-            py: { xs: 1, sm: 0 },
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 1, sm: 0 },
+            minHeight: { xs: 52, sm: 64 },
+            alignItems: 'center',
+            py: 0,
+            px: { xs: 1, sm: 2 },
+            flexDirection: 'row',
+            gap: 0.5,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: { xs: 'auto', sm: 'auto' }, minWidth: 0 }}>
             <SchoolRoundedIcon fontSize="small" color="primary" />
-            <Typography variant="h6" component="div">
+            <Typography variant="subtitle1" component="div" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, lineHeight: 1.2 }}>
               Mastery
             </Typography>
           </Box>
           {isMobile ? (
-            <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
-              <IconButton aria-label="Страницы" onClick={openPagesMenu}>
+            <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
+              <IconButton aria-label="Страницы" onClick={openPagesMenu} size="small" sx={{ p: 0.5 }}>
                 <MenuRoundedIcon fontSize="small" />
               </IconButton>
-              <IconButton aria-label="Тема" onClick={openThemeMenu}>
+              <IconButton aria-label="Тема" onClick={openThemeMenu} size="small" sx={{ p: 0.5 }}>
                 <ColorLensRoundedIcon fontSize="small" />
               </IconButton>
-              <IconButton aria-label="Выйти" onClick={logout}>
+              <IconButton aria-label="Выйти" onClick={logout} size="small" sx={{ p: 0.5 }}>
                 <LogoutRoundedIcon fontSize="small" />
               </IconButton>
             </Box>
@@ -242,14 +243,14 @@ export function AppLayout({ children }: PropsWithChildren) {
         </Box>
       </Menu>
 
-      <Toolbar sx={{ minHeight: { xs: 140, sm: 64 } }} />
+      <Toolbar sx={{ minHeight: { xs: 52, sm: 64 } }} />
 
       <Box
         component="div"
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', md: '260px 1fr' },
-          minHeight: { xs: 'calc(100vh - 140px)', sm: 'calc(100vh - 64px)' },
+          minHeight: { xs: 'calc(100vh - 52px)', sm: 'calc(100vh - 64px)' },
           maxWidth: '100vw',
           overflowX: 'hidden',
         }}

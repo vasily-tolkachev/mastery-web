@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { chooseQuestOption, getMyQuestSessions, getQuests, proceedQuestSession, restartQuestSession, startQuest, uploadQuestFile } from '../api/questApi';
 import type { QuestGameView, QuestSessionSnapshot, QuestSummary } from '../types/quest';
-import { EmptyState, ErrorState, LoadingState, PageHeader, SectionCard } from '../components/ui';
+import { EmptyState, ErrorState, LoadingState, SectionCard } from '../components/ui';
 
 export function QuestsPage() {
   const [quests, setQuests] = useState<QuestSummary[]>([]);
@@ -149,8 +149,6 @@ export function QuestsPage() {
 
   return (
     <Stack spacing={{ xs: 2, md: 2 }} sx={{ '& .MuiTypography-root': { fontSize: { xs: '1.15rem', md: '1rem' } } }}>
-      <PageHeader title="Квесты" subtitle="Интерактивные текстовые приключения." />
-
       {error ? <ErrorState message={error} /> : null}
 
       {!game || showCatalog ? (
@@ -187,16 +185,10 @@ export function QuestsPage() {
           </Stack>
         </SectionCard>
       ) : (
-        <SectionCard title={game.title}>
+        <SectionCard>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, lg: 8 }}>
               <Stack spacing={2}>
-                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: { xs: 1.75, md: 1.5 } }}>
-                  <Typography variant="h6" sx={{ fontSize: { xs: '1.35rem', md: '1.05rem' } }}>{game.nodeTitle}</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '1.05rem', md: '0.85rem' } }}>
-                    {game.nodeId}
-                  </Typography>
-                </Box>
                 <Box
                   sx={{
                     border: 1,
@@ -204,7 +196,9 @@ export function QuestsPage() {
                     borderRadius: 2,
                     p: 2,
                     minHeight: { xs: 300, md: 180 },
+                    maxHeight: { xs: 300, md: 180 },
                     backgroundColor: 'background.default',
+                    overflowY: 'auto',
                   }}
                 >
                   <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontSize: { xs: '1.25rem', md: '1rem' }, lineHeight: 1.7 }}>
