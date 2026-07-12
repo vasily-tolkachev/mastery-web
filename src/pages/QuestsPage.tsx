@@ -3,7 +3,8 @@ import FileUploadRoundedIcon from '@mui/icons-material/FileUploadRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import MemoryRoundedIcon from '@mui/icons-material/MemoryRounded';
-import { Box, Button, Divider, Grid, Stack, Typography } from '@mui/material';
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Divider, Grid, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { chooseQuestOption, getMyQuestSessions, getQuests, proceedQuestSession, restartQuestSession, startQuest, uploadQuestFile } from '../api/questApi';
@@ -23,6 +24,7 @@ export function QuestsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [sessionsExpanded, setSessionsExpanded] = useState(false);
 
   const loadQuests = async () => {
     try {
@@ -150,37 +152,6 @@ export function QuestsPage() {
       <PageHeader title="Quests" subtitle="Interactive text adventures." />
 
       {error ? <ErrorState message={error} /> : null}
-
-      {!game || showCatalog ? (
-        <SectionCard title="Upload Quest File">
-          <Stack spacing={1.5}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-              <Button variant="outlined" component="label" disabled={uploading} fullWidth sx={{ maxWidth: { sm: 220 }, minHeight: { xs: 60, sm: 56 } }}>
-                Select .quest
-                <input hidden type="file" accept=".quest,text/plain" onChange={handleFileChange} />
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<FileUploadRoundedIcon fontSize="small" />}
-                onClick={handleUpload}
-                disabled={!selectedFile || uploading}
-                fullWidth
-                sx={{ maxWidth: { sm: 180 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
-              >
-                Upload
-              </Button>
-              <Typography variant="body1" color="text.secondary" sx={{ overflowWrap: 'anywhere', fontSize: { xs: '1.1rem', sm: '0.95rem' } }}>
-                {selectedFile ? selectedFile.name : 'No file selected'}
-              </Typography>
-            </Stack>
-            {uploadMessage ? (
-              <Typography variant="body2" color="text.secondary">
-                {uploadMessage}
-              </Typography>
-            ) : null}
-          </Stack>
-        </SectionCard>
-      ) : null}
 
       {!game || showCatalog ? (
         <SectionCard title="Available Quests">
@@ -332,66 +303,97 @@ export function QuestsPage() {
 
       {!game || showCatalog ? (
         <SectionCard title="My Quest Sessions">
-          {!sessions.length ? <EmptyState message="No quest sessions yet." /> : null}
+          <Accordion expanded={sessionsExpanded} onChange={(_, expanded) => setSessionsExpanded(expanded)} sx={{ boxShadow: 'none', bgcolor: 'transparent' }}>
+            <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
+              <Typography variant="subtitle1">Show Sessions ({sessions.length})</Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 0 }}>
+              {!sessions.length ? <EmptyState message="No quest sessions yet." /> : null}
+              <Stack spacing={1.5}>
+                {sessions.map((session) => (
+                  <Accordion key={session.sessionId} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'transparent' }}>
+                    <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
+                      <Stack sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle1" sx={{ fontSize: { xs: '1.15rem', md: '1rem' } }}>
+                          {session.questTitle || session.questId}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+                          {session.status} • {session.sessionId}
+                        </Typography>
+                      </Stack>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Stack spacing={0.75}>
+                        <Typography variant="body2">currentNodeId: {session.gameState.currentNodeId}</Typography>
+                        <Typography variant="body2">facts: {session.gameState.facts.join(', ') || '-'}</Typography>
+                        <Typography variant="body2">inventory: {session.gameState.inventory.join(', ') || '-'}</Typography>
+                        <Typography variant="body2">visitedNodes: {session.gameState.visitedNodes.join(', ') || '-'}</Typography>
+                        <Typography variant="body2">navigationHistory: {session.gameState.navigationHistory.join(' -> ') || '-'}</Typography>
+                        <Typography variant="body2">variables:</Typography>
+                        <Box
+                          component="pre"
+                          sx={{
+                            m: 0,
+                            p: 1,
+                            borderRadius: 1,
+                            bgcolor: 'background.default',
+                            overflowX: 'auto',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            fontSize: 13,
+                          }}
+                        >
+                          {JSON.stringify(session.gameState.variables, null, 2)}
+                        </Box>
+                        <Stack direction="row" sx={{ justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            disabled={pendingAction === `proceed-${session.sessionId}`}
+                            onClick={() => handleProceed(session.sessionId)}
+                            fullWidth
+                            sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
+                          >
+                            Proceed
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        </SectionCard>
+      ) : null}
+
+      {!game || showCatalog ? (
+        <SectionCard title="Upload Quest File">
           <Stack spacing={1.5}>
-            {sessions.map((session) => (
-              <Box key={session.sessionId} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: { xs: 1.75, md: 1.5 } }}>
-                <Stack spacing={0.75}>
-                  <Typography variant="subtitle1" sx={{ fontSize: { xs: '1.25rem', md: '1rem' } }}>{session.questTitle || session.questId}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-                    session: {session.sessionId}
-                  </Typography>
-                  <Typography variant="body2">
-                    status: {session.status}
-                  </Typography>
-                  <Typography variant="body2">
-                    currentNodeId: {session.gameState.currentNodeId}
-                  </Typography>
-                  <Typography variant="body2">
-                    facts: {session.gameState.facts.join(', ') || '-'}
-                  </Typography>
-                  <Typography variant="body2">
-                    inventory: {session.gameState.inventory.join(', ') || '-'}
-                  </Typography>
-                  <Typography variant="body2">
-                    visitedNodes: {session.gameState.visitedNodes.join(', ') || '-'}
-                  </Typography>
-                  <Typography variant="body2">
-                    navigationHistory: {session.gameState.navigationHistory.join(' -> ') || '-'}
-                  </Typography>
-                  <Typography variant="body2">
-                    variables:
-                  </Typography>
-                  <Box
-                    component="pre"
-                    sx={{
-                      m: 0,
-                      p: 1,
-                      borderRadius: 1,
-                      bgcolor: 'background.default',
-                      overflowX: 'auto',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      fontSize: 13,
-                    }}
-                  >
-                    {JSON.stringify(session.gameState.variables, null, 2)}
-                  </Box>
-                  <Stack direction="row" sx={{ justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      disabled={pendingAction === `proceed-${session.sessionId}`}
-                      onClick={() => handleProceed(session.sessionId)}
-                      fullWidth
-                      sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
-                    >
-                      Proceed
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Box>
-            ))}
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
+              <Button variant="outlined" component="label" disabled={uploading} fullWidth sx={{ maxWidth: { sm: 220 }, minHeight: { xs: 60, sm: 56 } }}>
+                Select .quest
+                <input hidden type="file" accept=".quest,text/plain" onChange={handleFileChange} />
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<FileUploadRoundedIcon fontSize="small" />}
+                onClick={handleUpload}
+                disabled={!selectedFile || uploading}
+                fullWidth
+                sx={{ maxWidth: { sm: 180 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
+              >
+                Upload
+              </Button>
+              <Typography variant="body1" color="text.secondary" sx={{ overflowWrap: 'anywhere', fontSize: { xs: '1.1rem', sm: '0.95rem' } }}>
+                {selectedFile ? selectedFile.name : 'No file selected'}
+              </Typography>
+            </Stack>
+            {uploadMessage ? (
+              <Typography variant="body2" color="text.secondary">
+                {uploadMessage}
+              </Typography>
+            ) : null}
           </Stack>
         </SectionCard>
       ) : null}

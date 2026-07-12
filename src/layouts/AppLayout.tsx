@@ -6,8 +6,11 @@ import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import { AppBar, Box, Divider, FormControl, IconButton, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Toolbar, Typography, useMediaQuery, useTheme } from '@mui/material';
-import type { PropsWithChildren } from 'react';
+import ColorLensRoundedIcon from '@mui/icons-material/ColorLensRounded';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
+import { AppBar, Box, Divider, FormControl, IconButton, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Paper, Select, Toolbar, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { useState } from 'react';
+import type { MouseEvent, PropsWithChildren } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useAppTheme } from '../theme/AppThemeContext';
@@ -28,8 +31,14 @@ export function AppLayout({ children }: PropsWithChildren) {
   const location = useLocation();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const [themeAnchor, setThemeAnchor] = useState<null | HTMLElement>(null);
+  const [pagesAnchor, setPagesAnchor] = useState<null | HTMLElement>(null);
   const isActive = (path: string) =>
     location.pathname === path || (path !== '/home' && location.pathname.startsWith(`${path}/`));
+  const openThemeMenu = (event: MouseEvent<HTMLElement>) => setThemeAnchor(event.currentTarget);
+  const closeThemeMenu = () => setThemeAnchor(null);
+  const openPagesMenu = (event: MouseEvent<HTMLElement>) => setPagesAnchor(event.currentTarget);
+  const closePagesMenu = () => setPagesAnchor(null);
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
@@ -49,179 +58,189 @@ export function AppLayout({ children }: PropsWithChildren) {
               Mastery
             </Typography>
           </Box>
-          <Box
-            sx={{
-              ml: { xs: 0, sm: 'auto' },
-              width: { xs: '100%', sm: 'auto' },
-              display: { xs: 'grid', sm: 'flex' },
-              gridTemplateColumns: { xs: '1fr 1fr', sm: 'none' },
-              gap: 1,
-              alignItems: 'center',
-              justifyContent: { xs: 'stretch', sm: 'flex-end' },
-              minWidth: 0,
-            }}
-          >
-            <FormControl
-              size="small"
-              sx={{
-                minWidth: 0,
-                width: { xs: '100%', sm: 'auto' },
-                flex: { sm: '0 0 auto' },
-                maxWidth: { sm: 110 },
-                '& .MuiInputBase-root': { minHeight: { xs: 50, sm: 36 } },
-                '& .MuiSelect-select': { py: { xs: 1.15, sm: 0.75 } },
-              }}
-            >
-              <InputLabel id="theme-mode-label">Mode</InputLabel>
-              <Select
-                labelId="theme-mode-label"
-                label="Mode"
-                value={modeSetting}
-                native={isMobile}
-                onChange={(e) => setModeSetting(e.target.value as 'system' | 'light' | 'dark')}
-              >
-                {isMobile ? (
-                  <>
-                    <option value="system">System</option>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </>
-                ) : (
-                  <>
-                    <MenuItem value="system">System</MenuItem>
-                    <MenuItem value="light">Light</MenuItem>
-                    <MenuItem value="dark">Dark</MenuItem>
-                  </>
-                )}
-              </Select>
-            </FormControl>
-            <FormControl
-              size="small"
-              sx={{
-                minWidth: 0,
-                width: { xs: '100%', sm: 'auto' },
-                flex: { sm: '0 0 auto' },
-                maxWidth: { sm: 120 },
-                '& .MuiInputBase-root': { minHeight: { xs: 50, sm: 36 } },
-                '& .MuiSelect-select': { py: { xs: 1.15, sm: 0.75 } },
-              }}
-            >
-              <InputLabel id="theme-accent-label">Theme</InputLabel>
-              <Select
-                labelId="theme-accent-label"
-                label="Theme"
-                value={accent}
-                native={isMobile}
-                onChange={(e) =>
-                  setAccent(
-                    e.target.value as
-                      | 'cyan'
-                      | 'indigo'
-                      | 'emerald'
-                      | 'amber'
-                      | 'rose'
-                      | 'slate'
-                      | 'violet'
-                      | 'teal'
-                      | 'sky'
-                      | 'lime'
-                      | 'orange'
-                      | 'fuchsia'
-                      | 'red'
-                      | 'blue',
-                  )
-                }
-              >
-                {isMobile ? (
-                  <>
-                    <option value="cyan">Cyan</option>
-                    <option value="indigo">Indigo</option>
-                    <option value="emerald">Emerald</option>
-                    <option value="amber">Amber</option>
-                    <option value="rose">Rose</option>
-                    <option value="slate">Slate</option>
-                    <option value="violet">Violet</option>
-                    <option value="teal">Teal</option>
-                    <option value="sky">Sky</option>
-                    <option value="lime">Lime</option>
-                    <option value="orange">Orange</option>
-                    <option value="fuchsia">Fuchsia</option>
-                    <option value="red">Red</option>
-                    <option value="blue">Blue</option>
-                  </>
-                ) : (
-                  <>
-                    <MenuItem value="cyan">Cyan</MenuItem>
-                    <MenuItem value="indigo">Indigo</MenuItem>
-                    <MenuItem value="emerald">Emerald</MenuItem>
-                    <MenuItem value="amber">Amber</MenuItem>
-                    <MenuItem value="rose">Rose</MenuItem>
-                    <MenuItem value="slate">Slate</MenuItem>
-                    <MenuItem value="violet">Violet</MenuItem>
-                    <MenuItem value="teal">Teal</MenuItem>
-                    <MenuItem value="sky">Sky</MenuItem>
-                    <MenuItem value="lime">Lime</MenuItem>
-                    <MenuItem value="orange">Orange</MenuItem>
-                    <MenuItem value="fuchsia">Fuchsia</MenuItem>
-                    <MenuItem value="red">Red</MenuItem>
-                    <MenuItem value="blue">Blue</MenuItem>
-                  </>
-                )}
-              </Select>
-            </FormControl>
-            <FormControl
-              size="small"
-              sx={{
-                minWidth: 0,
-                width: { xs: '100%', sm: 'auto' },
-                flex: { sm: '0 0 auto' },
-                maxWidth: { sm: 130 },
-                gridColumn: { xs: '1 / span 1', sm: 'auto' },
-                '& .MuiInputBase-root': { minHeight: { xs: 50, sm: 36 } },
-                '& .MuiSelect-select': { py: { xs: 1.15, sm: 0.75 } },
-              }}
-            >
-              <InputLabel id="theme-dark-label">Dark</InputLabel>
-              <Select
-                labelId="theme-dark-label"
-                label="Dark"
-                value={darkTheme}
-                native={isMobile}
-                onChange={(e) =>
-                  setDarkTheme(e.target.value as 'midnight' | 'graphite' | 'ocean' | 'forest' | 'violet' | 'espresso')
-                }
-              >
-                {isMobile ? (
-                  <>
-                    <option value="midnight">Midnight</option>
-                    <option value="graphite">Graphite</option>
-                    <option value="ocean">Ocean</option>
-                    <option value="forest">Forest</option>
-                    <option value="violet">Violet</option>
-                    <option value="espresso">Espresso</option>
-                  </>
-                ) : (
-                  <>
-                    <MenuItem value="midnight">Midnight</MenuItem>
-                    <MenuItem value="graphite">Graphite</MenuItem>
-                    <MenuItem value="ocean">Ocean</MenuItem>
-                    <MenuItem value="forest">Forest</MenuItem>
-                    <MenuItem value="violet">Violet</MenuItem>
-                    <MenuItem value="espresso">Espresso</MenuItem>
-                  </>
-                )}
-              </Select>
-            </FormControl>
-            <IconButton
-              aria-label="Logout"
-              onClick={logout}
-              sx={{ justifySelf: { xs: 'stretch', sm: 'auto' }, width: { xs: '100%', sm: 52 } }}
-            >
-              <LogoutRoundedIcon fontSize="small" />
-            </IconButton>
-          </Box>
+          {isMobile ? (
+            <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
+              <IconButton aria-label="Pages" onClick={openPagesMenu}>
+                <MenuRoundedIcon fontSize="small" />
+              </IconButton>
+              <IconButton aria-label="Theme" onClick={openThemeMenu}>
+                <ColorLensRoundedIcon fontSize="small" />
+              </IconButton>
+              <IconButton aria-label="Logout" onClick={logout}>
+                <LogoutRoundedIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          ) : (
+            <Box sx={{ ml: 'auto', display: 'flex', gap: 1, alignItems: 'center' }}>
+              <FormControl size="small" sx={{ minWidth: 110 }}>
+                <InputLabel id="theme-mode-label">Mode</InputLabel>
+                <Select
+                  labelId="theme-mode-label"
+                  label="Mode"
+                  value={modeSetting}
+                  onChange={(e) => setModeSetting(e.target.value as 'system' | 'light' | 'dark')}
+                >
+                  <MenuItem value="system">System</MenuItem>
+                  <MenuItem value="light">Light</MenuItem>
+                  <MenuItem value="dark">Dark</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel id="theme-accent-label">Theme</InputLabel>
+                <Select
+                  labelId="theme-accent-label"
+                  label="Theme"
+                  value={accent}
+                  onChange={(e) =>
+                    setAccent(
+                      e.target.value as
+                        | 'cyan'
+                        | 'indigo'
+                        | 'emerald'
+                        | 'amber'
+                        | 'rose'
+                        | 'slate'
+                        | 'violet'
+                        | 'teal'
+                        | 'sky'
+                        | 'lime'
+                        | 'orange'
+                        | 'fuchsia'
+                        | 'red'
+                        | 'blue',
+                    )
+                  }
+                >
+                  <MenuItem value="cyan">Cyan</MenuItem>
+                  <MenuItem value="indigo">Indigo</MenuItem>
+                  <MenuItem value="emerald">Emerald</MenuItem>
+                  <MenuItem value="amber">Amber</MenuItem>
+                  <MenuItem value="rose">Rose</MenuItem>
+                  <MenuItem value="slate">Slate</MenuItem>
+                  <MenuItem value="violet">Violet</MenuItem>
+                  <MenuItem value="teal">Teal</MenuItem>
+                  <MenuItem value="sky">Sky</MenuItem>
+                  <MenuItem value="lime">Lime</MenuItem>
+                  <MenuItem value="orange">Orange</MenuItem>
+                  <MenuItem value="fuchsia">Fuchsia</MenuItem>
+                  <MenuItem value="red">Red</MenuItem>
+                  <MenuItem value="blue">Blue</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 130 }}>
+                <InputLabel id="theme-dark-label">Dark</InputLabel>
+                <Select
+                  labelId="theme-dark-label"
+                  label="Dark"
+                  value={darkTheme}
+                  onChange={(e) =>
+                    setDarkTheme(e.target.value as 'midnight' | 'graphite' | 'ocean' | 'forest' | 'violet' | 'espresso')
+                  }
+                >
+                  <MenuItem value="midnight">Midnight</MenuItem>
+                  <MenuItem value="graphite">Graphite</MenuItem>
+                  <MenuItem value="ocean">Ocean</MenuItem>
+                  <MenuItem value="forest">Forest</MenuItem>
+                  <MenuItem value="violet">Violet</MenuItem>
+                  <MenuItem value="espresso">Espresso</MenuItem>
+                </Select>
+              </FormControl>
+              <IconButton aria-label="Logout" onClick={logout}>
+                <LogoutRoundedIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          )}
         </Toolbar>
       </AppBar>
+
+      <Menu anchorEl={pagesAnchor} open={Boolean(pagesAnchor)} onClose={closePagesMenu}>
+        {sidebarItems.map((item) => (
+          <MenuItem key={item.path} component={Link} to={item.path} onClick={closePagesMenu} selected={isActive(item.path)}>
+            {item.label}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Menu anchorEl={themeAnchor} open={Boolean(themeAnchor)} onClose={closeThemeMenu}>
+        <Box sx={{ p: 1.5, width: 280, display: 'grid', gap: 1.25 }}>
+          <FormControl size="small" fullWidth>
+            <InputLabel id="theme-mode-mobile-label">Mode</InputLabel>
+            <Select
+              labelId="theme-mode-mobile-label"
+              label="Mode"
+              value={modeSetting}
+              native
+              onChange={(e) => setModeSetting(e.target.value as 'system' | 'light' | 'dark')}
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </Select>
+          </FormControl>
+          <FormControl size="small" fullWidth>
+            <InputLabel id="theme-accent-mobile-label">Theme</InputLabel>
+            <Select
+              labelId="theme-accent-mobile-label"
+              label="Theme"
+              value={accent}
+              native
+              onChange={(e) =>
+                setAccent(
+                  e.target.value as
+                    | 'cyan'
+                    | 'indigo'
+                    | 'emerald'
+                    | 'amber'
+                    | 'rose'
+                    | 'slate'
+                    | 'violet'
+                    | 'teal'
+                    | 'sky'
+                    | 'lime'
+                    | 'orange'
+                    | 'fuchsia'
+                    | 'red'
+                    | 'blue',
+                )
+              }
+            >
+              <option value="cyan">Cyan</option>
+              <option value="indigo">Indigo</option>
+              <option value="emerald">Emerald</option>
+              <option value="amber">Amber</option>
+              <option value="rose">Rose</option>
+              <option value="slate">Slate</option>
+              <option value="violet">Violet</option>
+              <option value="teal">Teal</option>
+              <option value="sky">Sky</option>
+              <option value="lime">Lime</option>
+              <option value="orange">Orange</option>
+              <option value="fuchsia">Fuchsia</option>
+              <option value="red">Red</option>
+              <option value="blue">Blue</option>
+            </Select>
+          </FormControl>
+          <FormControl size="small" fullWidth>
+            <InputLabel id="theme-dark-mobile-label">Dark</InputLabel>
+            <Select
+              labelId="theme-dark-mobile-label"
+              label="Dark"
+              value={darkTheme}
+              native
+              onChange={(e) =>
+                setDarkTheme(e.target.value as 'midnight' | 'graphite' | 'ocean' | 'forest' | 'violet' | 'espresso')
+              }
+            >
+              <option value="midnight">Midnight</option>
+              <option value="graphite">Graphite</option>
+              <option value="ocean">Ocean</option>
+              <option value="forest">Forest</option>
+              <option value="violet">Violet</option>
+              <option value="espresso">Espresso</option>
+            </Select>
+          </FormControl>
+        </Box>
+      </Menu>
 
       <Toolbar sx={{ minHeight: { xs: 140, sm: 64 } }} />
 
@@ -235,7 +254,8 @@ export function AppLayout({ children }: PropsWithChildren) {
           overflowX: 'hidden',
         }}
       >
-        <Paper
+        {!isMobile ? (
+          <Paper
           component="nav"
           aria-label="Primary navigation"
           square
@@ -281,6 +301,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             ))}
           </List>
         </Paper>
+        ) : null}
 
         <Box component="main" sx={{ p: { xs: 2, md: 3 }, backgroundColor: 'background.default', maxWidth: '100%', overflowX: 'hidden' }}>
           {children}
