@@ -115,9 +115,17 @@ export function AppLayout({ children }: PropsWithChildren) {
                   selected={isActive(item.path)}
                   aria-label={`Go to ${item.label}`}
                   aria-current={isActive(item.path) ? 'page' : undefined}
+                  sx={{ px: { xs: 1.5, md: 2 }, py: { xs: 1.25, md: 1 } }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.label} />
+                  <ListItemText
+                    primary={item.label}
+                    sx={{
+                      '& .MuiListItemText-primary': {
+                        fontSize: { xs: '1rem', md: '0.95rem' },
+                      },
+                    }}
+                  />
                 </ListItemButton>
                 {index === 3 ? <Divider sx={{ display: { xs: 'none', md: 'block' } }} /> : null}
               </Box>

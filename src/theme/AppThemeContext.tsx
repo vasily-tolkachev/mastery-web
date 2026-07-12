@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { PropsWithChildren } from 'react';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { CssBaseline, ThemeProvider, createTheme, responsiveFontSizes } from '@mui/material';
 import type { PaletteMode } from '@mui/material';
 
 export type ThemeModeSetting = 'system' | 'light' | 'dark';
@@ -60,9 +60,8 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
   const resolvedMode: PaletteMode = modeSetting === 'system' ? systemMode : modeSetting;
   const primary = accents[accent][resolvedMode];
 
-  const theme = useMemo(
-    () =>
-      createTheme({
+  const theme = useMemo(() => {
+    const base = createTheme({
         palette: {
           mode: resolvedMode,
           primary: { main: primary },
@@ -75,8 +74,32 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
         shape: { borderRadius: 8 },
         typography: {
           fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+          fontSize: 16,
         },
         components: {
+          MuiButton: {
+            styleOverrides: {
+              root: {
+                minHeight: 44,
+                textTransform: 'none',
+              },
+            },
+          },
+          MuiIconButton: {
+            styleOverrides: {
+              root: {
+                minWidth: 44,
+                minHeight: 44,
+              },
+            },
+          },
+          MuiListItemButton: {
+            styleOverrides: {
+              root: {
+                minHeight: 44,
+              },
+            },
+          },
           MuiPaper: {
             styleOverrides: {
               root: {
@@ -96,9 +119,9 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
             },
           },
         },
-      }),
-    [resolvedMode, primary],
-  );
+      });
+    return responsiveFontSizes(base, { factor: 2.1 });
+  }, [resolvedMode, primary]);
 
   const value = useMemo(
     () => ({ modeSetting, accent, setModeSetting, setAccent }),
