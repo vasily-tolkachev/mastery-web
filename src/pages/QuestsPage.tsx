@@ -142,7 +142,7 @@ export function QuestsPage() {
   }
 
   return (
-    <Stack spacing={{ xs: 1.5, md: 2 }}>
+    <Stack spacing={{ xs: 2, md: 2 }} sx={{ '& .MuiTypography-root': { fontSize: { xs: '1.15rem', md: '1rem' } } }}>
       <PageHeader title="Quests" subtitle="Interactive text adventures." />
 
       {error ? <ErrorState message={error} /> : null}
@@ -151,7 +151,7 @@ export function QuestsPage() {
         <SectionCard title="Upload Quest File">
           <Stack spacing={1.5}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-              <Button variant="outlined" component="label" disabled={uploading} fullWidth sx={{ maxWidth: { sm: 220 } }}>
+              <Button variant="outlined" component="label" disabled={uploading} fullWidth sx={{ maxWidth: { sm: 220 }, minHeight: { xs: 60, sm: 56 } }}>
                 Select .quest
                 <input hidden type="file" accept=".quest,text/plain" onChange={handleFileChange} />
               </Button>
@@ -161,11 +161,11 @@ export function QuestsPage() {
                 onClick={handleUpload}
                 disabled={!selectedFile || uploading}
                 fullWidth
-                sx={{ maxWidth: { sm: 180 }, minHeight: { xs: 48, sm: 44 } }}
+                sx={{ maxWidth: { sm: 180 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
               >
                 Upload
               </Button>
-              <Typography variant="body1" color="text.secondary" sx={{ overflowWrap: 'anywhere', fontSize: { xs: '1rem', sm: '0.95rem' } }}>
+              <Typography variant="body1" color="text.secondary" sx={{ overflowWrap: 'anywhere', fontSize: { xs: '1.1rem', sm: '0.95rem' } }}>
                 {selectedFile ? selectedFile.name : 'No file selected'}
               </Typography>
             </Stack>
@@ -194,7 +194,7 @@ export function QuestsPage() {
                 >
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <AutoStoriesRoundedIcon fontSize="small" color="primary" />
-                    <Typography variant="subtitle1" sx={{ fontSize: { xs: '1.05rem', md: '1rem' } }}>{quest.title}</Typography>
+                    <Typography variant="subtitle1" sx={{ fontSize: { xs: '1.25rem', md: '1rem' } }}>{quest.title}</Typography>
                   </Stack>
                   <Button
                     variant="contained"
@@ -202,7 +202,7 @@ export function QuestsPage() {
                     onClick={() => handleStartQuest(quest.id)}
                     disabled={busy}
                     fullWidth
-                    sx={{ maxWidth: { sm: 140 }, minHeight: { xs: 48, sm: 44 } }}
+                    sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                   >
                     Start
                   </Button>
@@ -217,8 +217,8 @@ export function QuestsPage() {
             <Grid size={{ xs: 12, lg: 8 }}>
               <Stack spacing={2}>
                 <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: { xs: 1.75, md: 1.5 } }}>
-                  <Typography variant="h6" sx={{ fontSize: { xs: '1.15rem', md: '1.05rem' } }}>{game.nodeTitle}</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.95rem', md: '0.85rem' } }}>
+                  <Typography variant="h6" sx={{ fontSize: { xs: '1.35rem', md: '1.05rem' } }}>{game.nodeTitle}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '1.05rem', md: '0.85rem' } }}>
                     {game.nodeId}
                   </Typography>
                 </Box>
@@ -228,11 +228,11 @@ export function QuestsPage() {
                     borderColor: 'divider',
                     borderRadius: 2,
                     p: 2,
-                    minHeight: { xs: 220, md: 180 },
+                    minHeight: { xs: 300, md: 180 },
                     backgroundColor: 'background.default',
                   }}
                 >
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontSize: { xs: '1.05rem', md: '1rem' }, lineHeight: 1.6 }}>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontSize: { xs: '1.25rem', md: '1rem' }, lineHeight: 1.7 }}>
                     {game.text}
                   </Typography>
                 </Box>
@@ -244,7 +244,7 @@ export function QuestsPage() {
                       variant="outlined"
                       onClick={() => handleChoose(option.id)}
                       disabled={busy || game.finished}
-                      sx={{ justifyContent: 'flex-start', minHeight: { xs: 48, sm: 44 }, fontSize: { xs: '1rem', md: '0.95rem' } }}
+                      sx={{ justifyContent: 'flex-start', minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.1rem', md: '0.95rem' }, py: { xs: 1.2, sm: 1 } }}
                     >
                       {option.text}
                     </Button>
@@ -263,11 +263,11 @@ export function QuestsPage() {
                     disabled={busy}
                     onClick={handleRestart}
                     fullWidth
-                    sx={{ minHeight: { xs: 48, sm: 44 } }}
+                    sx={{ minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                   >
                     Restart
                   </Button>
-                  <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)} fullWidth sx={{ minHeight: { xs: 48, sm: 44 } }}>
+                  <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)} fullWidth sx={{ minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}>
                     Back to quests
                   </Button>
                 </Stack>
@@ -333,7 +333,7 @@ export function QuestsPage() {
             {sessions.map((session) => (
               <Box key={session.sessionId} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: { xs: 1.75, md: 1.5 } }}>
                 <Stack spacing={0.75}>
-                  <Typography variant="subtitle1" sx={{ fontSize: { xs: '1.05rem', md: '1rem' } }}>{session.questTitle || session.questId}</Typography>
+                  <Typography variant="subtitle1" sx={{ fontSize: { xs: '1.25rem', md: '1rem' } }}>{session.questTitle || session.questId}</Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
                     session: {session.sessionId}
                   </Typography>
@@ -380,7 +380,7 @@ export function QuestsPage() {
                       disabled={busy}
                       onClick={() => handleProceed(session.sessionId)}
                       fullWidth
-                      sx={{ maxWidth: { sm: 140 }, minHeight: { xs: 48, sm: 44 } }}
+                      sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                     >
                       Proceed
                     </Button>

@@ -24,7 +24,7 @@ const sidebarItems = [
 
 export function AppLayout({ children }: PropsWithChildren) {
   const { logout } = useAuth();
-  const { modeSetting, accent, setModeSetting, setAccent } = useAppTheme();
+  const { modeSetting, accent, darkTheme, setModeSetting, setAccent, setDarkTheme } = useAppTheme();
   const location = useLocation();
   const isActive = (path: string) =>
     location.pathname === path || (path !== '/home' && location.pathname.startsWith(`${path}/`));
@@ -40,7 +40,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             </Typography>
           </Box>
           <Box sx={{ ml: 'auto', display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <FormControl size="small" sx={{ minWidth: 98 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: 122, sm: 98 } }}>
               <InputLabel id="theme-mode-label">Mode</InputLabel>
               <Select
                 labelId="theme-mode-label"
@@ -53,13 +53,31 @@ export function AppLayout({ children }: PropsWithChildren) {
                 <MenuItem value="dark">Dark</MenuItem>
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 104 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: 132, sm: 104 } }}>
               <InputLabel id="theme-accent-label">Theme</InputLabel>
               <Select
                 labelId="theme-accent-label"
                 label="Theme"
                 value={accent}
-                onChange={(e) => setAccent(e.target.value as 'cyan' | 'indigo' | 'emerald' | 'amber' | 'rose' | 'slate')}
+                onChange={(e) =>
+                  setAccent(
+                    e.target.value as
+                      | 'cyan'
+                      | 'indigo'
+                      | 'emerald'
+                      | 'amber'
+                      | 'rose'
+                      | 'slate'
+                      | 'violet'
+                      | 'teal'
+                      | 'sky'
+                      | 'lime'
+                      | 'orange'
+                      | 'fuchsia'
+                      | 'red'
+                      | 'blue',
+                  )
+                }
               >
                 <MenuItem value="cyan">Cyan</MenuItem>
                 <MenuItem value="indigo">Indigo</MenuItem>
@@ -67,6 +85,32 @@ export function AppLayout({ children }: PropsWithChildren) {
                 <MenuItem value="amber">Amber</MenuItem>
                 <MenuItem value="rose">Rose</MenuItem>
                 <MenuItem value="slate">Slate</MenuItem>
+                <MenuItem value="violet">Violet</MenuItem>
+                <MenuItem value="teal">Teal</MenuItem>
+                <MenuItem value="sky">Sky</MenuItem>
+                <MenuItem value="lime">Lime</MenuItem>
+                <MenuItem value="orange">Orange</MenuItem>
+                <MenuItem value="fuchsia">Fuchsia</MenuItem>
+                <MenuItem value="red">Red</MenuItem>
+                <MenuItem value="blue">Blue</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: { xs: 136, sm: 116 } }}>
+              <InputLabel id="theme-dark-label">Dark</InputLabel>
+              <Select
+                labelId="theme-dark-label"
+                label="Dark"
+                value={darkTheme}
+                onChange={(e) =>
+                  setDarkTheme(e.target.value as 'midnight' | 'graphite' | 'ocean' | 'forest' | 'violet' | 'espresso')
+                }
+              >
+                <MenuItem value="midnight">Midnight</MenuItem>
+                <MenuItem value="graphite">Graphite</MenuItem>
+                <MenuItem value="ocean">Ocean</MenuItem>
+                <MenuItem value="forest">Forest</MenuItem>
+                <MenuItem value="violet">Violet</MenuItem>
+                <MenuItem value="espresso">Espresso</MenuItem>
               </Select>
             </FormControl>
             <IconButton aria-label="Logout" onClick={logout}>
