@@ -7,7 +7,7 @@ import MemoryRoundedIcon from '@mui/icons-material/MemoryRounded';
 import { Box, Button, Divider, Grid, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { chooseQuestOption, getMyQuestSessions, getQuests, proceedQuestSession, startQuest, uploadQuestFile } from '../api/questApi';
+import { chooseQuestOption, getMyQuestSessions, getQuests, proceedQuestSession, restartQuestSession, startQuest, uploadQuestFile } from '../api/questApi';
 import type { QuestGameView, QuestSessionSnapshot, QuestSummary } from '../types/quest';
 import { WorldMap } from '../components/quest/WorldMap';
 import { EmptyState, ErrorState, LoadingState, PageHeader, SectionCard } from '../components/ui';
@@ -94,8 +94,23 @@ export function QuestsPage() {
   };
 
   const handleRestart = async () => {
-    if (!currentQuestId) return;
-    await handleStartQuest(currentQuestId);
+    if (!sessionId) return;
+    try {
+      setBusy(true);
+      setError(null);
+      const response = await restartQuestSession(sessionId);
+      setSessionId(response.sessionId);
+      if (!currentQuestId) {
+        const targetSession = sessions.find((item) => item.sessionId === sessionId);
+        setCurrentQuestId(targetSession?.questId ?? null);
+      }
+      setGame(response.game);
+      setSessions(await getMyQuestSessions());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to restart quest');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {

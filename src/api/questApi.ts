@@ -41,6 +41,21 @@ export async function proceedQuestSession(sessionId: string): Promise<StartQuest
   };
 }
 
+export async function restartQuestSession(sessionId: string): Promise<StartQuestResponse> {
+  const response = await authFetch(`/api/quests/sessions/${sessionId}/restart`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to restart quest session (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    sessionId: String(raw.sessionId ?? ''),
+    game: normalizeGameView(raw.game),
+  };
+}
+
 export async function getMyQuestSessions(): Promise<QuestSessionSnapshot[]> {
   const response = await authFetch('/api/quests/sessions');
   if (!response.ok) {
