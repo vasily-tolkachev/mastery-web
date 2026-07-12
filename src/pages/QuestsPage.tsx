@@ -7,13 +7,14 @@ import MemoryRoundedIcon from '@mui/icons-material/MemoryRounded';
 import { Box, Button, Divider, Grid, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { chooseQuestOption, getQuests, startQuest, uploadQuestFile } from '../api/questApi';
-import type { QuestGameView, QuestSummary } from '../types/quest';
+import { chooseQuestOption, getMyQuestSessions, getQuests, proceedQuestSession, startQuest, uploadQuestFile } from '../api/questApi';
+import type { QuestGameView, QuestSessionSnapshot, QuestSummary } from '../types/quest';
 import { WorldMap } from '../components/quest/WorldMap';
 import { EmptyState, ErrorState, LoadingState, PageHeader, SectionCard } from '../components/ui';
 
 export function QuestsPage() {
   const [quests, setQuests] = useState<QuestSummary[]>([]);
+  const [sessions, setSessions] = useState<QuestSessionSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -28,8 +29,9 @@ export function QuestsPage() {
     try {
       setLoading(true);
       setError(null);
-      const [questList] = await Promise.all([getQuests()]);
+      const [questList, sessionList] = await Promise.all([getQuests(), getMyQuestSessions()]);
       setQuests(questList);
+      setSessions(sessionList);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load quests');
     } finally {
@@ -49,6 +51,7 @@ export function QuestsPage() {
       setSessionId(response.sessionId);
       setGame(response.game);
       setShowCatalog(false);
+      setSessions(await getMyQuestSessions());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to start quest');
     } finally {
@@ -63,8 +66,24 @@ export function QuestsPage() {
       setError(null);
       const nextGame = await chooseQuestOption(sessionId, optionId);
       setGame(nextGame);
+      setSessions(await getMyQuestSessions());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to choose option');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleProceed = async (targetSessionId: string) => {
+    try {
+      setBusy(true);
+      setError(null);
+      const response = await proceedQuestSession(targetSessionId);
+      setSessionId(response.sessionId);
+      setGame(response.game);
+      setShowCatalog(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to proceed session');
     } finally {
       setBusy(false);
     }
@@ -301,12 +320,49 @@ export function QuestsPage() {
         </SectionCard>
       )}
 
-      {game && showCatalog ? (
-        <SectionCard title={`Current Quest: ${game.title}`}>
-          <Stack direction="row" spacing={1}>
-            <Button variant="contained" onClick={() => setShowCatalog(false)}>
-              Return to game
-            </Button>
+      {!game || showCatalog ? (
+        <SectionCard title="My Quest Sessions">
+          {!sessions.length ? <EmptyState message="No quest sessions yet." /> : null}
+          <Stack spacing={1.5}>
+            {sessions.map((session) => (
+              <Box key={session.sessionId} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+                <Stack spacing={0.75}>
+                  <Typography variant="subtitle2">{session.questTitle || session.questId}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    session: {session.sessionId}
+                  </Typography>
+                  <Typography variant="body2">
+                    status: {session.status}
+                  </Typography>
+                  <Typography variant="body2">
+                    currentNodeId: {session.gameState.currentNodeId}
+                  </Typography>
+                  <Typography variant="body2">
+                    facts: {session.gameState.facts.join(', ') || '-'}
+                  </Typography>
+                  <Typography variant="body2">
+                    inventory: {session.gameState.inventory.join(', ') || '-'}
+                  </Typography>
+                  <Typography variant="body2">
+                    visitedNodes: {session.gameState.visitedNodes.join(', ') || '-'}
+                  </Typography>
+                  <Typography variant="body2">
+                    navigationHistory: {session.gameState.navigationHistory.join(' -> ') || '-'}
+                  </Typography>
+                  <Typography variant="body2">
+                    variables:
+                  </Typography>
+                  <Box component="pre" sx={{ m: 0, p: 1, borderRadius: 1, bgcolor: 'background.default', overflowX: 'auto' }}>
+                    {JSON.stringify(session.gameState.variables, null, 2)}
+                  </Box>
+                  <Stack direction="row" justifyContent="flex-end">
+                    <Button size="small" variant="contained" disabled={busy} onClick={() => handleProceed(session.sessionId)}>
+                      Proceed
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Box>
+            ))}
           </Stack>
         </SectionCard>
       ) : null}

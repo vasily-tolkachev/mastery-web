@@ -26,6 +26,23 @@ export type StartQuestResponse = {
   game: QuestGameView;
 };
 
+export type QuestSessionState = {
+  currentNodeId: string;
+  facts: string[];
+  variables: Record<string, string>;
+  inventory: string[];
+  visitedNodes: string[];
+  navigationHistory: string[];
+};
+
+export type QuestSessionSnapshot = {
+  sessionId: string;
+  questId: string;
+  questTitle: string;
+  status: string;
+  gameState: QuestSessionState;
+};
+
 export type UploadQuestResponse = {
   id: string;
   title: string;

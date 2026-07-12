@@ -1,5 +1,5 @@
 import { authFetch } from './http';
-import type { QuestGameView, QuestSummary, StartQuestResponse, UploadQuestResponse } from '../types/quest';
+import type { QuestGameView, QuestSessionSnapshot, QuestSummary, StartQuestResponse, UploadQuestResponse } from '../types/quest';
 
 export async function getQuests(): Promise<QuestSummary[]> {
   const response = await authFetch('/api/quests');
@@ -24,6 +24,31 @@ export async function startQuest(questId: string): Promise<StartQuestResponse> {
     sessionId: String(raw.sessionId ?? ''),
     game: normalizeGameView(raw.game),
   };
+}
+
+export async function proceedQuestSession(sessionId: string): Promise<StartQuestResponse> {
+  const response = await authFetch(`/api/quests/sessions/${sessionId}/proceed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to proceed quest session (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    sessionId: String(raw.sessionId ?? ''),
+    game: normalizeGameView(raw.game),
+  };
+}
+
+export async function getMyQuestSessions(): Promise<QuestSessionSnapshot[]> {
+  const response = await authFetch('/api/quests/sessions');
+  if (!response.ok) {
+    throw new Error(`Failed to load quest sessions (${response.status})`);
+  }
+  const raw = await response.json();
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizeSessionSnapshot);
 }
 
 export async function chooseQuestOption(sessionId: string, optionId: string): Promise<QuestGameView> {
@@ -100,5 +125,28 @@ function normalizeGameView(value: unknown): QuestGameView {
     visitedNodes: (Array.isArray(raw.visitedNodes) ? raw.visitedNodes : []).map((value) => String(value)),
     canGoBack: Boolean(raw.canGoBack),
     finished: Boolean(raw.finished),
+  };
+}
+
+function normalizeSessionSnapshot(value: unknown): QuestSessionSnapshot {
+  const raw = (value ?? {}) as Record<string, unknown>;
+  const stateRaw = (raw.gameState ?? {}) as Record<string, unknown>;
+  const varsRaw = stateRaw.variables && typeof stateRaw.variables === 'object'
+    ? (stateRaw.variables as Record<string, unknown>)
+    : {};
+
+  return {
+    sessionId: String(raw.sessionId ?? ''),
+    questId: String(raw.questId ?? ''),
+    questTitle: String(raw.questTitle ?? ''),
+    status: String(raw.status ?? ''),
+    gameState: {
+      currentNodeId: String(stateRaw.currentNodeId ?? ''),
+      facts: (Array.isArray(stateRaw.facts) ? stateRaw.facts : []).map((value) => String(value)),
+      variables: Object.fromEntries(Object.entries(varsRaw).map(([k, v]) => [k, String(v)])),
+      inventory: (Array.isArray(stateRaw.inventory) ? stateRaw.inventory : []).map((value) => String(value)),
+      visitedNodes: (Array.isArray(stateRaw.visitedNodes) ? stateRaw.visitedNodes : []).map((value) => String(value)),
+      navigationHistory: (Array.isArray(stateRaw.navigationHistory) ? stateRaw.navigationHistory : []).map((value) => String(value)),
+    },
   };
 }
