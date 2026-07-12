@@ -1,6 +1,5 @@
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import FileUploadRoundedIcon from '@mui/icons-material/FileUploadRounded';
-import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import MemoryRoundedIcon from '@mui/icons-material/MemoryRounded';
@@ -9,7 +8,6 @@ import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { chooseQuestOption, getMyQuestSessions, getQuests, proceedQuestSession, restartQuestSession, startQuest, uploadQuestFile } from '../api/questApi';
 import type { QuestGameView, QuestSessionSnapshot, QuestSummary } from '../types/quest';
-import { WorldMap } from '../components/quest/WorldMap';
 import { EmptyState, ErrorState, LoadingState, PageHeader, SectionCard } from '../components/ui';
 
 export function QuestsPage() {
@@ -316,21 +314,6 @@ export function QuestsPage() {
                   )}
                 </Box>
 
-                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
-                    <MapRoundedIcon fontSize="small" color="primary" />
-                    <Typography variant="subtitle2">World Map</Typography>
-                  </Stack>
-                  <Divider sx={{ mb: 1 }} />
-                  <Box sx={{ height: { xs: 320, md: 460 }, minHeight: 320, maxHeight: 520 }}>
-                    <WorldMap
-                      currentNodeId={game.nodeId}
-                      visited={game.visitedNodes}
-                      available={[]}
-                      onNodeClick={() => {}}
-                    />
-                  </Box>
-                </Box>
               </Stack>
             </Grid>
           </Grid>
