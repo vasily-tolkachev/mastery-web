@@ -10,7 +10,7 @@ function GoalResolutionBadge({ goalId }: { goalId: number }) {
   const status = statusQuery.data;
 
   if (!status) {
-    return <StatusChip label="QUEUED" tone="default" />;
+    return <StatusChip label="В ОЧЕРЕДИ" tone="default" />;
   }
 
   const tone =
@@ -55,32 +55,32 @@ function GoalCard({
       {programQuery.data ? (
         <Stack spacing={0.25} sx={{ mt: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            Program: {programQuery.data.title || programQuery.data.programId}
+            Программа: {programQuery.data.title || programQuery.data.programId}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Origin: {programQuery.data.origin ?? 'GOAL_BASED'}
+            Источник: {programQuery.data.origin ?? 'GOAL_BASED'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Concepts: {programQuery.data.progress.totalConcepts} | Micro: {programQuery.data.progress.totalMicroConcepts}
+            Концепты: {programQuery.data.progress.totalConcepts} | Микро: {programQuery.data.progress.totalMicroConcepts}
           </Typography>
         </Stack>
       ) : (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Program: not linked yet
+          Программа: пока не привязана
         </Typography>
       )}
       <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
         <ActionButton
-          aria-label={`Start goal ${goal.title}`}
+          aria-label={`Запустить цель ${goal.title}`}
           onClick={() => onStart(goal.id)}
           disabled={isStarting || !canStart}
         >
-          Start
+          Старт
         </ActionButton>
       </Stack>
       {!canStart ? (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          Start is available after generation is completed.
+          Старт будет доступен после завершения генерации.
         </Typography>
       ) : null}
       {startError ? (
@@ -123,48 +123,48 @@ export function GoalsPage() {
       localStorage.setItem('active-goal-id', String(goalId));
       navigate('/learning');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to start goal';
+      const message = error instanceof Error ? error.message : 'Не удалось запустить цель';
       setStartErrorByGoalId((previous) => ({ ...previous, [goalId]: message }));
     }
   };
 
   return (
     <Stack spacing={2}>
-      <PageHeader title="Goals" subtitle="Create and manage learning goals." />
+      <PageHeader title="Цели" subtitle="Создание и управление целями обучения." />
 
-      <SectionCard title="Create Goal">
+      <SectionCard title="Создать цель">
         <Stack spacing={1.5}>
           <TextField
-            label="Title"
+            label="Название"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Become Java Backend Developer"
+            placeholder="Стать Java Backend разработчиком"
           />
           <TextField
-            label="Description"
+            label="Описание"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Optional details"
+            placeholder="Дополнительные детали"
             multiline
             minRows={2}
           />
           <ActionButton
-            aria-label="Create goal"
+            aria-label="Создать цель"
             onClick={handleCreate}
             disabled={createGoalMutation.isPending || !title.trim()}
           >
-            + Create Goal
+            + Создать цель
           </ActionButton>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Goals List">
-        {goalsQuery.isLoading ? <LoadingState message="Loading goals..." /> : null}
+      <SectionCard title="Список целей">
+        {goalsQuery.isLoading ? <LoadingState message="Загрузка целей..." /> : null}
         {goalsQuery.error ? (
-          <ErrorState message={goalsQuery.error instanceof Error ? goalsQuery.error.message : 'Failed to load goals'} />
+          <ErrorState message={goalsQuery.error instanceof Error ? goalsQuery.error.message : 'Не удалось загрузить цели'} />
         ) : null}
         {!goalsQuery.isLoading && !goalsQuery.error && !goalsQuery.data?.length ? (
-          <EmptyState message="No goals yet. Create your first goal." />
+          <EmptyState message="Целей пока нет. Создайте первую цель." />
         ) : null}
 
         <Stack spacing={1.5}>

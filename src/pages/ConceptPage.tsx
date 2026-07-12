@@ -31,36 +31,36 @@ export function ConceptPage() {
   return (
     <Stack spacing={2}>
       <PageHeader
-        title={concept?.title ?? 'Concept'}
-        subtitle={`${programQuery.data?.title ?? 'Program'} -> ${concept?.title ?? 'Unknown concept'}`}
+        title={concept?.title ?? 'Концепт'}
+        subtitle={`${programQuery.data?.title ?? 'Программа'} -> ${concept?.title ?? 'Неизвестный концепт'}`}
       />
 
-      {programQuery.isLoading ? <LoadingState message="Loading concept..." /> : null}
+      {programQuery.isLoading ? <LoadingState message="Загрузка концепта..." /> : null}
       {programQuery.error ? (
-        <ErrorState message={programQuery.error instanceof Error ? programQuery.error.message : 'Unexpected error'} />
+        <ErrorState message={programQuery.error instanceof Error ? programQuery.error.message : 'Непредвиденная ошибка'} />
       ) : null}
 
       {!programQuery.isLoading && !programQuery.error && !concept ? (
-        <EmptyState message="Concept was not found in the current program." />
+        <EmptyState message="Концепт не найден в текущей программе." />
       ) : null}
 
       {concept ? (
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, lg: 8 }}>
             <Stack spacing={2}>
-              <SectionCard title="Description">
-                <InfoCard label="Summary" value={concept.description || 'No description yet.'} />
-                <InfoCard label="Difficulty" value={concept.difficulty || 'Unknown'} />
+              <SectionCard title="Описание">
+                <InfoCard label="Кратко" value={concept.description || 'Описание пока отсутствует.'} />
+                <InfoCard label="Сложность" value={concept.difficulty || 'Неизвестно'} />
                 <InfoCard
-                  label="Estimated time"
-                  value={`${Math.max(0, concept.estimatedTimeMinutes)} min`}
+                  label="Оценка времени"
+                  value={`${Math.max(0, concept.estimatedTimeMinutes)} мин`}
                 />
               </SectionCard>
 
-              <SectionCard title="MicroConcepts">
+              <SectionCard title="Микроконцепты">
                 <Stack spacing={1}>
                   {concept.microConcepts.map((micro, index) => (
-                    <InfoCard key={micro.microConceptId ?? `${micro.title}-${index}`} label={`Step ${index + 1}`} value={micro.title} />
+                    <InfoCard key={micro.microConceptId ?? `${micro.title}-${index}`} label={`Шаг ${index + 1}`} value={micro.title} />
                   ))}
                 </Stack>
               </SectionCard>
@@ -69,19 +69,19 @@ export function ConceptPage() {
 
           <Grid size={{ xs: 12, lg: 4 }}>
             <Stack spacing={2}>
-              <SectionCard title="Progress">
-                <InfoCard label="MicroConcepts" value={`${completedMicro} / ${totalMicro}`} />
+              <SectionCard title="Прогресс">
+                <InfoCard label="Микроконцепты" value={`${completedMicro} / ${totalMicro}`} />
               </SectionCard>
 
-              <SectionCard title="Prerequisites">
+              <SectionCard title="Предпосылки">
                 {(concept.prerequisites.length ? concept.prerequisites : prerequisites).length ? (
                   <Stack spacing={1}>
                     {(concept.prerequisites.length ? concept.prerequisites : prerequisites).map((title) => (
-                      <InfoCard key={title} label="Required" value={title} />
+                      <InfoCard key={title} label="Требуется" value={title} />
                     ))}
                   </Stack>
                 ) : (
-                  <EmptyState message="No prerequisites for this concept." />
+                  <EmptyState message="Для этого концепта нет обязательных предпосылок." />
                 )}
               </SectionCard>
             </Stack>

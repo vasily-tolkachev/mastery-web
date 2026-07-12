@@ -49,7 +49,7 @@ function parsePracticeInput(input: string): { booleanAnswer: boolean | null; sel
 }
 
 function getActivityTitle(state: LearningState | undefined): string {
-  if (!state) return 'IDLE';
+  if (!state) return 'БЕЗ_СЕССИИ';
   return state.currentActivity.type.replace('_', ' ');
 }
 
@@ -143,91 +143,91 @@ export function LearningPage() {
       <Grid size={{ xs: 12, lg: 8.5 }}>
         <Stack spacing={spacing.section}>
           <PageHeader
-            title="Learning Workspace"
-            subtitle="Core runtime screen"
+            title="Обучение"
+            subtitle="Основной рабочий экран"
             actions={<StatusChip label={getActivityTitle(state)} tone={state ? 'info' : 'default'} />}
           />
 
-          <SectionCard title="Context">
+          <SectionCard title="Контекст">
             <Grid container spacing={1.5}>
               <Grid size={{ xs: 12 }}>
                 <InfoCard
-                  label="Active Goal"
-                  value={activeGoal?.title ?? (activeGoalId > 0 ? `Goal #${activeGoalId}` : 'Not selected')}
+                  label="Активная цель"
+                  value={activeGoal?.title ?? (activeGoalId > 0 ? `Цель #${activeGoalId}` : 'Не выбрана')}
                   hint={
                     activeGoalId > 0
-                      ? `Goal ID: ${activeGoalId}`
-                      : 'Select and start a goal from Goals page'
+                      ? `ID цели: ${activeGoalId}`
+                      : 'Выберите и запустите цель на странице «Цели»'
                   }
                 />
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 1 }}>
-                  <ActionButton aria-label="Back to goals" onClick={() => navigate('/goals')}>
-                    Back to Goals
+                  <ActionButton aria-label="Назад к целям" onClick={() => navigate('/goals')}>
+                    К целям
                   </ActionButton>
-                  <ActionButton aria-label="Clear active goal" onClick={clearActiveGoal}>
-                    Clear Active Goal
+                  <ActionButton aria-label="Очистить активную цель" onClick={clearActiveGoal}>
+                    Очистить активную цель
                   </ActionButton>
                 </Stack>
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <InfoCard
-                  label="Learning Path"
-                  value={`${activeGoal?.title ?? program?.goalTitle ?? 'Goal not set'} -> ${program?.title ?? 'Program not set'} -> ${state?.context.conceptName ?? 'Concept not started'} -> ${state?.context.microConceptName ?? 'MicroConcept not started'}`}
+                  label="Путь обучения"
+                  value={`${activeGoal?.title ?? program?.goalTitle ?? 'Цель не задана'} -> ${program?.title ?? 'Программа не задана'} -> ${state?.context.conceptName ?? 'Концепт не начат'} -> ${state?.context.microConceptName ?? 'Микроконцепт не начат'}`}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
-                <InfoCard label="Topic" value={state?.context.topicName ?? '-'} />
+                <InfoCard label="Тема" value={state?.context.topicName ?? '-'} />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
-                <InfoCard label="Concept" value={state?.context.conceptName ?? '-'} />
+                <InfoCard label="Концепт" value={state?.context.conceptName ?? '-'} />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
-                <InfoCard label="MicroConcept" value={state?.context.microConceptName ?? '-'} />
+                <InfoCard label="Микроконцепт" value={state?.context.microConceptName ?? '-'} />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
                 <InfoCard
-                  label="Progress"
+                  label="Прогресс"
                   value={`${state?.progress.conceptOrder ?? 0}/${state?.progress.totalConcepts ?? 0}`}
-                  hint={`Answered: ${state?.progress.answeredCount ?? 0}`}
+                  hint={`Ответов: ${state?.progress.answeredCount ?? 0}`}
                 />
               </Grid>
             </Grid>
           </SectionCard>
 
-          <SectionCard title="Current Activity">
-            {isPending ? <LoadingState message="Loading learning state..." /> : null}
-            {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
-            {!state && !isPending && !error ? <EmptyState message="Press Start to begin learning." /> : null}
+          <SectionCard title="Текущая активность">
+            {isPending ? <LoadingState message="Загрузка состояния обучения..." /> : null}
+            {error ? <ErrorState message={error instanceof Error ? error.message : 'Непредвиденная ошибка'} /> : null}
+            {!state && !isPending && !error ? <EmptyState message="Нажмите «Старт», чтобы начать обучение." /> : null}
             {state ? <LearningActivityView activity={state.currentActivity} /> : null}
           </SectionCard>
 
-          <SectionCard title="Action Area">
+          <SectionCard title="Действия">
             <Stack spacing={1.5}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                <ActionButton aria-label="Start learning" onClick={() => startMutation.mutate()} disabled={isPending}>
-                  Start
+                <ActionButton aria-label="Начать обучение" onClick={() => startMutation.mutate()} disabled={isPending}>
+                  Старт
                 </ActionButton>
               </Stack>
 
               <Divider />
 
               {state?.currentActivity.type === 'LEARNING_CARD' ? (
-                <ActionButton aria-label="Continue learning flow" onClick={() => continueMutation.mutate()} disabled={isPending}>
-                  Continue
+                <ActionButton aria-label="Продолжить обучение" onClick={() => continueMutation.mutate()} disabled={isPending}>
+                  Продолжить
                 </ActionButton>
               ) : null}
 
               {canSubmitInput ? (
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <TextField
-                    label="Answer"
-                    slotProps={{ htmlInput: { 'aria-label': 'Learning answer input' } }}
+                    label="Ответ"
+                    slotProps={{ htmlInput: { 'aria-label': 'Поле ответа' } }}
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
                     fullWidth
                   />
-                  <ActionButton aria-label="Submit learning answer" onClick={handleSubmit} disabled={isPending || !input.trim()}>
-                    Submit
+                  <ActionButton aria-label="Отправить ответ" onClick={handleSubmit} disabled={isPending || !input.trim()}>
+                    Отправить
                   </ActionButton>
                 </Stack>
               ) : null}
@@ -239,17 +239,17 @@ export function LearningPage() {
       <Grid size={{ xs: 12, lg: 3.5 }}>
         <Stack spacing={spacing.section}>
           <ProgressCard
-            title="Concept Progress"
+            title="Прогресс по концептам"
             current={state?.progress.conceptOrder ?? null}
             total={state?.progress.totalConcepts ?? null}
           />
           <ProgressCard
-            title="MicroConcept Progress"
+            title="Прогресс по микроконцептам"
             current={state?.progress.microConceptOrder ?? null}
             total={state?.progress.totalMicroConcepts ?? null}
           />
-          <InfoCard label="Next Step" value={state?.currentActivity.type ?? 'Start Learning'} />
-          <InfoCard label="Session ID" value={state?.sessionId ?? '-'} hint={`Schema v${state?.schemaVersion ?? '-'}`} />
+          <InfoCard label="Следующий шаг" value={state?.currentActivity.type ?? 'Начать обучение'} />
+          <InfoCard label="ID сессии" value={state?.sessionId ?? '-'} hint={`Схема v${state?.schemaVersion ?? '-'}`} />
         </Stack>
       </Grid>
     </Grid>

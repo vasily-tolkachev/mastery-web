@@ -98,7 +98,7 @@ function buildRoadmapItems(program: LearningProgram | undefined) {
 function formatHours(minutes: number): string {
   const hours = minutes / 60;
   const value = Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
-  return `${value} hours`;
+  return `${value} ч`;
 }
 
 export function ProgramsPage() {
@@ -171,37 +171,37 @@ export function ProgramsPage() {
   return (
     <Stack spacing={2}>
       <PageHeader
-        title="Programs"
-        subtitle="Goal -> Program -> Concepts -> MicroConcepts"
+        title="Программы"
+        subtitle="Цель -> Программа -> Концепты -> Микроконцепты"
         actions={
           <StatusChip
-            label={programStatus ?? state?.currentActivity.type ?? 'NO_SESSION'}
+            label={programStatus ?? state?.currentActivity.type ?? 'БЕЗ_СЕССИИ'}
             tone={programStatus === 'FAILED' ? 'error' : programStatus === 'READY' ? 'success' : state ? 'info' : 'default'}
           />
         }
       />
 
-      {isLoading ? <LoadingState message="Loading program..." /> : null}
-      {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
+      {isLoading ? <LoadingState message="Загрузка программы..." /> : null}
+      {error ? <ErrorState message={error instanceof Error ? error.message : 'Непредвиденная ошибка'} /> : null}
       {!isLoading && !error && (programStatus === 'CREATED' || programStatus === 'GENERATING') ? (
-        <LoadingState message="Generating..." />
+        <LoadingState message="Генерация..." />
       ) : null}
       {!isLoading && !error && programStatus === 'FAILED' ? (
-        <ErrorState message="Program generation failed." />
+        <ErrorState message="Не удалось сгенерировать программу." />
       ) : null}
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>
-          <SectionCard title="Program Overview">
+          <SectionCard title="Обзор программы">
             {!program ? (
-              <EmptyState message="Program is not available yet." />
+              <EmptyState message="Программа пока недоступна." />
             ) : (
               <Stack spacing={2}>
-                <InfoCard label="Goal" value={program.goalTitle || 'Not specified'} />
-                <InfoCard label="Program" value={program.title || 'Untitled program'} />
+                <InfoCard label="Цель" value={program.goalTitle || 'Не указана'} />
+                <InfoCard label="Программа" value={program.title || 'Без названия'} />
 
                 <Stack spacing={0.5}>
-                  <Typography variant="subtitle2">Concept Tree</Typography>
+                  <Typography variant="subtitle2">Дерево концептов</Typography>
                   <List dense disablePadding>
                     {program.concepts.map((concept) => {
                       const conceptStatuses = concept.microConcepts
@@ -261,7 +261,7 @@ export function ProgramsPage() {
                 </Stack>
 
                 <Stack spacing={0.5}>
-                  <Typography variant="subtitle2">Roadmap</Typography>
+                  <Typography variant="subtitle2">Маршрут</Typography>
                   {roadmapItems.length ? (
                     <List dense disablePadding>
                       {roadmapItems.map((item, index) => (
@@ -285,7 +285,7 @@ export function ProgramsPage() {
                       ))}
                     </List>
                   ) : (
-                    <EmptyState message="Roadmap will appear when program steps are available." />
+                    <EmptyState message="Маршрут появится, когда будут доступны шаги программы." />
                   )}
                 </Stack>
               </Stack>
@@ -295,34 +295,34 @@ export function ProgramsPage() {
 
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={2}>
-            <SectionCard title="Program Statistics">
+            <SectionCard title="Статистика программы">
               <Stack spacing={1}>
-                <InfoCard label="Concepts" value={`${completedConcepts} / ${totalConcepts}`} />
-                <InfoCard label="Micro Concepts" value={`${completedMicroConcepts} / ${totalMicroConcepts}`} />
-                <InfoCard label="Estimated completion" value={`${completionPercent}%`} />
-                <InfoCard label="Estimated remaining time" value={formatHours(remainingMinutes)} />
+                <InfoCard label="Концепты" value={`${completedConcepts} / ${totalConcepts}`} />
+                <InfoCard label="Микроконцепты" value={`${completedMicroConcepts} / ${totalMicroConcepts}`} />
+                <InfoCard label="Оценка завершения" value={`${completionPercent}%`} />
+                <InfoCard label="Оценка оставшегося времени" value={formatHours(remainingMinutes)} />
               </Stack>
             </SectionCard>
 
-            <SectionCard title="Current Position">
+            <SectionCard title="Текущая позиция">
               {state ? (
                 <Stack spacing={1}>
-                  <InfoCard label="Current Topic" value={state.context.topicName ?? 'Not started'} />
-                  <InfoCard label="Current Concept" value={state.context.conceptName ?? 'Not started'} />
-                  <InfoCard label="Current MicroConcept" value={state.context.microConceptName ?? 'Not started'} />
+                  <InfoCard label="Текущая тема" value={state.context.topicName ?? 'Не начато'} />
+                  <InfoCard label="Текущий концепт" value={state.context.conceptName ?? 'Не начато'} />
+                  <InfoCard label="Текущий микроконцепт" value={state.context.microConceptName ?? 'Не начато'} />
                 </Stack>
               ) : (
-                <EmptyState message="No active program position yet." />
+                <EmptyState message="Активная позиция в программе пока отсутствует." />
               )}
             </SectionCard>
 
             <ProgressCard
-              title="Concept Progress"
+              title="Прогресс по концептам"
               current={state?.progress.conceptOrder ?? null}
               total={state?.progress.totalConcepts ?? null}
             />
             <ProgressCard
-              title="MicroConcept Progress"
+              title="Прогресс по микроконцептам"
               current={state?.progress.microConceptOrder ?? null}
               total={state?.progress.totalMicroConcepts ?? null}
             />

@@ -12,27 +12,27 @@ import {
 import { useLearningState } from '../hooks/useLearning';
 
 const mockHistory = [
-  'Completed: Gravity and Mass basics',
-  'Completed: Orbital motion intuition',
-  'Reviewed: Earth-Moon relationship',
+  'Завершено: основы гравитации и массы',
+  'Завершено: интуиция орбитального движения',
+  'Повторено: связь Земля-Луна',
 ];
 
 function buildRecommendation(activityType: string | undefined): string {
   switch (activityType) {
     case 'QUESTION':
-      return 'Answer current question to keep momentum.';
+      return 'Ответьте на текущий вопрос, чтобы сохранить темп.';
     case 'LEARNING_CARD':
-      return 'Continue to practice after reviewing the card.';
+      return 'После карточки перейдите к практике.';
     case 'PRACTICE':
-      return 'Finish current practice set.';
+      return 'Завершите текущий набор практики.';
     case 'QUICK_CHECK':
-      return 'Submit quick check to validate retention.';
+      return 'Отправьте быструю проверку для оценки усвоения.';
     case 'RETRY':
-      return 'Retry with rubric focus for stronger recall.';
+      return 'Повторите с фокусом на критериях для лучшего закрепления.';
     case 'COMPLETED':
-      return 'Start a new learning goal or review weak areas.';
+      return 'Начните новую цель или повторите слабые места.';
     default:
-      return 'Start learning to generate progress.';
+      return 'Начните обучение, чтобы появился прогресс.';
   }
 }
 
@@ -45,45 +45,45 @@ export function ProgressPage() {
   return (
     <Stack spacing={2}>
       <PageHeader
-        title="Progress"
-        subtitle="Track learning progression, not only statistics."
-        actions={<StatusChip label={state?.currentActivity.type ?? 'NO_SESSION'} tone={state ? 'info' : 'default'} />}
+        title="Прогресс"
+        subtitle="Отслеживайте путь обучения, а не только цифры."
+        actions={<StatusChip label={state?.currentActivity.type ?? 'БЕЗ_СЕССИИ'} tone={state ? 'info' : 'default'} />}
       />
 
-      {isLoading ? <LoadingState message="Loading progress..." /> : null}
-      {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
+      {isLoading ? <LoadingState message="Загрузка прогресса..." /> : null}
+      {error ? <ErrorState message={error instanceof Error ? error.message : 'Непредвиденная ошибка'} /> : null}
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Stack spacing={2}>
-            <SectionCard title="Learning Trajectory">
+            <SectionCard title="Траектория обучения">
               {state ? (
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <InfoCard label="Current Goal" value="Master foundational astronomy concepts" />
+                    <InfoCard label="Текущая цель" value="Освоить базовые концепты астрономии" />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <InfoCard label="Current Program" value="Astronomy Foundations" />
+                    <InfoCard label="Текущая программа" value="Основы астрономии" />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <InfoCard label="Current Topic" value={state.context.topicName ?? 'Not started'} />
+                    <InfoCard label="Текущая тема" value={state.context.topicName ?? 'Не начато'} />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <InfoCard label="Current Concept" value={state.context.conceptName ?? 'Not started'} />
+                    <InfoCard label="Текущий концепт" value={state.context.conceptName ?? 'Не начато'} />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <InfoCard label="Current MicroConcept" value={state.context.microConceptName ?? 'Not started'} />
+                    <InfoCard label="Текущий микроконцепт" value={state.context.microConceptName ?? 'Не начато'} />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <InfoCard label="Mastered Concepts" value={String(Math.max((state.progress.conceptOrder ?? 1) - 1, 0))} />
+                    <InfoCard label="Освоено концептов" value={String(Math.max((state.progress.conceptOrder ?? 1) - 1, 0))} />
                   </Grid>
                 </Grid>
               ) : (
-                <EmptyState message="No active session yet." />
+                <EmptyState message="Активной сессии пока нет." />
               )}
             </SectionCard>
 
-            <SectionCard title="Learning History (Scaffold)">
+            <SectionCard title="История обучения">
               <List dense>
                 {mockHistory.map((entry) => (
                   <ListItem key={entry} disableGutters>
@@ -98,16 +98,16 @@ export function ProgressPage() {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={2}>
             <ProgressCard
-              title="Concept Progress"
+              title="Прогресс по концептам"
               current={state?.progress.conceptOrder ?? null}
               total={state?.progress.totalConcepts ?? null}
             />
             <ProgressCard
-              title="MicroConcept Progress"
+              title="Прогресс по микроконцептам"
               current={state?.progress.microConceptOrder ?? null}
               total={state?.progress.totalMicroConcepts ?? null}
             />
-            <SectionCard title="Next Recommendation">
+            <SectionCard title="Следующая рекомендация">
               <Typography variant="body2" color="text.secondary">
                 {buildRecommendation(state?.currentActivity.type)}
               </Typography>

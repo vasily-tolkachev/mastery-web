@@ -16,13 +16,13 @@ import { useAuth } from '../auth/AuthContext';
 import { useAppTheme } from '../theme/AppThemeContext';
 
 const sidebarItems = [
-  { label: 'Home', path: '/home', icon: <HomeRoundedIcon fontSize="small" /> },
-  { label: 'Learning', path: '/learning', icon: <SchoolRoundedIcon fontSize="small" /> },
-  { label: 'Programs', path: '/programs', icon: <MenuBookRoundedIcon fontSize="small" /> },
-  { label: 'Progress', path: '/progress', icon: <InsightsRoundedIcon fontSize="small" /> },
-  { label: 'Quests', path: '/quests', icon: <AutoStoriesRoundedIcon fontSize="small" /> },
-  { label: 'Goals', path: '/goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
-  { label: 'Settings', path: '/settings', icon: <SettingsRoundedIcon fontSize="small" /> },
+  { label: 'Главная', path: '/home', icon: <HomeRoundedIcon fontSize="small" /> },
+  { label: 'Обучение', path: '/learning', icon: <SchoolRoundedIcon fontSize="small" /> },
+  { label: 'Программы', path: '/programs', icon: <MenuBookRoundedIcon fontSize="small" /> },
+  { label: 'Прогресс', path: '/progress', icon: <InsightsRoundedIcon fontSize="small" /> },
+  { label: 'Квесты', path: '/quests', icon: <AutoStoriesRoundedIcon fontSize="small" /> },
+  { label: 'Цели', path: '/goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
+  { label: 'Настройки', path: '/settings', icon: <SettingsRoundedIcon fontSize="small" /> },
 ] as const;
 
 export function AppLayout({ children }: PropsWithChildren) {
@@ -60,36 +60,36 @@ export function AppLayout({ children }: PropsWithChildren) {
           </Box>
           {isMobile ? (
             <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
-              <IconButton aria-label="Pages" onClick={openPagesMenu}>
+              <IconButton aria-label="Страницы" onClick={openPagesMenu}>
                 <MenuRoundedIcon fontSize="small" />
               </IconButton>
-              <IconButton aria-label="Theme" onClick={openThemeMenu}>
+              <IconButton aria-label="Тема" onClick={openThemeMenu}>
                 <ColorLensRoundedIcon fontSize="small" />
               </IconButton>
-              <IconButton aria-label="Logout" onClick={logout}>
+              <IconButton aria-label="Выйти" onClick={logout}>
                 <LogoutRoundedIcon fontSize="small" />
               </IconButton>
             </Box>
           ) : (
             <Box sx={{ ml: 'auto', display: 'flex', gap: 1, alignItems: 'center' }}>
               <FormControl size="small" sx={{ minWidth: 110 }}>
-                <InputLabel id="theme-mode-label">Mode</InputLabel>
+                <InputLabel id="theme-mode-label">Режим</InputLabel>
                 <Select
                   labelId="theme-mode-label"
-                  label="Mode"
+                  label="Режим"
                   value={modeSetting}
                   onChange={(e) => setModeSetting(e.target.value as 'system' | 'light' | 'dark')}
                 >
-                  <MenuItem value="system">System</MenuItem>
-                  <MenuItem value="light">Light</MenuItem>
-                  <MenuItem value="dark">Dark</MenuItem>
+                  <MenuItem value="system">Системный</MenuItem>
+                  <MenuItem value="light">Светлый</MenuItem>
+                  <MenuItem value="dark">Тёмный</MenuItem>
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel id="theme-accent-label">Theme</InputLabel>
+                <InputLabel id="theme-accent-label">Тема</InputLabel>
                 <Select
                   labelId="theme-accent-label"
-                  label="Theme"
+                  label="Тема"
                   value={accent}
                   onChange={(e) =>
                     setAccent(
@@ -111,41 +111,41 @@ export function AppLayout({ children }: PropsWithChildren) {
                     )
                   }
                 >
-                  <MenuItem value="cyan">Cyan</MenuItem>
-                  <MenuItem value="indigo">Indigo</MenuItem>
-                  <MenuItem value="emerald">Emerald</MenuItem>
-                  <MenuItem value="amber">Amber</MenuItem>
-                  <MenuItem value="rose">Rose</MenuItem>
-                  <MenuItem value="slate">Slate</MenuItem>
-                  <MenuItem value="violet">Violet</MenuItem>
-                  <MenuItem value="teal">Teal</MenuItem>
-                  <MenuItem value="sky">Sky</MenuItem>
-                  <MenuItem value="lime">Lime</MenuItem>
-                  <MenuItem value="orange">Orange</MenuItem>
-                  <MenuItem value="fuchsia">Fuchsia</MenuItem>
-                  <MenuItem value="red">Red</MenuItem>
-                  <MenuItem value="blue">Blue</MenuItem>
+                  <MenuItem value="cyan">Циан</MenuItem>
+                  <MenuItem value="indigo">Индиго</MenuItem>
+                  <MenuItem value="emerald">Изумруд</MenuItem>
+                  <MenuItem value="amber">Янтарь</MenuItem>
+                  <MenuItem value="rose">Роза</MenuItem>
+                  <MenuItem value="slate">Сланец</MenuItem>
+                  <MenuItem value="violet">Фиолет</MenuItem>
+                  <MenuItem value="teal">Бирюза</MenuItem>
+                  <MenuItem value="sky">Небо</MenuItem>
+                  <MenuItem value="lime">Лайм</MenuItem>
+                  <MenuItem value="orange">Оранжевый</MenuItem>
+                  <MenuItem value="fuchsia">Фуксия</MenuItem>
+                  <MenuItem value="red">Красный</MenuItem>
+                  <MenuItem value="blue">Синий</MenuItem>
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 130 }}>
-                <InputLabel id="theme-dark-label">Dark</InputLabel>
+                <InputLabel id="theme-dark-label">Тёмная</InputLabel>
                 <Select
                   labelId="theme-dark-label"
-                  label="Dark"
+                  label="Тёмная"
                   value={darkTheme}
                   onChange={(e) =>
                     setDarkTheme(e.target.value as 'midnight' | 'graphite' | 'ocean' | 'forest' | 'violet' | 'espresso')
                   }
                 >
-                  <MenuItem value="midnight">Midnight</MenuItem>
-                  <MenuItem value="graphite">Graphite</MenuItem>
-                  <MenuItem value="ocean">Ocean</MenuItem>
-                  <MenuItem value="forest">Forest</MenuItem>
-                  <MenuItem value="violet">Violet</MenuItem>
-                  <MenuItem value="espresso">Espresso</MenuItem>
+                  <MenuItem value="midnight">Ночь</MenuItem>
+                  <MenuItem value="graphite">Графит</MenuItem>
+                  <MenuItem value="ocean">Океан</MenuItem>
+                  <MenuItem value="forest">Лес</MenuItem>
+                  <MenuItem value="violet">Фиолет</MenuItem>
+                  <MenuItem value="espresso">Эспрессо</MenuItem>
                 </Select>
               </FormControl>
-              <IconButton aria-label="Logout" onClick={logout}>
+              <IconButton aria-label="Выйти" onClick={logout}>
                 <LogoutRoundedIcon fontSize="small" />
               </IconButton>
             </Box>
@@ -164,24 +164,24 @@ export function AppLayout({ children }: PropsWithChildren) {
       <Menu anchorEl={themeAnchor} open={Boolean(themeAnchor)} onClose={closeThemeMenu}>
         <Box sx={{ p: 1.5, width: 280, display: 'grid', gap: 1.25 }}>
           <FormControl size="small" fullWidth>
-            <InputLabel id="theme-mode-mobile-label">Mode</InputLabel>
+            <InputLabel id="theme-mode-mobile-label">Режим</InputLabel>
             <Select
               labelId="theme-mode-mobile-label"
-              label="Mode"
+              label="Режим"
               value={modeSetting}
               native
               onChange={(e) => setModeSetting(e.target.value as 'system' | 'light' | 'dark')}
             >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+              <option value="system">Системный</option>
+              <option value="light">Светлый</option>
+              <option value="dark">Тёмный</option>
             </Select>
           </FormControl>
           <FormControl size="small" fullWidth>
-            <InputLabel id="theme-accent-mobile-label">Theme</InputLabel>
+            <InputLabel id="theme-accent-mobile-label">Тема</InputLabel>
             <Select
               labelId="theme-accent-mobile-label"
-              label="Theme"
+              label="Тема"
               value={accent}
               native
               onChange={(e) =>
@@ -204,39 +204,39 @@ export function AppLayout({ children }: PropsWithChildren) {
                 )
               }
             >
-              <option value="cyan">Cyan</option>
-              <option value="indigo">Indigo</option>
-              <option value="emerald">Emerald</option>
-              <option value="amber">Amber</option>
-              <option value="rose">Rose</option>
-              <option value="slate">Slate</option>
-              <option value="violet">Violet</option>
-              <option value="teal">Teal</option>
-              <option value="sky">Sky</option>
-              <option value="lime">Lime</option>
-              <option value="orange">Orange</option>
-              <option value="fuchsia">Fuchsia</option>
-              <option value="red">Red</option>
-              <option value="blue">Blue</option>
+              <option value="cyan">Циан</option>
+              <option value="indigo">Индиго</option>
+              <option value="emerald">Изумруд</option>
+              <option value="amber">Янтарь</option>
+              <option value="rose">Роза</option>
+              <option value="slate">Сланец</option>
+              <option value="violet">Фиолет</option>
+              <option value="teal">Бирюза</option>
+              <option value="sky">Небо</option>
+              <option value="lime">Лайм</option>
+              <option value="orange">Оранжевый</option>
+              <option value="fuchsia">Фуксия</option>
+              <option value="red">Красный</option>
+              <option value="blue">Синий</option>
             </Select>
           </FormControl>
           <FormControl size="small" fullWidth>
-            <InputLabel id="theme-dark-mobile-label">Dark</InputLabel>
+            <InputLabel id="theme-dark-mobile-label">Тёмная</InputLabel>
             <Select
               labelId="theme-dark-mobile-label"
-              label="Dark"
+              label="Тёмная"
               value={darkTheme}
               native
               onChange={(e) =>
                 setDarkTheme(e.target.value as 'midnight' | 'graphite' | 'ocean' | 'forest' | 'violet' | 'espresso')
               }
             >
-              <option value="midnight">Midnight</option>
-              <option value="graphite">Graphite</option>
-              <option value="ocean">Ocean</option>
-              <option value="forest">Forest</option>
-              <option value="violet">Violet</option>
-              <option value="espresso">Espresso</option>
+              <option value="midnight">Ночь</option>
+              <option value="graphite">Графит</option>
+              <option value="ocean">Океан</option>
+              <option value="forest">Лес</option>
+              <option value="violet">Фиолет</option>
+              <option value="espresso">Эспрессо</option>
             </Select>
           </FormControl>
         </Box>
@@ -257,7 +257,7 @@ export function AppLayout({ children }: PropsWithChildren) {
         {!isMobile ? (
           <Paper
           component="nav"
-          aria-label="Primary navigation"
+          aria-label="Основная навигация"
           square
           elevation={0}
           sx={{
@@ -282,7 +282,7 @@ export function AppLayout({ children }: PropsWithChildren) {
                   component={Link}
                   to={item.path}
                   selected={isActive(item.path)}
-                  aria-label={`Go to ${item.label}`}
+                  aria-label={`Перейти: ${item.label}`}
                   aria-current={isActive(item.path) ? 'page' : undefined}
                   sx={{ px: { xs: 1.5, md: 2 }, py: { xs: 1.25, md: 1 } }}
                 >
