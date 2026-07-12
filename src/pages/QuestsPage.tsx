@@ -151,7 +151,7 @@ export function QuestsPage() {
         <SectionCard title="Upload Quest File">
           <Stack spacing={1.5}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-              <Button variant="outlined" component="label" disabled={uploading}>
+              <Button variant="outlined" component="label" disabled={uploading} fullWidth sx={{ maxWidth: { sm: 220 } }}>
                 Select .quest
                 <input hidden type="file" accept=".quest,text/plain" onChange={handleFileChange} />
               </Button>
@@ -160,10 +160,12 @@ export function QuestsPage() {
                 startIcon={<FileUploadRoundedIcon fontSize="small" />}
                 onClick={handleUpload}
                 disabled={!selectedFile || uploading}
+                fullWidth
+                sx={{ maxWidth: { sm: 180 } }}
               >
                 Upload
               </Button>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
                 {selectedFile ? selectedFile.name : 'No file selected'}
               </Typography>
             </Stack>
@@ -186,7 +188,7 @@ export function QuestsPage() {
                 sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}
               >
                 <Stack
-                  direction="row"
+                  direction={{ xs: 'column', sm: 'row' }}
                   spacing={1.5}
                   sx={{ alignItems: 'center', justifyContent: 'space-between' }}
                 >
@@ -199,6 +201,8 @@ export function QuestsPage() {
                     size="small"
                     onClick={() => handleStartQuest(quest.id)}
                     disabled={busy}
+                    fullWidth
+                    sx={{ maxWidth: { sm: 120 } }}
                   >
                     Start
                   </Button>
@@ -252,16 +256,17 @@ export function QuestsPage() {
                   ) : null}
                 </Stack>
 
-                <Stack direction="row" spacing={1}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <Button
                     variant="text"
                     startIcon={<RefreshRoundedIcon fontSize="small" />}
                     disabled={busy}
                     onClick={handleRestart}
+                    fullWidth
                   >
                     Restart
                   </Button>
-                  <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)}>
+                  <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)} fullWidth>
                     Back to quests
                   </Button>
                 </Stack>
@@ -328,7 +333,7 @@ export function QuestsPage() {
               <Box key={session.sessionId} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
                 <Stack spacing={0.75}>
                   <Typography variant="subtitle2">{session.questTitle || session.questId}</Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
                     session: {session.sessionId}
                   </Typography>
                   <Typography variant="body2">
@@ -352,11 +357,30 @@ export function QuestsPage() {
                   <Typography variant="body2">
                     variables:
                   </Typography>
-                  <Box component="pre" sx={{ m: 0, p: 1, borderRadius: 1, bgcolor: 'background.default', overflowX: 'auto' }}>
+                  <Box
+                    component="pre"
+                    sx={{
+                      m: 0,
+                      p: 1,
+                      borderRadius: 1,
+                      bgcolor: 'background.default',
+                      overflowX: 'auto',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      fontSize: 13,
+                    }}
+                  >
                     {JSON.stringify(session.gameState.variables, null, 2)}
                   </Box>
-                  <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
-                    <Button size="small" variant="contained" disabled={busy} onClick={() => handleProceed(session.sessionId)}>
+                  <Stack direction="row" sx={{ justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      disabled={busy}
+                      onClick={() => handleProceed(session.sessionId)}
+                      fullWidth
+                      sx={{ maxWidth: { sm: 140 } }}
+                    >
                       Proceed
                     </Button>
                   </Stack>
