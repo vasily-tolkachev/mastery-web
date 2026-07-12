@@ -29,6 +29,18 @@ export async function loginWithGoogleIdToken(idToken: string): Promise<TokenResp
   return response.json() as Promise<TokenResponse>;
 }
 
+export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
+  const response = await fetch('/api/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken }),
+  });
+  if (!response.ok) {
+    throw new Error(`Refresh failed (${response.status})`);
+  }
+  return response.json() as Promise<TokenResponse>;
+}
+
 export async function getAuthProfile(): Promise<AuthUserProfile> {
   const response = await authApiFetch('/api/profile');
   if (!response.ok) {
