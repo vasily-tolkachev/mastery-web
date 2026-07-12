@@ -19,7 +19,7 @@ export function QuestsPage() {
   const [currentQuestId, setCurrentQuestId] = useState<string | null>(null);
   const [game, setGame] = useState<QuestGameView | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
@@ -43,8 +43,9 @@ export function QuestsPage() {
   }, []);
 
   const handleStartQuest = async (questId: string) => {
+    const actionKey = `start-${questId}`;
     try {
-      setBusy(true);
+      setPendingAction(actionKey);
       setError(null);
       const response = await startQuest(questId);
       setSessionId(response.sessionId);
@@ -55,14 +56,15 @@ export function QuestsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to start quest');
     } finally {
-      setBusy(false);
+      setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
   };
 
   const handleChoose = async (optionId: string) => {
     if (!sessionId) return;
+    const actionKey = `choose-${optionId}`;
     try {
-      setBusy(true);
+      setPendingAction(actionKey);
       setError(null);
       const nextGame = await chooseQuestOption(sessionId, optionId);
       setGame(nextGame);
@@ -70,13 +72,14 @@ export function QuestsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to choose option');
     } finally {
-      setBusy(false);
+      setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
   };
 
   const handleProceed = async (targetSessionId: string) => {
+    const actionKey = `proceed-${targetSessionId}`;
     try {
-      setBusy(true);
+      setPendingAction(actionKey);
       setError(null);
       const response = await proceedQuestSession(targetSessionId);
       const targetSession = sessions.find((item) => item.sessionId === targetSessionId);
@@ -87,14 +90,15 @@ export function QuestsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to proceed session');
     } finally {
-      setBusy(false);
+      setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
   };
 
   const handleRestart = async () => {
     if (!sessionId) return;
+    const actionKey = 'restart';
     try {
-      setBusy(true);
+      setPendingAction(actionKey);
       setError(null);
       const response = await restartQuestSession(sessionId);
       setSessionId(response.sessionId);
@@ -107,7 +111,7 @@ export function QuestsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to restart quest');
     } finally {
-      setBusy(false);
+      setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
   };
 
@@ -200,7 +204,7 @@ export function QuestsPage() {
                     variant="contained"
                     size="medium"
                     onClick={() => handleStartQuest(quest.id)}
-                    disabled={busy}
+                    disabled={pendingAction === `start-${quest.id}`}
                     fullWidth
                     sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                   >
@@ -243,7 +247,7 @@ export function QuestsPage() {
                       key={option.id}
                       variant="outlined"
                       onClick={() => handleChoose(option.id)}
-                      disabled={busy || game.finished}
+                      disabled={pendingAction === `choose-${option.id}` || game.finished}
                       sx={{ justifyContent: 'flex-start', minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.1rem', md: '0.95rem' }, py: { xs: 1.2, sm: 1 } }}
                     >
                       {option.text}
@@ -260,14 +264,14 @@ export function QuestsPage() {
                   <Button
                     variant="text"
                     startIcon={<RefreshRoundedIcon fontSize="small" />}
-                    disabled={busy}
+                    disabled={pendingAction === 'restart'}
                     onClick={handleRestart}
                     fullWidth
                     sx={{ minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                   >
                     Restart
                   </Button>
-                  <Button variant="text" disabled={busy} onClick={() => setShowCatalog(true)} fullWidth sx={{ minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}>
+                  <Button variant="text" onClick={() => setShowCatalog(true)} fullWidth sx={{ minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}>
                     Back to quests
                   </Button>
                 </Stack>
@@ -377,7 +381,7 @@ export function QuestsPage() {
                     <Button
                       size="small"
                       variant="contained"
-                      disabled={busy}
+                      disabled={pendingAction === `proceed-${session.sessionId}`}
                       onClick={() => handleProceed(session.sessionId)}
                       fullWidth
                       sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}

@@ -158,14 +158,6 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
               },
             },
           },
-          MuiInputBase: {
-            styleOverrides: {
-              root: {
-                minHeight: 52,
-                fontSize: '1rem',
-              },
-            },
-          },
           MuiPaper: {
             styleOverrides: {
               root: {

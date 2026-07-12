@@ -53,15 +53,25 @@ export function AppLayout({ children }: PropsWithChildren) {
             sx={{
               ml: { xs: 0, sm: 'auto' },
               width: { xs: '100%', sm: 'auto' },
-              display: 'flex',
+              display: { xs: 'grid', sm: 'flex' },
+              gridTemplateColumns: { xs: '1fr 1fr', sm: 'none' },
               gap: 1,
               alignItems: 'center',
-              flexWrap: 'nowrap',
-              justifyContent: { xs: 'space-between', sm: 'flex-end' },
+              justifyContent: { xs: 'stretch', sm: 'flex-end' },
               minWidth: 0,
             }}
           >
-            <FormControl size="small" sx={{ minWidth: 0, flex: { xs: 1, sm: '0 0 auto' }, maxWidth: { sm: 110 } }}>
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: 0,
+                width: { xs: '100%', sm: 'auto' },
+                flex: { sm: '0 0 auto' },
+                maxWidth: { sm: 110 },
+                '& .MuiInputBase-root': { minHeight: { xs: 50, sm: 36 } },
+                '& .MuiSelect-select': { py: { xs: 1.15, sm: 0.75 } },
+              }}
+            >
               <InputLabel id="theme-mode-label">Mode</InputLabel>
               <Select
                 labelId="theme-mode-label"
@@ -85,7 +95,17 @@ export function AppLayout({ children }: PropsWithChildren) {
                 )}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 0, flex: { xs: 1, sm: '0 0 auto' }, maxWidth: { sm: 120 } }}>
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: 0,
+                width: { xs: '100%', sm: 'auto' },
+                flex: { sm: '0 0 auto' },
+                maxWidth: { sm: 120 },
+                '& .MuiInputBase-root': { minHeight: { xs: 50, sm: 36 } },
+                '& .MuiSelect-select': { py: { xs: 1.15, sm: 0.75 } },
+              }}
+            >
               <InputLabel id="theme-accent-label">Theme</InputLabel>
               <Select
                 labelId="theme-accent-label"
@@ -149,7 +169,18 @@ export function AppLayout({ children }: PropsWithChildren) {
                 )}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 0, flex: { xs: 1, sm: '0 0 auto' }, maxWidth: { sm: 130 } }}>
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: 0,
+                width: { xs: '100%', sm: 'auto' },
+                flex: { sm: '0 0 auto' },
+                maxWidth: { sm: 130 },
+                gridColumn: { xs: '1 / span 1', sm: 'auto' },
+                '& .MuiInputBase-root': { minHeight: { xs: 50, sm: 36 } },
+                '& .MuiSelect-select': { py: { xs: 1.15, sm: 0.75 } },
+              }}
+            >
               <InputLabel id="theme-dark-label">Dark</InputLabel>
               <Select
                 labelId="theme-dark-label"
@@ -181,7 +212,11 @@ export function AppLayout({ children }: PropsWithChildren) {
                 )}
               </Select>
             </FormControl>
-            <IconButton aria-label="Logout" onClick={logout}>
+            <IconButton
+              aria-label="Logout"
+              onClick={logout}
+              sx={{ justifySelf: { xs: 'stretch', sm: 'auto' }, width: { xs: '100%', sm: 52 } }}
+            >
               <LogoutRoundedIcon fontSize="small" />
             </IconButton>
           </Box>
@@ -216,13 +251,13 @@ export function AppLayout({ children }: PropsWithChildren) {
             dense
             disablePadding
             sx={{
-              display: { xs: 'flex', md: 'block' },
-              overflowX: { xs: 'auto', md: 'visible' },
-              whiteSpace: { xs: 'nowrap', md: 'normal' },
+              display: 'block',
+              overflowX: 'visible',
+              whiteSpace: 'normal',
             }}
           >
             {sidebarItems.map((item, index) => (
-              <Box key={item.label} sx={{ minWidth: { xs: 108, md: 'auto' } }}>
+              <Box key={item.label}>
                 <ListItemButton
                   component={Link}
                   to={item.path}
