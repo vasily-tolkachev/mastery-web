@@ -5,7 +5,7 @@ import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { approveStage, createGeneratorProject, generateStage, generateStageStep, getGeneratorProject, getGeneratorProjects } from '../api/generatorApi';
+import { approveStage, convertDslFromJson, createGeneratorProject, exportDsl, generateStage, generateStageStep, getGeneratorProject, getGeneratorProjects } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
@@ -22,6 +22,9 @@ export function GeneratorPage() {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
   const [newQuestStyle, setNewQuestStyle] = useState('classic-adventure');
+  const [dslText, setDslText] = useState<string | null>(null);
+  const [uploadedQuestGraphName, setUploadedQuestGraphName] = useState('');
+  const [uploadedQuestGraphJson, setUploadedQuestGraphJson] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const selectedProject = useMemo(
@@ -132,6 +135,92 @@ export function GeneratorPage() {
     }
   };
 
+  const handleExportDsl = async () => {
+    if (!selectedProjectId) {
+      return;
+    }
+    const actionKey = 'export-dsl';
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const dsl = await exportDsl(selectedProjectId);
+      setDslText(dsl);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось экспортировать DSL');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleDownloadDsl = () => {
+    if (!dslText || !selectedProject) {
+      return;
+    }
+    const blob = new Blob([dslText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeName = selectedProject.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'generated_quest';
+    link.download = `${safeName}.quest`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadQuestGraphJson = () => {
+    if (!selectedProject) {
+      return;
+    }
+    const graphStage = selectedProject.stages.find((stage) => stage.type === 'QUEST_GRAPH');
+    const outputJson = graphStage?.currentRevision?.outputJson;
+    if (!outputJson) {
+      return;
+    }
+
+    const jsonText = JSON.stringify(outputJson, null, 2);
+    const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeName = selectedProject.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'quest_graph';
+    link.download = `${safeName}-quest-graph.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUploadQuestGraphFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      setUploadedQuestGraphJson(parsed);
+      setUploadedQuestGraphName(file.name.replace(/\.json$/i, ''));
+      setError(null);
+    } catch {
+      setUploadedQuestGraphJson(null);
+      setError('Файл QUEST_GRAPH JSON не удалось распарсить');
+    }
+  };
+
+  const handleConvertUploadedQuestGraph = async () => {
+    if (!uploadedQuestGraphJson) {
+      return;
+    }
+    const actionKey = 'convert-uploaded-dsl';
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const dsl = await convertDslFromJson(uploadedQuestGraphName || 'manual_import', uploadedQuestGraphJson);
+      setDslText(dsl);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось конвертировать загруженный JSON');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   if (loading) {
     return <LoadingState message="Загрузка проектов генератора..." />;
   }
@@ -234,6 +323,89 @@ export function GeneratorPage() {
           </Stack>
         </SectionCard>
       ) : null}
+
+      {selectedProject ? (
+        <SectionCard
+          title="Экспорт DSL"
+          action={
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => void handleExportDsl()}
+              disabled={busyAction !== null || !selectedProject.stages.some((s) => s.type === 'QUEST_GRAPH' && s.status === 'APPROVED')}
+            >
+              Export DSL
+            </Button>
+          }
+        >
+          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={handleDownloadQuestGraphJson}
+              disabled={!selectedProject.stages.some((s) => s.type === 'QUEST_GRAPH' && Boolean(s.currentRevision?.outputJson))}
+            >
+              Скачать QUEST_GRAPH JSON
+            </Button>
+          </Stack>
+          {dslText ? (
+            <Stack spacing={1}>
+              <Button size="small" variant="outlined" onClick={handleDownloadDsl} sx={{ alignSelf: 'flex-start' }}>
+                Скачать .quest
+              </Button>
+              <Box
+                component="pre"
+                sx={{
+                  m: 0,
+                  p: 1,
+                  borderRadius: 1,
+                  bgcolor: 'background.default',
+                  maxHeight: 280,
+                  overflow: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  fontSize: 12,
+                }}
+              >
+                {dslText}
+              </Box>
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              После подтверждения QUEST GRAPH нажмите Export DSL.
+            </Typography>
+          )}
+        </SectionCard>
+      ) : null}
+
+      <SectionCard title="Конвертация JSON → DSL">
+        <Stack spacing={1.25}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
+            <Button variant="outlined" component="label" size="small">
+              Загрузить QUEST_GRAPH JSON
+              <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleUploadQuestGraphFile(event)} />
+            </Button>
+            <TextField
+              size="small"
+              label="Имя проекта"
+              value={uploadedQuestGraphName}
+              onChange={(event) => setUploadedQuestGraphName(event.target.value)}
+              sx={{ minWidth: 220 }}
+            />
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => void handleConvertUploadedQuestGraph()}
+              disabled={!uploadedQuestGraphJson || busyAction !== null}
+            >
+              Конвертировать в DSL
+            </Button>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {uploadedQuestGraphJson ? 'JSON загружен и готов к конвертации.' : 'Загрузите JSON последней стадии для ручной конвертации.'}
+          </Typography>
+        </Stack>
+      </SectionCard>
     </Stack>
   );
 }

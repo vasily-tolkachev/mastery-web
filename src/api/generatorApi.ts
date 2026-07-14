@@ -64,6 +64,28 @@ export async function approveStage(projectId: string, stageType: GeneratorStageT
   return normalizeProject(await response.json());
 }
 
+export async function exportDsl(projectId: string): Promise<string> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/export-dsl`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Не удалось экспортировать DSL');
+  }
+  return response.text();
+}
+
+export async function convertDslFromJson(projectName: string, questGraphJson: unknown): Promise<string> {
+  const response = await authFetch('/api/generator/projects/convert-dsl', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectName, questGraphJson }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Не удалось конвертировать JSON в DSL');
+  }
+  return response.text();
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
