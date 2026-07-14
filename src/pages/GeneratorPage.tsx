@@ -231,7 +231,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between' }}>
         <Stack spacing={0.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-            <Typography variant="subtitle2">{stage.type}</Typography>
+            <Typography variant="subtitle2">{stageTypeLabel(stage.type)}</Typography>
             <Chip size="small" label={stage.status} />
             {stage.approved ? (
               <Chip size="small" color="success" label="Подтверждено" icon={<CheckCircleRoundedIcon />} />
@@ -292,4 +292,9 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
       ) : null}
     </Box>
   );
+}
+
+function stageTypeLabel(type: GeneratorStageType): string {
+  if (type === 'QUEST_GRAPH') return 'QUEST GRAPH';
+  return type;
 }
