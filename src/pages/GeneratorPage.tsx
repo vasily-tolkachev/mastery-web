@@ -9,7 +9,7 @@ import { approveStage, createGeneratorProject, generateStage, getGeneratorProjec
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'FLOW', 'WRITER'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_GRAPH'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -293,4 +293,3 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
     </Box>
   );
 }
-
