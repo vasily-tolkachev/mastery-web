@@ -3,6 +3,7 @@ import { useAuth } from './auth/AuthContext';
 import { AppLayout } from './layouts/AppLayout';
 import { ConceptPage } from './pages/ConceptPage';
 import { GoalsPage } from './pages/GoalsPage';
+import { GeneratorPage } from './pages/GeneratorPage';
 import { HomePage } from './pages/HomePage';
 import { LearningPage } from './pages/LearningPage';
 import { LoginPage } from './pages/LoginPage';
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/quests" element={<QuestsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/generator" element={<GeneratorPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/quests" replace />} />
       </Routes>

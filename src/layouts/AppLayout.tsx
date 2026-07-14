@@ -5,6 +5,7 @@ import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
+import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import ColorLensRoundedIcon from '@mui/icons-material/ColorLensRounded';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
@@ -21,6 +22,7 @@ const sidebarItems = [
   { label: 'Программы', path: '/programs', icon: <MenuBookRoundedIcon fontSize="small" /> },
   { label: 'Прогресс', path: '/progress', icon: <InsightsRoundedIcon fontSize="small" /> },
   { label: 'Квесты', path: '/quests', icon: <AutoStoriesRoundedIcon fontSize="small" /> },
+  { label: 'Генератор', path: '/generator', icon: <AutoFixHighRoundedIcon fontSize="small" /> },
   { label: 'Цели', path: '/goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
   { label: 'Настройки', path: '/settings', icon: <SettingsRoundedIcon fontSize="small" /> },
 ] as const;
