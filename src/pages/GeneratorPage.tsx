@@ -5,11 +5,15 @@ import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { approveStage, createGeneratorProject, generateStage, getGeneratorProject, getGeneratorProjects } from '../api/generatorApi';
+import { approveStage, createGeneratorProject, generateStage, generateStageStep, getGeneratorProject, getGeneratorProjects } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
 const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_GRAPH'];
+const STAGE_STEPS: Partial<Record<GeneratorStageType, string[]>> = {
+  FACTS: ['fact_list', 'fact_owners', 'fact_dependencies', 'fact_visibility'],
+  QUEST_GRAPH: ['node_list', 'node_details', 'edges', 'endings'],
+};
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -104,6 +108,24 @@ export function GeneratorPage() {
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось подтвердить этап');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleGenerateStep = async (stageType: GeneratorStageType, step: string) => {
+    if (!selectedProjectId) {
+      return;
+    }
+    const actionKey = `step-${stageType}-${step}`;
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const updated = await generateStageStep(selectedProjectId, stageType, step);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать шаг этапа');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -205,6 +227,7 @@ export function GeneratorPage() {
                   busyAction={busyAction}
                   onGenerate={() => void handleGenerate(stageType)}
                   onApprove={() => void handleApprove(stageType)}
+                  onGenerateStep={(step) => void handleGenerateStep(stageType, step)}
                 />
               ) : null;
             })}
@@ -220,9 +243,10 @@ type StageRowProps = {
   busyAction: string | null;
   onGenerate: () => void;
   onApprove: () => void;
+  onGenerateStep: (step: string) => void;
 };
 
-function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
+function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
   const isReadyToGenerate = stage.status === 'READY' || stage.status === 'REVIEW';
   const canApprove = stage.status === 'REVIEW' && Boolean(stage.currentRevision);
 
@@ -289,6 +313,22 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
         >
           {JSON.stringify(stage.currentRevision.outputJson, null, 2)}
         </Box>
+      ) : null}
+
+      {STAGE_STEPS[stage.type]?.length ? (
+        <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap' }}>
+          {STAGE_STEPS[stage.type]!.map((step) => (
+            <Button
+              key={step}
+              size="small"
+              variant="text"
+              disabled={busyAction !== null || (!isReadyToGenerate && stage.status !== 'REVIEW')}
+              onClick={() => onGenerateStep(step)}
+            >
+              {step}
+            </Button>
+          ))}
+        </Stack>
       ) : null}
     </Box>
   );

@@ -42,6 +42,17 @@ export async function generateStage(projectId: string, stageType: GeneratorStage
   return normalizeProject(await response.json());
 }
 
+export async function generateStageStep(projectId: string, stageType: GeneratorStageType, step: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/${stageType}/steps/${step}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Не удалось сгенерировать шаг этапа');
+  }
+  return normalizeProject(await response.json());
+}
+
 export async function approveStage(projectId: string, stageType: GeneratorStageType): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${projectId}/stages/${stageType}/approve`, {
     method: 'POST',
