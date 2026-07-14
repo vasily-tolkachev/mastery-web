@@ -8,7 +8,7 @@ export async function createGeneratorProject(name: string): Promise<GeneratorPro
     body: JSON.stringify({ name }),
   });
   if (!response.ok) {
-    throw await toError(response, 'Failed to create generator project');
+    throw await toError(response, 'Не удалось создать проект генератора');
   }
   return normalizeProject(await response.json());
 }
@@ -16,7 +16,7 @@ export async function createGeneratorProject(name: string): Promise<GeneratorPro
 export async function getGeneratorProjects(): Promise<GeneratorProject[]> {
   const response = await authFetch('/api/generator/projects');
   if (!response.ok) {
-    throw await toError(response, 'Failed to load generator projects');
+    throw await toError(response, 'Не удалось загрузить проекты генератора');
   }
   const raw = await response.json();
   if (!Array.isArray(raw)) return [];
@@ -26,7 +26,7 @@ export async function getGeneratorProjects(): Promise<GeneratorProject[]> {
 export async function getGeneratorProject(id: string): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${id}`);
   if (!response.ok) {
-    throw await toError(response, 'Failed to load generator project');
+    throw await toError(response, 'Не удалось загрузить проект генератора');
   }
   return normalizeProject(await response.json());
 }
@@ -37,7 +37,7 @@ export async function generateStage(projectId: string, stageType: GeneratorStage
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Failed to generate stage');
+    throw await toError(response, 'Не удалось сгенерировать этап');
   }
   return normalizeProject(await response.json());
 }
@@ -48,7 +48,7 @@ export async function approveStage(projectId: string, stageType: GeneratorStageT
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Failed to approve stage');
+    throw await toError(response, 'Не удалось подтвердить этап');
   }
   return normalizeProject(await response.json());
 }
@@ -95,4 +95,3 @@ function normalizeRevision(rawValue: unknown): StageRevision | null {
     createdAt: String(raw.createdAt ?? ''),
   };
 }
-

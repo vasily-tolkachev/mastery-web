@@ -36,7 +36,7 @@ export function GeneratorPage() {
         setSelectedProjectId(loaded[0]?.id ?? null);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load projects');
+      setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export function GeneratorPage() {
       setSelectedProjectId(created.id);
       setNewProjectName('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create project');
+      setError(e instanceof Error ? e.message : 'Не удалось создать проект');
     } finally {
       setBusyAction(null);
     }
@@ -83,7 +83,7 @@ export function GeneratorPage() {
       const updated = await generateStage(selectedProjectId, stageType);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate stage');
+      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать этап');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -101,7 +101,7 @@ export function GeneratorPage() {
       const updated = await approveStage(selectedProjectId, stageType);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve stage');
+      setError(e instanceof Error ? e.message : 'Не удалось подтвердить этап');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -109,19 +109,19 @@ export function GeneratorPage() {
   };
 
   if (loading) {
-    return <LoadingState message="Loading generator projects..." />;
+    return <LoadingState message="Загрузка проектов генератора..." />;
   }
 
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
 
-      <SectionCard title="Quest Generator">
+      <SectionCard title="Генератор квестов">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
           <TextField
             value={newProjectName}
             onChange={(event) => setNewProjectName(event.target.value)}
-            label="Project name"
+            label="Название проекта"
             size="small"
             fullWidth
           />
@@ -132,7 +132,7 @@ export function GeneratorPage() {
             disabled={!newProjectName.trim() || busyAction === 'create-project'}
             sx={{ minWidth: 180 }}
           >
-            Create Project
+            Создать проект
           </Button>
           <Button
             variant="outlined"
@@ -141,13 +141,13 @@ export function GeneratorPage() {
             disabled={Boolean(busyAction)}
             sx={{ minWidth: 140 }}
           >
-            Refresh
+            Обновить
           </Button>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Projects">
-        {!projects.length ? <EmptyState message="No generator projects yet." /> : null}
+      <SectionCard title="Проекты">
+        {!projects.length ? <EmptyState message="Пока нет проектов генератора." /> : null}
         <Stack spacing={1}>
           {projects.map((project) => (
             <Box
@@ -182,7 +182,7 @@ export function GeneratorPage() {
       </SectionCard>
 
       {selectedProject ? (
-        <SectionCard title={`Stages: ${selectedProject.name}`}>
+        <SectionCard title={`Этапы: ${selectedProject.name}`}>
           <Stack spacing={1.5}>
             {ORDERED_STAGE_TYPES.map((stageType) => {
               const stage = selectedProject.stages.find((item) => item.type === stageType);
@@ -222,10 +222,10 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
             <Typography variant="subtitle2">{stage.type}</Typography>
             <Chip size="small" label={stage.status} />
             {stage.approved ? (
-              <Chip size="small" color="success" label="Approved" icon={<CheckCircleRoundedIcon />} />
+              <Chip size="small" color="success" label="Подтверждено" icon={<CheckCircleRoundedIcon />} />
             ) : null}
             {stage.status === 'NOT_STARTED' ? (
-              <Chip size="small" color="default" label="Locked" icon={<LockRoundedIcon />} />
+              <Chip size="small" color="default" label="Заблокировано" icon={<LockRoundedIcon />} />
             ) : null}
           </Stack>
           {stage.currentRevision ? (
@@ -233,7 +233,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
               Revision #{stage.currentRevision.revisionNumber} at {new Date(stage.currentRevision.createdAt).toLocaleString()}
             </Typography>
           ) : (
-            <Typography variant="caption" color="text.secondary">No revision yet</Typography>
+            <Typography variant="caption" color="text.secondary">Ревизий пока нет</Typography>
           )}
         </Stack>
 
@@ -245,7 +245,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
             disabled={!isReadyToGenerate || busyAction === `generate-${stage.type}` || busyAction !== null}
             onClick={onGenerate}
           >
-            Generate
+            Сгенерировать
           </Button>
           <Button
             size="small"
@@ -254,7 +254,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
             disabled={!canApprove || busyAction === `approve-${stage.type}` || busyAction !== null}
             onClick={onApprove}
           >
-            Approve
+            Подтвердить
           </Button>
         </Stack>
       </Stack>
@@ -281,4 +281,3 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
     </Box>
   );
 }
-
