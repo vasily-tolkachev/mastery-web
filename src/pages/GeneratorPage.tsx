@@ -17,6 +17,7 @@ export function GeneratorPage() {
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newQuestStyle, setNewQuestStyle] = useState('classic-adventure');
   const [error, setError] = useState<string | null>(null);
 
   const selectedProject = useMemo(
@@ -61,10 +62,11 @@ export function GeneratorPage() {
     try {
       setBusyAction(actionKey);
       setError(null);
-      const created = await createGeneratorProject(newProjectName.trim());
+      const created = await createGeneratorProject(newProjectName.trim(), newQuestStyle.trim());
       setProjects((prev) => [created, ...prev]);
       setSelectedProjectId(created.id);
       setNewProjectName('');
+      setNewQuestStyle('classic-adventure');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось создать проект');
     } finally {
@@ -125,6 +127,13 @@ export function GeneratorPage() {
             size="small"
             fullWidth
           />
+          <TextField
+            value={newQuestStyle}
+            onChange={(event) => setNewQuestStyle(event.target.value)}
+            label="Стиль квеста"
+            size="small"
+            fullWidth
+          />
           <Button
             variant="contained"
             onClick={handleCreateProject}
@@ -173,6 +182,9 @@ export function GeneratorPage() {
                 <Typography variant="subtitle1">{project.name}</Typography>
                 <Chip size="small" label={project.status} />
               </Stack>
+              <Typography variant="body2" color="text.secondary">
+                Стиль: {project.questStyle || 'classic-adventure'}
+              </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
                 {project.id}
               </Typography>
@@ -230,7 +242,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
           </Stack>
           {stage.currentRevision ? (
             <Typography variant="caption" color="text.secondary">
-              Revision #{stage.currentRevision.revisionNumber} at {new Date(stage.currentRevision.createdAt).toLocaleString()}
+              Ревизия #{stage.currentRevision.revisionNumber} от {new Date(stage.currentRevision.createdAt).toLocaleString()}
             </Typography>
           ) : (
             <Typography variant="caption" color="text.secondary">Ревизий пока нет</Typography>
@@ -281,3 +293,4 @@ function StageRow({ stage, busyAction, onGenerate, onApprove }: StageRowProps) {
     </Box>
   );
 }
+

@@ -1,11 +1,11 @@
 import { authFetch } from './http';
 import type { GeneratorProject, GeneratorStage, GeneratorStageStatus, GeneratorStageType, StageRevision } from '../types/generator';
 
-export async function createGeneratorProject(name: string): Promise<GeneratorProject> {
+export async function createGeneratorProject(name: string, questStyle: string): Promise<GeneratorProject> {
   const response = await authFetch('/api/generator/projects', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, questStyle }),
   });
   if (!response.ok) {
     throw await toError(response, 'Не удалось создать проект генератора');
@@ -69,6 +69,7 @@ function normalizeProject(rawValue: unknown): GeneratorProject {
   return {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? ''),
+    questStyle: String(raw.questStyle ?? ''),
     status: String(raw.status ?? ''),
     stages: stagesRaw.map(normalizeStage),
   };

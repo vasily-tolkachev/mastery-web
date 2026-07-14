@@ -18,7 +18,7 @@ export type GeneratorStage = {
 export type GeneratorProject = {
   id: string;
   name: string;
+  questStyle: string;
   status: string;
   stages: GeneratorStage[];
 };
-
