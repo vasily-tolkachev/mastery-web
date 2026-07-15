@@ -153,14 +153,15 @@ export function GeneratorPage() {
   };
 
   const handleDownloadDsl = () => {
-    if (!dslText || !selectedProject) {
+    if (!dslText) {
       return;
     }
     const blob = new Blob([dslText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const safeName = selectedProject.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'generated_quest';
+    const baseName = selectedProject?.name ?? uploadedQuestGraphName ?? 'generated_quest';
+    const safeName = baseName.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'generated_quest';
     link.download = `${safeName}.quest`;
     link.click();
     URL.revokeObjectURL(url);
@@ -404,6 +405,29 @@ export function GeneratorPage() {
           <Typography variant="body2" color="text.secondary">
             {uploadedQuestGraphJson ? 'JSON загружен и готов к конвертации.' : 'Загрузите JSON последней стадии для ручной конвертации.'}
           </Typography>
+          {dslText ? (
+            <Stack spacing={1}>
+              <Button size="small" variant="outlined" onClick={handleDownloadDsl} sx={{ alignSelf: 'flex-start' }}>
+                Скачать .quest
+              </Button>
+              <Box
+                component="pre"
+                sx={{
+                  m: 0,
+                  p: 1,
+                  borderRadius: 1,
+                  bgcolor: 'background.default',
+                  maxHeight: 280,
+                  overflow: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  fontSize: 12,
+                }}
+              >
+                {dslText}
+              </Box>
+            </Stack>
+          ) : null}
         </Stack>
       </SectionCard>
     </Stack>
