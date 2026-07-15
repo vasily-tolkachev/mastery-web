@@ -113,6 +113,28 @@ export async function approveChapter(projectId: string, chapterId: string): Prom
   return normalizeProject(await response.json());
 }
 
+export async function generateScene(projectId: string, sceneId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/SCENES/scenes/${encodeURIComponent(sceneId)}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Не удалось сгенерировать сцену');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function approveScene(projectId: string, sceneId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/SCENES/scenes/${encodeURIComponent(sceneId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Не удалось подтвердить сцену');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;

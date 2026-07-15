@@ -7,10 +7,12 @@ import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/mat
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   approveChapter,
+  approveScene,
   approveStage,
   createGeneratorProject,
   exportProjectJson,
   generateChapter,
+  generateScene,
   generateStage,
   generateStageStep,
   getGeneratorProject,
@@ -20,12 +22,13 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_OUTLINE', 'CHAPTERS'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_OUTLINE', 'CHAPTERS', 'SCENES'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
@@ -175,6 +178,42 @@ export function GeneratorPage() {
     }
   };
 
+  const handleGenerateScene = async (sceneId: string) => {
+    if (!selectedProjectId) {
+      return;
+    }
+    const actionKey = `generate-scene-${sceneId}`;
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const updated = await generateScene(selectedProjectId, sceneId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate scene');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleApproveScene = async (sceneId: string) => {
+    if (!selectedProjectId) {
+      return;
+    }
+    const actionKey = `approve-scene-${sceneId}`;
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const updated = await approveScene(selectedProjectId, sceneId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to approve scene');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleExportJson = async () => {
     if (!selectedProjectId || !selectedProject) {
       return;
@@ -229,6 +268,7 @@ export function GeneratorPage() {
 
   const outlineStage = selectedProject?.stages.find((stage) => stage.type === 'QUEST_OUTLINE') ?? null;
   const chaptersStage = selectedProject?.stages.find((stage) => stage.type === 'CHAPTERS') ?? null;
+  const scenesStage = selectedProject?.stages.find((stage) => stage.type === 'SCENES') ?? null;
   const outlineChapters = extractOutlineChapters(outlineStage?.currentRevision?.outputJson);
   const generatedChapters = extractGeneratedChapters(chaptersStage?.currentRevision?.outputJson);
   const chapterItems = outlineChapters.map((chapter) => ({
@@ -236,6 +276,13 @@ export function GeneratorPage() {
     generated: generatedChapters.find((item) => item.chapterId.toUpperCase() === chapter.id.toUpperCase()) ?? null,
   }));
   const selectedChapter = chapterItems.find((item) => item.chapter.id === selectedChapterId) ?? chapterItems[0] ?? null;
+  const chapterScenes = selectedChapter?.generated?.scenes ?? [];
+  const generatedScenes = extractGeneratedScenes(scenesStage?.currentRevision?.outputJson);
+  const sceneItems = chapterScenes.map((scene) => ({
+    scene,
+    generated: generatedScenes.find((item) => item.sceneId.toUpperCase() === scene.id.toUpperCase()) ?? null,
+  }));
+  const selectedScene = sceneItems.find((item) => item.scene.id === selectedSceneId) ?? sceneItems[0] ?? null;
 
   return (
     <Stack spacing={2}>
@@ -406,6 +453,83 @@ export function GeneratorPage() {
           )}
         </SectionCard>
       ) : null}
+
+      {selectedProject && (chaptersStage?.status === 'REVIEW' || chaptersStage?.status === 'APPROVED') ? (
+        <SectionCard title="Scene Generator">
+          {!sceneItems.length ? (
+            <Typography variant="body2" color="text.secondary">Generate chapter scenes first.</Typography>
+          ) : (
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+              <Stack spacing={1} sx={{ minWidth: 280, maxWidth: 360 }}>
+                {sceneItems.map(({ scene, generated }) => (
+                  <Box
+                    key={scene.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedSceneId(scene.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        setSelectedSceneId(scene.id);
+                      }
+                    }}
+                    sx={{
+                      border: 1,
+                      borderColor: (selectedScene?.scene.id ?? '') === scene.id ? 'primary.main' : 'divider',
+                      borderRadius: 1,
+                      p: 1.25,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="subtitle2">{scene.id}</Typography>
+                      <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">{scene.title || scene.objective}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+
+              {selectedScene ? (
+                <Stack spacing={1.25} sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1">{selectedScene.scene.title || selectedScene.scene.id}</Typography>
+                  <Typography variant="body2" color="text.secondary">{selectedScene.scene.objective}</Typography>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                    <Chip size="small" label={selectedScene.scene.location} />
+                    {selectedScene.scene.participants.map((id) => <Chip key={`sp-${id}`} size="small" label={id} />)}
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="contained" onClick={() => void handleGenerateScene(selectedScene.scene.id)} disabled={Boolean(busyAction)}>
+                      Generate Steps
+                    </Button>
+                    <Button size="small" variant="outlined" onClick={() => void handleApproveScene(selectedScene.scene.id)} disabled={Boolean(busyAction) || !selectedScene.generated}>
+                      Approve
+                    </Button>
+                  </Stack>
+                  {selectedScene.generated ? (
+                    <Box
+                      component="pre"
+                      sx={{
+                        mt: 0.5,
+                        mb: 0,
+                        p: 1,
+                        borderRadius: 1,
+                        bgcolor: 'background.default',
+                        maxHeight: 320,
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        fontSize: 12,
+                      }}
+                    >
+                      {JSON.stringify(selectedScene.generated, null, 2)}
+                    </Box>
+                  ) : null}
+                </Stack>
+              ) : null}
+            </Stack>
+          )}
+        </SectionCard>
+      ) : null}
     </Stack>
   );
 }
@@ -421,7 +545,7 @@ type StageRowProps = {
 function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
   const isReadyToGenerate = stage.status === 'READY' || stage.status === 'REVIEW';
   const canApprove = stage.status === 'REVIEW' && Boolean(stage.currentRevision);
-  const isChaptersStage = stage.type === 'CHAPTERS';
+  const isNestedStage = stage.type === 'CHAPTERS' || stage.type === 'SCENES';
   const steps: string[] = [];
 
   return (
@@ -446,7 +570,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
             size="small"
             variant="contained"
             startIcon={<PlayArrowRoundedIcon fontSize="small" />}
-            disabled={isChaptersStage || !isReadyToGenerate || busyAction === `generate-${stage.type}` || busyAction !== null}
+            disabled={isNestedStage || !isReadyToGenerate || busyAction === `generate-${stage.type}` || busyAction !== null}
             onClick={onGenerate}
           >
             Generate
@@ -455,7 +579,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
             size="small"
             variant="outlined"
             startIcon={<CheckCircleRoundedIcon fontSize="small" />}
-            disabled={isChaptersStage || !canApprove || busyAction === `approve-${stage.type}` || busyAction !== null}
+            disabled={isNestedStage || !canApprove || busyAction === `approve-${stage.type}` || busyAction !== null}
             onClick={onApprove}
           >
             Approve
@@ -505,6 +629,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
 function stageTypeLabel(type: GeneratorStageType): string {
   if (type === 'QUEST_OUTLINE') return 'QUEST OUTLINE';
   if (type === 'CHAPTERS') return 'CHAPTERS';
+  if (type === 'SCENES') return 'SCENES';
   if (type === 'QUEST_GRAPH') return 'QUEST GRAPH';
   return type;
 }
@@ -522,7 +647,23 @@ type GeneratedChapter = {
   chapterId: string;
   status: string;
   approved: boolean;
-  scenes: unknown[];
+  scenes: ChapterScene[];
+};
+
+type ChapterScene = {
+  id: string;
+  title: string;
+  objective: string;
+  location: string;
+  participants: string[];
+};
+
+type GeneratedScene = {
+  sceneId: string;
+  status: string;
+  approved: boolean;
+  entryStep: string;
+  steps: unknown[];
 };
 
 function extractOutlineChapters(output: unknown): OutlineChapter[] {
@@ -555,10 +696,44 @@ function extractGeneratedChapters(output: unknown): GeneratedChapter[] {
         chapterId: String(c.chapterId ?? ''),
         status: String(c.status ?? 'REVIEW'),
         approved: Boolean(c.approved),
-        scenes: Array.isArray(c.scenes) ? c.scenes : [],
+        scenes: extractChapterScenes(c.scenes),
       };
     })
     .filter((c) => c.chapterId);
+}
+
+function extractChapterScenes(rawScenes: unknown): ChapterScene[] {
+  if (!Array.isArray(rawScenes)) return [];
+  return rawScenes
+    .map((item) => {
+      const s = (item ?? {}) as Record<string, unknown>;
+      return {
+        id: String(s.id ?? ''),
+        title: String(s.title ?? ''),
+        objective: String(s.objective ?? ''),
+        location: String(s.location ?? ''),
+        participants: toStringArray(s.participants),
+      };
+    })
+    .filter((s) => s.id);
+}
+
+function extractGeneratedScenes(output: unknown): GeneratedScene[] {
+  if (!output || typeof output !== 'object') return [];
+  const raw = output as Record<string, unknown>;
+  const scenes = Array.isArray(raw.scenes) ? raw.scenes : [];
+  return scenes
+    .map((item) => {
+      const s = (item ?? {}) as Record<string, unknown>;
+      return {
+        sceneId: String(s.sceneId ?? ''),
+        status: String(s.status ?? 'REVIEW'),
+        approved: Boolean(s.approved),
+        entryStep: String(s.entryStep ?? ''),
+        steps: Array.isArray(s.steps) ? s.steps : [],
+      };
+    })
+    .filter((s) => s.sceneId);
 }
 
 function toStringArray(value: unknown): string[] {
