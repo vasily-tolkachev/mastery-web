@@ -492,6 +492,7 @@ export function GeneratorPage() {
               {selectedScene ? (
                 <Stack spacing={1.25} sx={{ flex: 1 }}>
                   <Typography variant="subtitle1">{selectedScene.scene.title || selectedScene.scene.id}</Typography>
+                  <Typography variant="body2" color="text.secondary">{selectedScene.scene.situation}</Typography>
                   <Typography variant="body2" color="text.secondary">{selectedScene.scene.objective}</Typography>
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                     <Chip size="small" label={selectedScene.scene.location} />
@@ -653,6 +654,7 @@ type GeneratedChapter = {
 type ChapterScene = {
   id: string;
   title: string;
+  situation: string;
   objective: string;
   location: string;
   participants: string[];
@@ -710,6 +712,7 @@ function extractChapterScenes(rawScenes: unknown): ChapterScene[] {
       return {
         id: String(s.id ?? ''),
         title: String(s.title ?? ''),
+        situation: String(s.situation ?? ''),
         objective: String(s.objective ?? ''),
         location: String(s.location ?? ''),
         participants: toStringArray(s.participants),
