@@ -1,4 +1,4 @@
-export type GeneratorStageType = 'MYSTERY' | 'WORLD' | 'NPC' | 'FACTS' | 'QUEST_GRAPH';
+export type GeneratorStageType = 'MYSTERY' | 'WORLD' | 'NPC' | 'FACTS' | 'QUEST_OUTLINE' | 'QUEST_GRAPH';
 
 export type GeneratorStageStatus = 'NOT_STARTED' | 'READY' | 'GENERATING' | 'REVIEW' | 'APPROVED';
 
@@ -21,4 +21,16 @@ export type GeneratorProject = {
   questStyle: string;
   status: string;
   stages: GeneratorStage[];
+};
+
+export type GeneratorProjectSnapshot = {
+  name: string;
+  questStyle: string;
+  status: string;
+  stages: Array<{
+    type: string;
+    status: string;
+    approved: boolean;
+    outputJson: unknown;
+  }>;
 };

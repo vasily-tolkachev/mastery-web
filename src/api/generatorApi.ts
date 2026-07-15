@@ -1,5 +1,12 @@
 import { authFetch } from './http';
-import type { GeneratorProject, GeneratorStage, GeneratorStageStatus, GeneratorStageType, StageRevision } from '../types/generator';
+import type {
+  GeneratorProject,
+  GeneratorProjectSnapshot,
+  GeneratorStage,
+  GeneratorStageStatus,
+  GeneratorStageType,
+  StageRevision,
+} from '../types/generator';
 
 export async function createGeneratorProject(name: string, questStyle: string): Promise<GeneratorProject> {
   const response = await authFetch('/api/generator/projects', {
@@ -64,26 +71,24 @@ export async function approveStage(projectId: string, stageType: GeneratorStageT
   return normalizeProject(await response.json());
 }
 
-export async function exportDsl(projectId: string): Promise<string> {
-  const response = await authFetch(`/api/generator/projects/${projectId}/export-dsl`, {
-    method: 'POST',
-  });
+export async function exportProjectJson(projectId: string): Promise<GeneratorProjectSnapshot> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/export-json`);
   if (!response.ok) {
-    throw await toError(response, 'Не удалось экспортировать DSL');
+    throw await toError(response, 'Не удалось экспортировать JSON проекта');
   }
-  return response.text();
+  return (await response.json()) as GeneratorProjectSnapshot;
 }
 
-export async function convertDslFromJson(projectName: string, questGraphJson: unknown): Promise<string> {
-  const response = await authFetch('/api/generator/projects/convert-dsl', {
+export async function importProjectJson(projectId: string, snapshotJson: unknown): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/import-json`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ projectName, questGraphJson }),
+    body: JSON.stringify({ snapshotJson }),
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось конвертировать JSON в DSL');
+    throw await toError(response, 'Не удалось импортировать JSON проекта');
   }
-  return response.text();
+  return normalizeProject(await response.json());
 }
 
 async function toError(response: Response, fallback: string): Promise<Error> {

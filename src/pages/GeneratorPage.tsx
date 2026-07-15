@@ -4,16 +4,21 @@ import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
-import { approveStage, convertDslFromJson, createGeneratorProject, exportDsl, generateStage, generateStageStep, getGeneratorProject, getGeneratorProjects } from '../api/generatorApi';
+import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import {
+  approveStage,
+  createGeneratorProject,
+  exportProjectJson,
+  generateStage,
+  generateStageStep,
+  getGeneratorProject,
+  getGeneratorProjects,
+  importProjectJson,
+} from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_GRAPH'];
-const STAGE_STEPS: Partial<Record<GeneratorStageType, string[]>> = {
-  FACTS: ['fact_list', 'fact_owners', 'fact_dependencies', 'fact_visibility'],
-  QUEST_GRAPH: ['node_list', 'node_details', 'edges', 'endings'],
-};
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_OUTLINE'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -22,9 +27,6 @@ export function GeneratorPage() {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
   const [newQuestStyle, setNewQuestStyle] = useState('classic-adventure');
-  const [dslText, setDslText] = useState<string | null>(null);
-  const [uploadedQuestGraphName, setUploadedQuestGraphName] = useState('');
-  const [uploadedQuestGraphJson, setUploadedQuestGraphJson] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const selectedProject = useMemo(
@@ -65,9 +67,8 @@ export function GeneratorPage() {
     if (!newProjectName.trim()) {
       return;
     }
-    const actionKey = 'create-project';
     try {
-      setBusyAction(actionKey);
+      setBusyAction('create-project');
       setError(null);
       const created = await createGeneratorProject(newProjectName.trim(), newQuestStyle.trim());
       setProjects((prev) => [created, ...prev]);
@@ -128,95 +129,56 @@ export function GeneratorPage() {
       const updated = await generateStageStep(selectedProjectId, stageType, step);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать шаг этапа');
+      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать шаг');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
     }
   };
 
-  const handleExportDsl = async () => {
-    if (!selectedProjectId) {
+  const handleExportJson = async () => {
+    if (!selectedProjectId || !selectedProject) {
       return;
     }
-    const actionKey = 'export-dsl';
     try {
-      setBusyAction(actionKey);
+      setBusyAction('export-json');
       setError(null);
-      const dsl = await exportDsl(selectedProjectId);
-      setDslText(dsl);
+      const snapshot = await exportProjectJson(selectedProjectId);
+      const jsonText = JSON.stringify(snapshot, null, 2);
+      const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeName = selectedProject.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'generator_project';
+      link.download = `${safeName}-snapshot.json`;
+      link.click();
+      URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось экспортировать DSL');
+      setError(e instanceof Error ? e.message : 'Не удалось экспортировать JSON');
     } finally {
       setBusyAction(null);
     }
   };
 
-  const handleDownloadDsl = () => {
-    if (!dslText) {
+  const handleImportJsonFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!selectedProjectId) {
       return;
     }
-    const blob = new Blob([dslText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const baseName = selectedProject?.name ?? uploadedQuestGraphName ?? 'generated_quest';
-    const safeName = baseName.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'generated_quest';
-    link.download = `${safeName}.quest`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDownloadQuestGraphJson = () => {
-    if (!selectedProject) {
-      return;
-    }
-    const graphStage = selectedProject.stages.find((stage) => stage.type === 'QUEST_GRAPH');
-    const outputJson = graphStage?.currentRevision?.outputJson;
-    if (!outputJson) {
-      return;
-    }
-
-    const jsonText = JSON.stringify(outputJson, null, 2);
-    const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const safeName = selectedProject.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'quest_graph';
-    link.download = `${safeName}-quest-graph.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleUploadQuestGraphFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
+    event.currentTarget.value = '';
     if (!file) {
       return;
     }
     try {
+      setBusyAction('import-json');
+      setError(null);
       const text = await file.text();
-      const parsed = JSON.parse(text);
-      setUploadedQuestGraphJson(parsed);
-      setUploadedQuestGraphName(file.name.replace(/\.json$/i, ''));
-      setError(null);
-    } catch {
-      setUploadedQuestGraphJson(null);
-      setError('Файл QUEST_GRAPH JSON не удалось распарсить');
-    }
-  };
-
-  const handleConvertUploadedQuestGraph = async () => {
-    if (!uploadedQuestGraphJson) {
-      return;
-    }
-    const actionKey = 'convert-uploaded-dsl';
-    try {
-      setBusyAction(actionKey);
-      setError(null);
-      const dsl = await convertDslFromJson(uploadedQuestGraphName || 'manual_import', uploadedQuestGraphJson);
-      setDslText(dsl);
+      const parsed = JSON.parse(text) as unknown;
+      const updated = await importProjectJson(selectedProjectId, parsed);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось конвертировать загруженный JSON');
+      setError(e instanceof Error ? e.message : 'Не удалось импортировать JSON');
+      await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
     }
@@ -306,7 +268,20 @@ export function GeneratorPage() {
       </SectionCard>
 
       {selectedProject ? (
-        <SectionCard title={`Этапы: ${selectedProject.name}`}>
+        <SectionCard
+          title={`Этапы: ${selectedProject.name}`}
+          action={
+            <Stack direction="row" spacing={1}>
+              <Button size="small" variant="outlined" onClick={() => void handleExportJson()} disabled={Boolean(busyAction)}>
+                Export JSON
+              </Button>
+              <Button size="small" variant="contained" component="label" disabled={Boolean(busyAction)}>
+                Import JSON
+                <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
+              </Button>
+            </Stack>
+          }
+        >
           <Stack spacing={1.5}>
             {ORDERED_STAGE_TYPES.map((stageType) => {
               const stage = selectedProject.stages.find((item) => item.type === stageType);
@@ -324,112 +299,6 @@ export function GeneratorPage() {
           </Stack>
         </SectionCard>
       ) : null}
-
-      {selectedProject ? (
-        <SectionCard
-          title="Экспорт DSL"
-          action={
-            <Button
-              size="small"
-              variant="contained"
-              onClick={() => void handleExportDsl()}
-              disabled={busyAction !== null || !selectedProject.stages.some((s) => s.type === 'QUEST_GRAPH' && s.status === 'APPROVED')}
-            >
-              Export DSL
-            </Button>
-          }
-        >
-          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={handleDownloadQuestGraphJson}
-              disabled={!selectedProject.stages.some((s) => s.type === 'QUEST_GRAPH' && Boolean(s.currentRevision?.outputJson))}
-            >
-              Скачать QUEST_GRAPH JSON
-            </Button>
-          </Stack>
-          {dslText ? (
-            <Stack spacing={1}>
-              <Button size="small" variant="outlined" onClick={handleDownloadDsl} sx={{ alignSelf: 'flex-start' }}>
-                Скачать .quest
-              </Button>
-              <Box
-                component="pre"
-                sx={{
-                  m: 0,
-                  p: 1,
-                  borderRadius: 1,
-                  bgcolor: 'background.default',
-                  maxHeight: 280,
-                  overflow: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  fontSize: 12,
-                }}
-              >
-                {dslText}
-              </Box>
-            </Stack>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              После подтверждения QUEST GRAPH нажмите Export DSL.
-            </Typography>
-          )}
-        </SectionCard>
-      ) : null}
-
-      <SectionCard title="Конвертация JSON → DSL">
-        <Stack spacing={1.25}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-            <Button variant="outlined" component="label" size="small">
-              Загрузить QUEST_GRAPH JSON
-              <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleUploadQuestGraphFile(event)} />
-            </Button>
-            <TextField
-              size="small"
-              label="Имя проекта"
-              value={uploadedQuestGraphName}
-              onChange={(event) => setUploadedQuestGraphName(event.target.value)}
-              sx={{ minWidth: 220 }}
-            />
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => void handleConvertUploadedQuestGraph()}
-              disabled={!uploadedQuestGraphJson || busyAction !== null}
-            >
-              Конвертировать в DSL
-            </Button>
-          </Stack>
-          <Typography variant="body2" color="text.secondary">
-            {uploadedQuestGraphJson ? 'JSON загружен и готов к конвертации.' : 'Загрузите JSON последней стадии для ручной конвертации.'}
-          </Typography>
-          {dslText ? (
-            <Stack spacing={1}>
-              <Button size="small" variant="outlined" onClick={handleDownloadDsl} sx={{ alignSelf: 'flex-start' }}>
-                Скачать .quest
-              </Button>
-              <Box
-                component="pre"
-                sx={{
-                  m: 0,
-                  p: 1,
-                  borderRadius: 1,
-                  bgcolor: 'background.default',
-                  maxHeight: 280,
-                  overflow: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  fontSize: 12,
-                }}
-              >
-                {dslText}
-              </Box>
-            </Stack>
-          ) : null}
-        </Stack>
-      </SectionCard>
     </Stack>
   );
 }
@@ -445,6 +314,7 @@ type StageRowProps = {
 function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
   const isReadyToGenerate = stage.status === 'READY' || stage.status === 'REVIEW';
   const canApprove = stage.status === 'REVIEW' && Boolean(stage.currentRevision);
+  const steps: string[] = [];
 
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
@@ -453,12 +323,8 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
             <Typography variant="subtitle2">{stageTypeLabel(stage.type)}</Typography>
             <Chip size="small" label={stage.status} />
-            {stage.approved ? (
-              <Chip size="small" color="success" label="Подтверждено" icon={<CheckCircleRoundedIcon />} />
-            ) : null}
-            {stage.status === 'NOT_STARTED' ? (
-              <Chip size="small" color="default" label="Заблокировано" icon={<LockRoundedIcon />} />
-            ) : null}
+            {stage.approved ? <Chip size="small" color="success" label="Подтверждено" icon={<CheckCircleRoundedIcon />} /> : null}
+            {stage.status === 'NOT_STARTED' ? <Chip size="small" color="default" label="Заблокировано" icon={<LockRoundedIcon />} /> : null}
           </Stack>
           {stage.currentRevision ? (
             <Typography variant="caption" color="text.secondary">
@@ -511,9 +377,9 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
         </Box>
       ) : null}
 
-      {STAGE_STEPS[stage.type]?.length ? (
+      {steps.length ? (
         <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap' }}>
-          {STAGE_STEPS[stage.type]!.map((step) => (
+          {steps.map((step) => (
             <Button
               key={step}
               size="small"
@@ -531,6 +397,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
 }
 
 function stageTypeLabel(type: GeneratorStageType): string {
+  if (type === 'QUEST_OUTLINE') return 'QUEST OUTLINE';
   if (type === 'QUEST_GRAPH') return 'QUEST GRAPH';
   return type;
 }
