@@ -91,6 +91,28 @@ export async function importProjectJson(projectId: string, snapshotJson: unknown
   return normalizeProject(await response.json());
 }
 
+export async function generateChapter(projectId: string, chapterId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/CHAPTERS/chapters/${encodeURIComponent(chapterId)}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Не удалось сгенерировать главу');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function approveChapter(projectId: string, chapterId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/CHAPTERS/chapters/${encodeURIComponent(chapterId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Не удалось подтвердить главу');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;

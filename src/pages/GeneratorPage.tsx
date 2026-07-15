@@ -6,9 +6,11 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
+  approveChapter,
   approveStage,
   createGeneratorProject,
   exportProjectJson,
+  generateChapter,
   generateStage,
   generateStageStep,
   getGeneratorProject,
@@ -18,11 +20,12 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_OUTLINE'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_OUTLINE', 'CHAPTERS'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
@@ -46,7 +49,7 @@ export function GeneratorPage() {
         setSelectedProjectId(loaded[0]?.id ?? null);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты');
+      setError(e instanceof Error ? e.message : 'Failed to load projects');
     } finally {
       setLoading(false);
     }
@@ -76,7 +79,7 @@ export function GeneratorPage() {
       setNewProjectName('');
       setNewQuestStyle('classic-adventure');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось создать проект');
+      setError(e instanceof Error ? e.message : 'Failed to create project');
     } finally {
       setBusyAction(null);
     }
@@ -93,7 +96,7 @@ export function GeneratorPage() {
       const updated = await generateStage(selectedProjectId, stageType);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать этап');
+      setError(e instanceof Error ? e.message : 'Failed to generate stage');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -111,7 +114,7 @@ export function GeneratorPage() {
       const updated = await approveStage(selectedProjectId, stageType);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось подтвердить этап');
+      setError(e instanceof Error ? e.message : 'Failed to approve stage');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -129,7 +132,43 @@ export function GeneratorPage() {
       const updated = await generateStageStep(selectedProjectId, stageType, step);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать шаг');
+      setError(e instanceof Error ? e.message : 'Failed to generate step');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleGenerateChapter = async (chapterId: string) => {
+    if (!selectedProjectId) {
+      return;
+    }
+    const actionKey = `generate-chapter-${chapterId}`;
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const updated = await generateChapter(selectedProjectId, chapterId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate chapter');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleApproveChapter = async (chapterId: string) => {
+    if (!selectedProjectId) {
+      return;
+    }
+    const actionKey = `approve-chapter-${chapterId}`;
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const updated = await approveChapter(selectedProjectId, chapterId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to approve chapter');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -154,7 +193,7 @@ export function GeneratorPage() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось экспортировать JSON');
+      setError(e instanceof Error ? e.message : 'Failed to export JSON');
     } finally {
       setBusyAction(null);
     }
@@ -177,7 +216,7 @@ export function GeneratorPage() {
       const updated = await importProjectJson(selectedProjectId, parsed);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось импортировать JSON');
+      setError(e instanceof Error ? e.message : 'Failed to import JSON');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -185,29 +224,27 @@ export function GeneratorPage() {
   };
 
   if (loading) {
-    return <LoadingState message="Загрузка проектов генератора..." />;
+    return <LoadingState message="Loading generator projects..." />;
   }
+
+  const outlineStage = selectedProject?.stages.find((stage) => stage.type === 'QUEST_OUTLINE') ?? null;
+  const chaptersStage = selectedProject?.stages.find((stage) => stage.type === 'CHAPTERS') ?? null;
+  const outlineChapters = extractOutlineChapters(outlineStage?.currentRevision?.outputJson);
+  const generatedChapters = extractGeneratedChapters(chaptersStage?.currentRevision?.outputJson);
+  const chapterItems = outlineChapters.map((chapter) => ({
+    chapter,
+    generated: generatedChapters.find((item) => item.chapterId.toUpperCase() === chapter.id.toUpperCase()) ?? null,
+  }));
+  const selectedChapter = chapterItems.find((item) => item.chapter.id === selectedChapterId) ?? chapterItems[0] ?? null;
 
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
 
-      <SectionCard title="Генератор квестов">
+      <SectionCard title="Quest Generator">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-          <TextField
-            value={newProjectName}
-            onChange={(event) => setNewProjectName(event.target.value)}
-            label="Название проекта"
-            size="small"
-            fullWidth
-          />
-          <TextField
-            value={newQuestStyle}
-            onChange={(event) => setNewQuestStyle(event.target.value)}
-            label="Стиль квеста"
-            size="small"
-            fullWidth
-          />
+          <TextField value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} label="Project name" size="small" fullWidth />
+          <TextField value={newQuestStyle} onChange={(event) => setNewQuestStyle(event.target.value)} label="Quest style" size="small" fullWidth />
           <Button
             variant="contained"
             onClick={handleCreateProject}
@@ -215,22 +252,16 @@ export function GeneratorPage() {
             disabled={!newProjectName.trim() || busyAction === 'create-project'}
             sx={{ minWidth: 180 }}
           >
-            Создать проект
+            Create
           </Button>
-          <Button
-            variant="outlined"
-            onClick={() => void loadProjects()}
-            startIcon={<RefreshRoundedIcon fontSize="small" />}
-            disabled={Boolean(busyAction)}
-            sx={{ minWidth: 140 }}
-          >
-            Обновить
+          <Button variant="outlined" onClick={() => void loadProjects()} startIcon={<RefreshRoundedIcon fontSize="small" />} disabled={Boolean(busyAction)} sx={{ minWidth: 140 }}>
+            Refresh
           </Button>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Проекты">
-        {!projects.length ? <EmptyState message="Пока нет проектов генератора." /> : null}
+      <SectionCard title="Projects">
+        {!projects.length ? <EmptyState message="No generator projects yet." /> : null}
         <Stack spacing={1}>
           {projects.map((project) => (
             <Box
@@ -256,12 +287,8 @@ export function GeneratorPage() {
                 <Typography variant="subtitle1">{project.name}</Typography>
                 <Chip size="small" label={project.status} />
               </Stack>
-              <Typography variant="body2" color="text.secondary">
-                Стиль: {project.questStyle || 'classic-adventure'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-                {project.id}
-              </Typography>
+              <Typography variant="body2" color="text.secondary">Style: {project.questStyle || 'classic-adventure'}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>{project.id}</Typography>
             </Box>
           ))}
         </Stack>
@@ -269,12 +296,10 @@ export function GeneratorPage() {
 
       {selectedProject ? (
         <SectionCard
-          title={`Этапы: ${selectedProject.name}`}
+          title={`Stages: ${selectedProject.name}`}
           action={
             <Stack direction="row" spacing={1}>
-              <Button size="small" variant="outlined" onClick={() => void handleExportJson()} disabled={Boolean(busyAction)}>
-                Export JSON
-              </Button>
+              <Button size="small" variant="outlined" onClick={() => void handleExportJson()} disabled={Boolean(busyAction)}>Export JSON</Button>
               <Button size="small" variant="contained" component="label" disabled={Boolean(busyAction)}>
                 Import JSON
                 <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
@@ -299,6 +324,88 @@ export function GeneratorPage() {
           </Stack>
         </SectionCard>
       ) : null}
+
+      {selectedProject && outlineStage?.status === 'APPROVED' ? (
+        <SectionCard title="Chapter Generator">
+          {!chapterItems.length ? (
+            <Typography variant="body2" color="text.secondary">No chapters in QUEST_OUTLINE.</Typography>
+          ) : (
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+              <Stack spacing={1} sx={{ minWidth: 280, maxWidth: 360 }}>
+                {chapterItems.map(({ chapter, generated }) => (
+                  <Box
+                    key={chapter.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedChapterId(chapter.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        setSelectedChapterId(chapter.id);
+                      }
+                    }}
+                    sx={{
+                      border: 1,
+                      borderColor: (selectedChapter?.chapter.id ?? '') === chapter.id ? 'primary.main' : 'divider',
+                      borderRadius: 1,
+                      p: 1.25,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="subtitle2">{chapter.id}</Typography>
+                      <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">{chapter.title}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+
+              {selectedChapter ? (
+                <Stack spacing={1.25} sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1">{selectedChapter.chapter.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">{selectedChapter.chapter.purpose}</Typography>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                    {selectedChapter.chapter.locations.map((id) => <Chip key={`loc-${id}`} size="small" label={id} />)}
+                  </Stack>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                    {selectedChapter.chapter.participants.map((id) => <Chip key={`npc-${id}`} size="small" label={id} />)}
+                  </Stack>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                    {selectedChapter.chapter.facts.map((id) => <Chip key={`fact-${id}`} size="small" label={id} />)}
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="contained" onClick={() => void handleGenerateChapter(selectedChapter.chapter.id)} disabled={Boolean(busyAction)}>
+                      Generate Scenes
+                    </Button>
+                    <Button size="small" variant="outlined" onClick={() => void handleApproveChapter(selectedChapter.chapter.id)} disabled={Boolean(busyAction) || !selectedChapter.generated}>
+                      Approve
+                    </Button>
+                  </Stack>
+                  {selectedChapter.generated?.scenes ? (
+                    <Box
+                      component="pre"
+                      sx={{
+                        mt: 0.5,
+                        mb: 0,
+                        p: 1,
+                        borderRadius: 1,
+                        bgcolor: 'background.default',
+                        maxHeight: 280,
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        fontSize: 12,
+                      }}
+                    >
+                      {JSON.stringify(selectedChapter.generated.scenes, null, 2)}
+                    </Box>
+                  ) : null}
+                </Stack>
+              ) : null}
+            </Stack>
+          )}
+        </SectionCard>
+      ) : null}
     </Stack>
   );
 }
@@ -314,6 +421,7 @@ type StageRowProps = {
 function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
   const isReadyToGenerate = stage.status === 'READY' || stage.status === 'REVIEW';
   const canApprove = stage.status === 'REVIEW' && Boolean(stage.currentRevision);
+  const isChaptersStage = stage.type === 'CHAPTERS';
   const steps: string[] = [];
 
   return (
@@ -323,15 +431,13 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
             <Typography variant="subtitle2">{stageTypeLabel(stage.type)}</Typography>
             <Chip size="small" label={stage.status} />
-            {stage.approved ? <Chip size="small" color="success" label="Подтверждено" icon={<CheckCircleRoundedIcon />} /> : null}
-            {stage.status === 'NOT_STARTED' ? <Chip size="small" color="default" label="Заблокировано" icon={<LockRoundedIcon />} /> : null}
+            {stage.approved ? <Chip size="small" color="success" label="Approved" icon={<CheckCircleRoundedIcon />} /> : null}
+            {stage.status === 'NOT_STARTED' ? <Chip size="small" color="default" label="Locked" icon={<LockRoundedIcon />} /> : null}
           </Stack>
           {stage.currentRevision ? (
-            <Typography variant="caption" color="text.secondary">
-              Ревизия #{stage.currentRevision.revisionNumber} от {new Date(stage.currentRevision.createdAt).toLocaleString()}
-            </Typography>
+            <Typography variant="caption" color="text.secondary">Revision #{stage.currentRevision.revisionNumber} at {new Date(stage.currentRevision.createdAt).toLocaleString()}</Typography>
           ) : (
-            <Typography variant="caption" color="text.secondary">Ревизий пока нет</Typography>
+            <Typography variant="caption" color="text.secondary">No revisions yet</Typography>
           )}
         </Stack>
 
@@ -340,19 +446,19 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
             size="small"
             variant="contained"
             startIcon={<PlayArrowRoundedIcon fontSize="small" />}
-            disabled={!isReadyToGenerate || busyAction === `generate-${stage.type}` || busyAction !== null}
+            disabled={isChaptersStage || !isReadyToGenerate || busyAction === `generate-${stage.type}` || busyAction !== null}
             onClick={onGenerate}
           >
-            Сгенерировать
+            Generate
           </Button>
           <Button
             size="small"
             variant="outlined"
             startIcon={<CheckCircleRoundedIcon fontSize="small" />}
-            disabled={!canApprove || busyAction === `approve-${stage.type}` || busyAction !== null}
+            disabled={isChaptersStage || !canApprove || busyAction === `approve-${stage.type}` || busyAction !== null}
             onClick={onApprove}
           >
-            Подтвердить
+            Approve
           </Button>
         </Stack>
       </Stack>
@@ -398,6 +504,63 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
 
 function stageTypeLabel(type: GeneratorStageType): string {
   if (type === 'QUEST_OUTLINE') return 'QUEST OUTLINE';
+  if (type === 'CHAPTERS') return 'CHAPTERS';
   if (type === 'QUEST_GRAPH') return 'QUEST GRAPH';
   return type;
+}
+
+type OutlineChapter = {
+  id: string;
+  title: string;
+  purpose: string;
+  locations: string[];
+  participants: string[];
+  facts: string[];
+};
+
+type GeneratedChapter = {
+  chapterId: string;
+  status: string;
+  approved: boolean;
+  scenes: unknown[];
+};
+
+function extractOutlineChapters(output: unknown): OutlineChapter[] {
+  if (!output || typeof output !== 'object') return [];
+  const raw = output as Record<string, unknown>;
+  const chapters = Array.isArray(raw.chapters) ? raw.chapters : [];
+  return chapters
+    .map((item) => {
+      const c = (item ?? {}) as Record<string, unknown>;
+      return {
+        id: String(c.id ?? ''),
+        title: String(c.title ?? ''),
+        purpose: String(c.purpose ?? ''),
+        locations: toStringArray(c.locations),
+        participants: toStringArray(c.participants),
+        facts: toStringArray(c.facts),
+      };
+    })
+    .filter((c) => c.id);
+}
+
+function extractGeneratedChapters(output: unknown): GeneratedChapter[] {
+  if (!output || typeof output !== 'object') return [];
+  const raw = output as Record<string, unknown>;
+  const chapters = Array.isArray(raw.chapters) ? raw.chapters : [];
+  return chapters
+    .map((item) => {
+      const c = (item ?? {}) as Record<string, unknown>;
+      return {
+        chapterId: String(c.chapterId ?? ''),
+        status: String(c.status ?? 'REVIEW'),
+        approved: Boolean(c.approved),
+        scenes: Array.isArray(c.scenes) ? c.scenes : [],
+      };
+    })
+    .filter((c) => c.chapterId);
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((x) => String(x)).filter(Boolean) : [];
 }
