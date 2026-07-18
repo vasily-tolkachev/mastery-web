@@ -20,7 +20,7 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'KNOWLEDGE_CHAIN', 'ACHIEVEMENT_SCENES'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'KNOWLEDGE_CHAIN', 'ACHIEVEMENT_SCENES', 'ACTION_QUESTS'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -458,6 +458,7 @@ function stageTypeLabel(stage: GeneratorStage): string {
   if (stage.type === 'ACHIEVEMENT_INFORMATION_FLOW') return 'Achievement Information Flow';
   if (stage.type === 'KNOWLEDGE_CHAIN') return 'Knowledge Chain';
   if (stage.type === 'ACHIEVEMENT_SCENES') return 'Achievement Scenes';
+  if (stage.type === 'ACTION_QUESTS') return 'Action Quests';
   if (stage.type === 'QUEST_OUTLINE') return 'Quest Outline';
   if (stage.type === 'QUEST_GRAPH') return 'Quest Graph';
   return stage.type;
