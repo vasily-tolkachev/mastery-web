@@ -135,6 +135,28 @@ export async function approveScene(projectId: string, sceneId: string): Promise<
   return normalizeProject(await response.json());
 }
 
+export async function generateAchievementScene(projectId: string, achievementId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACHIEVEMENT_SCENES/achievements/${encodeURIComponent(achievementId)}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to generate achievement scenes');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function approveAchievementScene(projectId: string, achievementId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACHIEVEMENT_SCENES/achievements/${encodeURIComponent(achievementId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to approve achievement scenes');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;

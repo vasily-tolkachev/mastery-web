@@ -6,9 +6,11 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
+  approveAchievementScene,
   approveStage,
   createGeneratorProject,
   exportProjectJson,
+  generateAchievementScene,
   generateStage,
   generateStageStep,
   getGeneratorProject,
@@ -18,7 +20,7 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_SCENES'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -189,6 +191,41 @@ export function GeneratorPage() {
     return <LoadingState message="Loading generator projects..." />;
   }
 
+  const descriptionStage = selectedProject?.stages.find((stage) => stage.type === 'QUEST_DESCRIPTION') ?? null;
+  const achievementScenesStage = selectedProject?.stages.find((stage) => stage.type === 'ACHIEVEMENT_SCENES') ?? null;
+  const achievements = extractQuestAchievements(descriptionStage?.currentRevision?.outputJson);
+  const generatedAchievementScenes = extractGeneratedAchievementScenes(achievementScenesStage?.currentRevision?.outputJson);
+
+  const handleGenerateAchievement = async (achievementId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`generate-achievement-${achievementId}`);
+      setError(null);
+      const updated = await generateAchievementScene(selectedProjectId, achievementId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate achievement scenes');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleApproveAchievement = async (achievementId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`approve-achievement-${achievementId}`);
+      setError(null);
+      const updated = await approveAchievementScene(selectedProjectId, achievementId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to approve achievement scenes');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
 
   return (
     <Stack spacing={2}>
@@ -274,6 +311,58 @@ export function GeneratorPage() {
                 />
               ))}
           </Stack>
+        </SectionCard>
+      ) : null}
+
+      {selectedProject ? (
+        <SectionCard title="Achievement Scenes">
+          {!achievements.length ? (
+            <Typography variant="body2" color="text.secondary">No achievements found in QUEST_DESCRIPTION.</Typography>
+          ) : (
+            <Stack spacing={1}>
+              {achievements.map((achievement) => {
+                const generated = generatedAchievementScenes.find((item) => item.achievementId.toUpperCase() === achievement.id.toUpperCase()) ?? null;
+                return (
+                  <Box key={achievement.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25 }}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' } }}>
+                      <Box>
+                        <Typography variant="subtitle2">{achievement.id}</Typography>
+                        <Typography variant="body2" color="text.secondary">{achievement.description}</Typography>
+                      </Box>
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                        <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
+                        <Button size="small" variant="contained" onClick={() => void handleGenerateAchievement(achievement.id)} disabled={false}>
+                          Generate
+                        </Button>
+                        <Button size="small" variant="outlined" onClick={() => void handleApproveAchievement(achievement.id)} disabled={false}>
+                          Approve
+                        </Button>
+                      </Stack>
+                    </Stack>
+                    {generated?.scenes ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          mt: 1,
+                          mb: 0,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: 'background.default',
+                          maxHeight: 260,
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          fontSize: 12,
+                        }}
+                      >
+                        {JSON.stringify(generated.scenes, null, 2)}
+                      </Box>
+                    ) : null}
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
         </SectionCard>
       ) : null}
     </Stack>
@@ -374,6 +463,7 @@ function stageTypeLabel(stage: GeneratorStage): string {
   if (stage.type === 'QUEST_CONSTRAINTS') return 'Quest Constraints';
   if (stage.type === 'ACHIEVEMENT_RESOURCE_ANALYSIS') return 'Achievement Resource Analysis';
   if (stage.type === 'ACHIEVEMENT_REALISATION' || stage.type === 'NPC') return 'Achievement Realisation';
+  if (stage.type === 'ACHIEVEMENT_SCENES') return 'Achievement Scenes';
   if (stage.type === 'QUEST_OUTLINE') return 'Quest Outline';
   if (stage.type === 'QUEST_GRAPH') return 'Quest Graph';
   return stage.type;
@@ -382,4 +472,48 @@ function stageTypeLabel(stage: GeneratorStage): string {
 function stageOrder(type: GeneratorStageType): number {
   const index = ORDERED_STAGE_TYPES.indexOf(type);
   return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+}
+
+type QuestAchievement = {
+  id: string;
+  description: string;
+};
+
+type GeneratedAchievementScenes = {
+  achievementId: string;
+  status: string;
+  approved: boolean;
+  scenes: unknown[];
+};
+
+function extractQuestAchievements(output: unknown): QuestAchievement[] {
+  if (!output || typeof output !== 'object') return [];
+  const raw = output as Record<string, unknown>;
+  const achievements = Array.isArray(raw.achievements) ? raw.achievements : [];
+  return achievements
+    .map((item) => {
+      const a = (item ?? {}) as Record<string, unknown>;
+      return {
+        id: String(a.id ?? ''),
+        description: String(a.description ?? ''),
+      };
+    })
+    .filter((a) => a.id);
+}
+
+function extractGeneratedAchievementScenes(output: unknown): GeneratedAchievementScenes[] {
+  if (!output || typeof output !== 'object') return [];
+  const raw = output as Record<string, unknown>;
+  const achievements = Array.isArray(raw.achievements) ? raw.achievements : [];
+  return achievements
+    .map((item) => {
+      const a = (item ?? {}) as Record<string, unknown>;
+      return {
+        achievementId: String(a.achievement_id ?? ''),
+        status: String(a.status ?? 'REVIEW'),
+        approved: Boolean(a.approved),
+        scenes: Array.isArray(a.scenes) ? a.scenes : [],
+      };
+    })
+    .filter((a) => a.achievementId);
 }
