@@ -22,7 +22,7 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['MYSTERY', 'WORLD', 'NPC', 'FACTS', 'QUEST_OUTLINE', 'CHAPTERS', 'SCENES'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'WORLD', 'NPC', 'FACTS', 'QUEST_OUTLINE', 'CHAPTERS', 'SCENES'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -355,19 +355,19 @@ export function GeneratorPage() {
           }
         >
           <Stack spacing={1.5}>
-            {ORDERED_STAGE_TYPES.map((stageType) => {
-              const stage = selectedProject.stages.find((item) => item.type === stageType);
-              return stage ? (
+            {selectedProject.stages
+              .slice()
+              .sort((a, b) => stageOrder(a.type) - stageOrder(b.type))
+              .map((stage) => (
                 <StageRow
-                  key={stageType}
+                  key={stage.type}
                   stage={stage}
                   busyAction={busyAction}
-                  onGenerate={() => void handleGenerate(stageType)}
-                  onApprove={() => void handleApprove(stageType)}
-                  onGenerateStep={(step) => void handleGenerateStep(stageType, step)}
+                  onGenerate={() => void handleGenerate(stage.type)}
+                  onApprove={() => void handleApprove(stage.type)}
+                  onGenerateStep={(step) => void handleGenerateStep(stage.type, step)}
                 />
-              ) : null;
-            })}
+              ))}
           </Stack>
         </SectionCard>
       ) : null}
@@ -554,7 +554,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between' }}>
         <Stack spacing={0.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-            <Typography variant="subtitle2">{stageTypeLabel(stage.type)}</Typography>
+            <Typography variant="subtitle2">{stageTypeLabel(stage)}</Typography>
             <Chip size="small" label={stage.status} />
             {stage.approved ? <Chip size="small" color="success" label="Approved" icon={<CheckCircleRoundedIcon />} /> : null}
             {stage.status === 'NOT_STARTED' ? <Chip size="small" color="default" label="Locked" icon={<LockRoundedIcon />} /> : null}
@@ -627,12 +627,17 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
   );
 }
 
-function stageTypeLabel(type: GeneratorStageType): string {
-  if (type === 'QUEST_OUTLINE') return 'QUEST OUTLINE';
-  if (type === 'CHAPTERS') return 'CHAPTERS';
-  if (type === 'SCENES') return 'SCENES';
-  if (type === 'QUEST_GRAPH') return 'QUEST GRAPH';
-  return type;
+function stageTypeLabel(stage: GeneratorStage): string {
+  if (stage.displayName?.trim()) return stage.displayName;
+  if (stage.type === 'QUEST_DESCRIPTION' || stage.type === 'MYSTERY') return 'Quest Description';
+  if (stage.type === 'QUEST_OUTLINE') return 'Quest Outline';
+  if (stage.type === 'QUEST_GRAPH') return 'Quest Graph';
+  return stage.type;
+}
+
+function stageOrder(type: GeneratorStageType): number {
+  const index = ORDERED_STAGE_TYPES.indexOf(type);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
 
 type OutlineChapter = {

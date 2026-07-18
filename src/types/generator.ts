@@ -1,4 +1,4 @@
-export type GeneratorStageType = 'MYSTERY' | 'WORLD' | 'NPC' | 'FACTS' | 'QUEST_OUTLINE' | 'CHAPTERS' | 'SCENES' | 'QUEST_GRAPH';
+export type GeneratorStageType = 'QUEST_DESCRIPTION' | 'MYSTERY' | 'WORLD' | 'NPC' | 'FACTS' | 'QUEST_OUTLINE' | 'CHAPTERS' | 'SCENES' | 'QUEST_GRAPH';
 
 export type GeneratorStageStatus = 'NOT_STARTED' | 'READY' | 'GENERATING' | 'REVIEW' | 'APPROVED';
 
@@ -10,6 +10,7 @@ export type StageRevision = {
 
 export type GeneratorStage = {
   type: GeneratorStageType;
+  displayName?: string;
   status: GeneratorStageStatus;
   approved: boolean;
   currentRevision: StageRevision | null;

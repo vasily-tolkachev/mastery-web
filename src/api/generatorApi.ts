@@ -159,8 +159,11 @@ function normalizeProject(rawValue: unknown): GeneratorProject {
 
 function normalizeStage(rawValue: unknown): GeneratorStage {
   const raw = (rawValue ?? {}) as Record<string, unknown>;
+  const rawType = String(raw.type ?? 'QUEST_DESCRIPTION');
+  const normalizedType = rawType === 'MYSTERY' ? 'QUEST_DESCRIPTION' : rawType;
   return {
-    type: String(raw.type ?? 'MYSTERY') as GeneratorStageType,
+    type: normalizedType as GeneratorStageType,
+    displayName: typeof raw.displayName === 'string' ? raw.displayName : undefined,
     status: String(raw.status ?? 'NOT_STARTED') as GeneratorStageStatus,
     approved: Boolean(raw.approved),
     currentRevision: normalizeRevision(raw.currentRevision),
