@@ -3,7 +3,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   approveAchievementScene,
@@ -27,8 +27,6 @@ export function GeneratorPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setBusyAction] = useState<string | null>(null);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newQuestStyle, setNewQuestStyle] = useState('classic-adventure');
   const [error, setError] = useState<string | null>(null);
 
   const selectedProject = useMemo(
@@ -66,17 +64,12 @@ export function GeneratorPage() {
   };
 
   const handleCreateProject = async () => {
-    if (!newProjectName.trim()) {
-      return;
-    }
     try {
       setBusyAction('create-project');
       setError(null);
-      const created = await createGeneratorProject(newProjectName.trim(), newQuestStyle.trim());
+      const created = await createGeneratorProject(generateProjectName(), 'classic-adventure');
       setProjects((prev) => [created, ...prev]);
       setSelectedProjectId(created.id);
-      setNewProjectName('');
-      setNewQuestStyle('classic-adventure');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create project');
     } finally {
@@ -233,8 +226,6 @@ export function GeneratorPage() {
 
       <SectionCard title="Quest Generator">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-          <TextField value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} label="Project name" size="small" fullWidth />
-          <TextField value={newQuestStyle} onChange={(event) => setNewQuestStyle(event.target.value)} label="Quest style" size="small" fullWidth />
           <Button
             variant="contained"
             onClick={handleCreateProject}
@@ -242,7 +233,7 @@ export function GeneratorPage() {
             disabled={false}
             sx={{ minWidth: 180 }}
           >
-            Create
+            Create New Project
           </Button>
           <Button variant="outlined" onClick={() => void loadProjects()} startIcon={<RefreshRoundedIcon fontSize="small" />} disabled={false} sx={{ minWidth: 140 }}>
             Refresh
@@ -475,6 +466,13 @@ function stageTypeLabel(stage: GeneratorStage): string {
 function stageOrder(type: GeneratorStageType): number {
   const index = ORDERED_STAGE_TYPES.indexOf(type);
   return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+}
+
+function generateProjectName(): string {
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const time = now.toISOString().slice(11, 19).replace(/:/g, '-');
+  return `Quest Project ${date} ${time}`;
 }
 
 type RealisationWay = {
