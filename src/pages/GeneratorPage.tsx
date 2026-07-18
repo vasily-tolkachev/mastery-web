@@ -30,7 +30,7 @@ export function GeneratorPage() {
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [, setBusyAction] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
   const [newQuestStyle, setNewQuestStyle] = useState('classic-adventure');
   const [error, setError] = useState<string | null>(null);
@@ -362,7 +362,6 @@ export function GeneratorPage() {
                 <StageRow
                   key={stage.type}
                   stage={stage}
-                  busyAction={busyAction}
                   onGenerate={() => void handleGenerate(stage.type)}
                   onApprove={() => void handleApprove(stage.type)}
                   onGenerateStep={(step) => void handleGenerateStep(stage.type, step)}
@@ -537,13 +536,12 @@ export function GeneratorPage() {
 
 type StageRowProps = {
   stage: GeneratorStage;
-  busyAction: string | null;
   onGenerate: () => void;
   onApprove: () => void;
   onGenerateStep: (step: string) => void;
 };
 
-function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
+function StageRow({ stage, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
   const steps: string[] = [];
 
   return (
