@@ -1,4 +1,4 @@
-export type GeneratorStageType = 'QUEST_DESCRIPTION' | 'MYSTERY' | 'WORLD' | 'NPC' | 'FACTS' | 'QUEST_OUTLINE' | 'CHAPTERS' | 'SCENES' | 'QUEST_GRAPH';
+export type GeneratorStageType = 'QUEST_DESCRIPTION' | 'QUEST_CONSTRAINTS' | 'MYSTERY' | 'WORLD' | 'NPC' | 'FACTS' | 'QUEST_OUTLINE' | 'CHAPTERS' | 'SCENES' | 'QUEST_GRAPH';
 
 export type GeneratorStageStatus = 'NOT_STARTED' | 'READY' | 'GENERATING' | 'REVIEW' | 'APPROVED';
 
