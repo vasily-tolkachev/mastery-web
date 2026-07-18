@@ -296,12 +296,12 @@ export function GeneratorPage() {
             variant="contained"
             onClick={handleCreateProject}
             startIcon={<AutoFixHighRoundedIcon fontSize="small" />}
-            disabled={!newProjectName.trim() || busyAction === 'create-project'}
+            disabled={false}
             sx={{ minWidth: 180 }}
           >
             Create
           </Button>
-          <Button variant="outlined" onClick={() => void loadProjects()} startIcon={<RefreshRoundedIcon fontSize="small" />} disabled={Boolean(busyAction)} sx={{ minWidth: 140 }}>
+          <Button variant="outlined" onClick={() => void loadProjects()} startIcon={<RefreshRoundedIcon fontSize="small" />} disabled={false} sx={{ minWidth: 140 }}>
             Refresh
           </Button>
         </Stack>
@@ -346,8 +346,8 @@ export function GeneratorPage() {
           title={`Stages: ${selectedProject.name}`}
           action={
             <Stack direction="row" spacing={1}>
-              <Button size="small" variant="outlined" onClick={() => void handleExportJson()} disabled={Boolean(busyAction)}>Export JSON</Button>
-              <Button size="small" variant="contained" component="label" disabled={Boolean(busyAction)}>
+              <Button size="small" variant="outlined" onClick={() => void handleExportJson()} disabled={false}>Export JSON</Button>
+              <Button size="small" variant="contained" component="label" disabled={false}>
                 Import JSON
                 <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
               </Button>
@@ -421,10 +421,10 @@ export function GeneratorPage() {
                     {selectedChapter.chapter.facts.map((id) => <Chip key={`fact-${id}`} size="small" label={id} />)}
                   </Stack>
                   <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="contained" onClick={() => void handleGenerateChapter(selectedChapter.chapter.id)} disabled={Boolean(busyAction)}>
+                    <Button size="small" variant="contained" onClick={() => void handleGenerateChapter(selectedChapter.chapter.id)} disabled={false}>
                       Generate Scenes
                     </Button>
-                    <Button size="small" variant="outlined" onClick={() => void handleApproveChapter(selectedChapter.chapter.id)} disabled={Boolean(busyAction) || !selectedChapter.generated}>
+                    <Button size="small" variant="outlined" onClick={() => void handleApproveChapter(selectedChapter.chapter.id)} disabled={false}>
                       Approve
                     </Button>
                   </Stack>
@@ -499,10 +499,10 @@ export function GeneratorPage() {
                     {selectedScene.scene.participants.map((id) => <Chip key={`sp-${id}`} size="small" label={id} />)}
                   </Stack>
                   <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="contained" onClick={() => void handleGenerateScene(selectedScene.scene.id)} disabled={Boolean(busyAction)}>
+                    <Button size="small" variant="contained" onClick={() => void handleGenerateScene(selectedScene.scene.id)} disabled={false}>
                       Generate Steps
                     </Button>
-                    <Button size="small" variant="outlined" onClick={() => void handleApproveScene(selectedScene.scene.id)} disabled={Boolean(busyAction) || !selectedScene.generated}>
+                    <Button size="small" variant="outlined" onClick={() => void handleApproveScene(selectedScene.scene.id)} disabled={false}>
                       Approve
                     </Button>
                   </Stack>
@@ -544,9 +544,6 @@ type StageRowProps = {
 };
 
 function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
-  const isReadyToGenerate = stage.status === 'READY' || stage.status === 'REVIEW';
-  const canApprove = stage.status === 'REVIEW' && Boolean(stage.currentRevision);
-  const isNestedStage = stage.type === 'CHAPTERS' || stage.type === 'SCENES';
   const steps: string[] = [];
 
   return (
@@ -571,7 +568,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
             size="small"
             variant="contained"
             startIcon={<PlayArrowRoundedIcon fontSize="small" />}
-            disabled={isNestedStage || !isReadyToGenerate || busyAction === `generate-${stage.type}` || busyAction !== null}
+            disabled={false}
             onClick={onGenerate}
           >
             Generate
@@ -580,7 +577,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
             size="small"
             variant="outlined"
             startIcon={<CheckCircleRoundedIcon fontSize="small" />}
-            disabled={isNestedStage || !canApprove || busyAction === `approve-${stage.type}` || busyAction !== null}
+            disabled={false}
             onClick={onApprove}
           >
             Approve
@@ -615,7 +612,7 @@ function StageRow({ stage, busyAction, onGenerate, onApprove, onGenerateStep }: 
               key={step}
               size="small"
               variant="text"
-              disabled={busyAction !== null || (!isReadyToGenerate && stage.status !== 'REVIEW')}
+              disabled={false}
               onClick={() => onGenerateStep(step)}
             >
               {step}
