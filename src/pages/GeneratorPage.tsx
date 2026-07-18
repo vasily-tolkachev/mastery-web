@@ -20,7 +20,7 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'ACHIEVEMENT_SCENES'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'KNOWLEDGE_CHAIN', 'ACHIEVEMENT_SCENES'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -339,7 +339,7 @@ export function GeneratorPage() {
                         </Button>
                       </Stack>
                     </Stack>
-                    {generated?.scenes ? (
+                    {generated?.quests ? (
                       <Box
                         component="pre"
                         sx={{
@@ -355,7 +355,7 @@ export function GeneratorPage() {
                           fontSize: 12,
                         }}
                       >
-                        {JSON.stringify(generated.scenes, null, 2)}
+                        {JSON.stringify(generated.quests, null, 2)}
                       </Box>
                     ) : null}
                   </Box>
@@ -464,6 +464,7 @@ function stageTypeLabel(stage: GeneratorStage): string {
   if (stage.type === 'ACHIEVEMENT_RESOURCE_ANALYSIS') return 'Achievement Resource Analysis';
   if (stage.type === 'ACHIEVEMENT_REALISATION' || stage.type === 'NPC') return 'Achievement Realisation';
   if (stage.type === 'ACHIEVEMENT_INFORMATION_FLOW') return 'Achievement Information Flow';
+  if (stage.type === 'KNOWLEDGE_CHAIN') return 'Knowledge Chain';
   if (stage.type === 'ACHIEVEMENT_SCENES') return 'Achievement Scenes';
   if (stage.type === 'QUEST_OUTLINE') return 'Quest Outline';
   if (stage.type === 'QUEST_GRAPH') return 'Quest Graph';
@@ -484,7 +485,7 @@ type GeneratedAchievementScenes = {
   achievementId: string;
   status: string;
   approved: boolean;
-  scenes: unknown[];
+  quests: unknown[];
 };
 
 function extractQuestAchievements(output: unknown): QuestAchievement[] {
@@ -513,7 +514,7 @@ function extractGeneratedAchievementScenes(output: unknown): GeneratedAchievemen
         achievementId: String(a.achievement_id ?? ''),
         status: String(a.status ?? 'REVIEW'),
         approved: Boolean(a.approved),
-        scenes: Array.isArray(a.scenes) ? a.scenes : [],
+        quests: Array.isArray(a.quests) ? a.quests : [],
       };
     })
     .filter((a) => a.achievementId);
