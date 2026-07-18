@@ -191,17 +191,17 @@ export function GeneratorPage() {
     return <LoadingState message="Loading generator projects..." />;
   }
 
-  const descriptionStage = selectedProject?.stages.find((stage) => stage.type === 'QUEST_DESCRIPTION') ?? null;
+  const realisationStage = selectedProject?.stages.find((stage) => stage.type === 'ACHIEVEMENT_REALISATION') ?? null;
   const achievementScenesStage = selectedProject?.stages.find((stage) => stage.type === 'ACHIEVEMENT_SCENES') ?? null;
-  const achievements = extractQuestAchievements(descriptionStage?.currentRevision?.outputJson);
-  const generatedAchievementScenes = extractGeneratedAchievementScenes(achievementScenesStage?.currentRevision?.outputJson);
+  const ways = extractRealisationWays(realisationStage?.currentRevision?.outputJson);
+  const generatedAchievementScenes = extractGeneratedWayScenes(achievementScenesStage?.currentRevision?.outputJson);
 
-  const handleGenerateAchievement = async (achievementId: string) => {
+  const handleGenerateWay = async (wayId: string) => {
     if (!selectedProjectId) return;
     try {
-      setBusyAction(`generate-achievement-${achievementId}`);
+      setBusyAction(`generate-way-${wayId}`);
       setError(null);
-      const updated = await generateAchievementScene(selectedProjectId, achievementId);
+      const updated = await generateAchievementScene(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to generate achievement scenes');
@@ -211,12 +211,12 @@ export function GeneratorPage() {
     }
   };
 
-  const handleApproveAchievement = async (achievementId: string) => {
+  const handleApproveWay = async (wayId: string) => {
     if (!selectedProjectId) return;
     try {
-      setBusyAction(`approve-achievement-${achievementId}`);
+      setBusyAction(`approve-way-${wayId}`);
       setError(null);
-      const updated = await approveAchievementScene(selectedProjectId, achievementId);
+      const updated = await approveAchievementScene(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to approve achievement scenes');
@@ -316,25 +316,26 @@ export function GeneratorPage() {
 
       {selectedProject ? (
         <SectionCard title="Achievement Scenes">
-          {!achievements.length ? (
-            <Typography variant="body2" color="text.secondary">No achievements found in QUEST_DESCRIPTION.</Typography>
+          {!ways.length ? (
+            <Typography variant="body2" color="text.secondary">No ways found in ACHIEVEMENT_REALISATION.</Typography>
           ) : (
             <Stack spacing={1}>
-              {achievements.map((achievement) => {
-                const generated = generatedAchievementScenes.find((item) => item.achievementId.toUpperCase() === achievement.id.toUpperCase()) ?? null;
+              {ways.map((way) => {
+                const generated = generatedAchievementScenes.find((item) => item.wayId.toUpperCase() === way.id.toUpperCase()) ?? null;
                 return (
-                  <Box key={achievement.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25 }}>
+                  <Box key={way.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25 }}>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' } }}>
                       <Box>
-                        <Typography variant="subtitle2">{achievement.id}</Typography>
-                        <Typography variant="body2" color="text.secondary">{achievement.description}</Typography>
+                        <Typography variant="subtitle2">{way.id}</Typography>
+                        <Typography variant="body2" color="text.secondary">Achievement: {way.achievementId}</Typography>
+                        <Typography variant="body2" color="text.secondary">{way.description}</Typography>
                       </Box>
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                         <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
-                        <Button size="small" variant="contained" onClick={() => void handleGenerateAchievement(achievement.id)} disabled={false}>
+                        <Button size="small" variant="contained" onClick={() => void handleGenerateWay(way.id)} disabled={false}>
                           Generate
                         </Button>
-                        <Button size="small" variant="outlined" onClick={() => void handleApproveAchievement(achievement.id)} disabled={false}>
+                        <Button size="small" variant="outlined" onClick={() => void handleApproveWay(way.id)} disabled={false}>
                           Approve
                         </Button>
                       </Stack>
@@ -476,46 +477,58 @@ function stageOrder(type: GeneratorStageType): number {
   return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
 
-type QuestAchievement = {
+type RealisationWay = {
   id: string;
+  achievementId: string;
   description: string;
 };
 
-type GeneratedAchievementScenes = {
+type GeneratedWayScenes = {
+  wayId: string;
   achievementId: string;
   status: string;
   approved: boolean;
   quests: unknown[];
 };
 
-function extractQuestAchievements(output: unknown): QuestAchievement[] {
+function extractRealisationWays(output: unknown): RealisationWay[] {
   if (!output || typeof output !== 'object') return [];
   const raw = output as Record<string, unknown>;
-  const achievements = Array.isArray(raw.achievements) ? raw.achievements : [];
-  return achievements
-    .map((item) => {
-      const a = (item ?? {}) as Record<string, unknown>;
-      return {
-        id: String(a.id ?? ''),
-        description: String(a.description ?? ''),
-      };
-    })
-    .filter((a) => a.id);
+  const realisations = Array.isArray(raw.achievement_realisations) ? raw.achievement_realisations : [];
+  const ways: RealisationWay[] = [];
+  realisations.forEach((item) => {
+    const r = (item ?? {}) as Record<string, unknown>;
+    const achievementId = String(r.achievement_id ?? '');
+    const wayItems = Array.isArray(r.ways) ? r.ways : [];
+    wayItems.forEach((w) => {
+      const way = (w ?? {}) as Record<string, unknown>;
+      const id = String(way.id ?? '');
+      if (id) {
+        ways.push({
+          id,
+          achievementId,
+          description: String(way.description ?? ''),
+        });
+      }
+    });
+  });
+  return ways;
 }
 
-function extractGeneratedAchievementScenes(output: unknown): GeneratedAchievementScenes[] {
+function extractGeneratedWayScenes(output: unknown): GeneratedWayScenes[] {
   if (!output || typeof output !== 'object') return [];
   const raw = output as Record<string, unknown>;
-  const achievements = Array.isArray(raw.achievements) ? raw.achievements : [];
-  return achievements
+  const ways = Array.isArray(raw.ways) ? raw.ways : [];
+  return ways
     .map((item) => {
       const a = (item ?? {}) as Record<string, unknown>;
       return {
+        wayId: String(a.way_id ?? ''),
         achievementId: String(a.achievement_id ?? ''),
         status: String(a.status ?? 'REVIEW'),
         approved: Boolean(a.approved),
         quests: Array.isArray(a.quests) ? a.quests : [],
       };
     })
-    .filter((a) => a.achievementId);
+    .filter((a) => a.wayId);
 }

@@ -135,8 +135,8 @@ export async function approveScene(projectId: string, sceneId: string): Promise<
   return normalizeProject(await response.json());
 }
 
-export async function generateAchievementScene(projectId: string, achievementId: string): Promise<GeneratorProject> {
-  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACHIEVEMENT_SCENES/achievements/${encodeURIComponent(achievementId)}/generate`, {
+export async function generateAchievementScene(projectId: string, wayId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACHIEVEMENT_SCENES/ways/${encodeURIComponent(wayId)}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -146,8 +146,8 @@ export async function generateAchievementScene(projectId: string, achievementId:
   return normalizeProject(await response.json());
 }
 
-export async function approveAchievementScene(projectId: string, achievementId: string): Promise<GeneratorProject> {
-  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACHIEVEMENT_SCENES/achievements/${encodeURIComponent(achievementId)}/approve`, {
+export async function approveAchievementScene(projectId: string, wayId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACHIEVEMENT_SCENES/ways/${encodeURIComponent(wayId)}/approve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
