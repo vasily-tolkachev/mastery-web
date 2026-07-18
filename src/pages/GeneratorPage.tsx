@@ -6,13 +6,9 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
-  approveChapter,
-  approveScene,
   approveStage,
   createGeneratorProject,
   exportProjectJson,
-  generateChapter,
-  generateScene,
   generateStage,
   generateStageStep,
   getGeneratorProject,
@@ -22,13 +18,11 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'FACTS', 'QUEST_OUTLINE', 'CHAPTERS', 'SCENES'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'WORLD', 'ACHIEVEMENT_REALISATION'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
-  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setBusyAction] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
@@ -142,77 +136,6 @@ export function GeneratorPage() {
     }
   };
 
-  const handleGenerateChapter = async (chapterId: string) => {
-    if (!selectedProjectId) {
-      return;
-    }
-    const actionKey = `generate-chapter-${chapterId}`;
-    try {
-      setBusyAction(actionKey);
-      setError(null);
-      const updated = await generateChapter(selectedProjectId, chapterId);
-      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate chapter');
-      await refreshSelectedProject(selectedProjectId);
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
-  const handleApproveChapter = async (chapterId: string) => {
-    if (!selectedProjectId) {
-      return;
-    }
-    const actionKey = `approve-chapter-${chapterId}`;
-    try {
-      setBusyAction(actionKey);
-      setError(null);
-      const updated = await approveChapter(selectedProjectId, chapterId);
-      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve chapter');
-      await refreshSelectedProject(selectedProjectId);
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
-  const handleGenerateScene = async (sceneId: string) => {
-    if (!selectedProjectId) {
-      return;
-    }
-    const actionKey = `generate-scene-${sceneId}`;
-    try {
-      setBusyAction(actionKey);
-      setError(null);
-      const updated = await generateScene(selectedProjectId, sceneId);
-      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate scene');
-      await refreshSelectedProject(selectedProjectId);
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
-  const handleApproveScene = async (sceneId: string) => {
-    if (!selectedProjectId) {
-      return;
-    }
-    const actionKey = `approve-scene-${sceneId}`;
-    try {
-      setBusyAction(actionKey);
-      setError(null);
-      const updated = await approveScene(selectedProjectId, sceneId);
-      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve scene');
-      await refreshSelectedProject(selectedProjectId);
-    } finally {
-      setBusyAction(null);
-    }
-  };
 
   const handleExportJson = async () => {
     if (!selectedProjectId || !selectedProject) {
@@ -266,23 +189,6 @@ export function GeneratorPage() {
     return <LoadingState message="Loading generator projects..." />;
   }
 
-  const outlineStage = selectedProject?.stages.find((stage) => stage.type === 'QUEST_OUTLINE') ?? null;
-  const chaptersStage = selectedProject?.stages.find((stage) => stage.type === 'CHAPTERS') ?? null;
-  const scenesStage = selectedProject?.stages.find((stage) => stage.type === 'SCENES') ?? null;
-  const outlineChapters = extractOutlineChapters(outlineStage?.currentRevision?.outputJson);
-  const generatedChapters = extractGeneratedChapters(chaptersStage?.currentRevision?.outputJson);
-  const chapterItems = outlineChapters.map((chapter) => ({
-    chapter,
-    generated: generatedChapters.find((item) => item.chapterId.toUpperCase() === chapter.id.toUpperCase()) ?? null,
-  }));
-  const selectedChapter = chapterItems.find((item) => item.chapter.id === selectedChapterId) ?? chapterItems[0] ?? null;
-  const chapterScenes = selectedChapter?.generated?.scenes ?? [];
-  const generatedScenes = extractGeneratedScenes(scenesStage?.currentRevision?.outputJson);
-  const sceneItems = chapterScenes.map((scene) => ({
-    scene,
-    generated: generatedScenes.find((item) => item.sceneId.toUpperCase() === scene.id.toUpperCase()) ?? null,
-  }));
-  const selectedScene = sceneItems.find((item) => item.scene.id === selectedSceneId) ?? sceneItems[0] ?? null;
 
   return (
     <Stack spacing={2}>
@@ -370,166 +276,6 @@ export function GeneratorPage() {
           </Stack>
         </SectionCard>
       ) : null}
-
-      {selectedProject && outlineStage?.status === 'APPROVED' ? (
-        <SectionCard title="Chapter Generator">
-          {!chapterItems.length ? (
-            <Typography variant="body2" color="text.secondary">No chapters in QUEST_OUTLINE.</Typography>
-          ) : (
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-              <Stack spacing={1} sx={{ minWidth: 280, maxWidth: 360 }}>
-                {chapterItems.map(({ chapter, generated }) => (
-                  <Box
-                    key={chapter.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedChapterId(chapter.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        setSelectedChapterId(chapter.id);
-                      }
-                    }}
-                    sx={{
-                      border: 1,
-                      borderColor: (selectedChapter?.chapter.id ?? '') === chapter.id ? 'primary.main' : 'divider',
-                      borderRadius: 1,
-                      p: 1.25,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="subtitle2">{chapter.id}</Typography>
-                      <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary">{chapter.title}</Typography>
-                  </Box>
-                ))}
-              </Stack>
-
-              {selectedChapter ? (
-                <Stack spacing={1.25} sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1">{selectedChapter.chapter.title}</Typography>
-                  <Typography variant="body2" color="text.secondary">{selectedChapter.chapter.purpose}</Typography>
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                    {selectedChapter.chapter.locations.map((id) => <Chip key={`loc-${id}`} size="small" label={id} />)}
-                  </Stack>
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                    {selectedChapter.chapter.participants.map((id) => <Chip key={`npc-${id}`} size="small" label={id} />)}
-                  </Stack>
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                    {selectedChapter.chapter.facts.map((id) => <Chip key={`fact-${id}`} size="small" label={id} />)}
-                  </Stack>
-                  <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="contained" onClick={() => void handleGenerateChapter(selectedChapter.chapter.id)} disabled={false}>
-                      Generate Scenes
-                    </Button>
-                    <Button size="small" variant="outlined" onClick={() => void handleApproveChapter(selectedChapter.chapter.id)} disabled={false}>
-                      Approve
-                    </Button>
-                  </Stack>
-                  {selectedChapter.generated?.scenes ? (
-                    <Box
-                      component="pre"
-                      sx={{
-                        mt: 0.5,
-                        mb: 0,
-                        p: 1,
-                        borderRadius: 1,
-                        bgcolor: 'background.default',
-                        maxHeight: 280,
-                        overflow: 'auto',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        fontSize: 12,
-                      }}
-                    >
-                      {JSON.stringify(selectedChapter.generated.scenes, null, 2)}
-                    </Box>
-                  ) : null}
-                </Stack>
-              ) : null}
-            </Stack>
-          )}
-        </SectionCard>
-      ) : null}
-
-      {selectedProject && (chaptersStage?.status === 'REVIEW' || chaptersStage?.status === 'APPROVED') ? (
-        <SectionCard title="Scene Generator">
-          {!sceneItems.length ? (
-            <Typography variant="body2" color="text.secondary">Generate chapter scenes first.</Typography>
-          ) : (
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-              <Stack spacing={1} sx={{ minWidth: 280, maxWidth: 360 }}>
-                {sceneItems.map(({ scene, generated }) => (
-                  <Box
-                    key={scene.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedSceneId(scene.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        setSelectedSceneId(scene.id);
-                      }
-                    }}
-                    sx={{
-                      border: 1,
-                      borderColor: (selectedScene?.scene.id ?? '') === scene.id ? 'primary.main' : 'divider',
-                      borderRadius: 1,
-                      p: 1.25,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="subtitle2">{scene.id}</Typography>
-                      <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary">{scene.title || scene.objective}</Typography>
-                  </Box>
-                ))}
-              </Stack>
-
-              {selectedScene ? (
-                <Stack spacing={1.25} sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1">{selectedScene.scene.title || selectedScene.scene.id}</Typography>
-                  <Typography variant="body2" color="text.secondary">{selectedScene.scene.situation}</Typography>
-                  <Typography variant="body2" color="text.secondary">{selectedScene.scene.objective}</Typography>
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                    <Chip size="small" label={selectedScene.scene.location} />
-                    {selectedScene.scene.participants.map((id) => <Chip key={`sp-${id}`} size="small" label={id} />)}
-                  </Stack>
-                  <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="contained" onClick={() => void handleGenerateScene(selectedScene.scene.id)} disabled={false}>
-                      Generate Steps
-                    </Button>
-                    <Button size="small" variant="outlined" onClick={() => void handleApproveScene(selectedScene.scene.id)} disabled={false}>
-                      Approve
-                    </Button>
-                  </Stack>
-                  {selectedScene.generated ? (
-                    <Box
-                      component="pre"
-                      sx={{
-                        mt: 0.5,
-                        mb: 0,
-                        p: 1,
-                        borderRadius: 1,
-                        bgcolor: 'background.default',
-                        maxHeight: 320,
-                        overflow: 'auto',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        fontSize: 12,
-                      }}
-                    >
-                      {JSON.stringify(selectedScene.generated, null, 2)}
-                    </Box>
-                  ) : null}
-                </Stack>
-              ) : null}
-            </Stack>
-          )}
-        </SectionCard>
-      ) : null}
     </Stack>
   );
 }
@@ -538,7 +284,7 @@ type StageRowProps = {
   stage: GeneratorStage;
   onGenerate: () => void;
   onApprove: () => void;
-  onGenerateStep: (step: string) => void;
+  onGenerateStep: (_step: string) => void;
 };
 
 function StageRow({ stage, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
@@ -635,112 +381,4 @@ function stageTypeLabel(stage: GeneratorStage): string {
 function stageOrder(type: GeneratorStageType): number {
   const index = ORDERED_STAGE_TYPES.indexOf(type);
   return index === -1 ? Number.MAX_SAFE_INTEGER : index;
-}
-
-type OutlineChapter = {
-  id: string;
-  title: string;
-  purpose: string;
-  locations: string[];
-  participants: string[];
-  facts: string[];
-};
-
-type GeneratedChapter = {
-  chapterId: string;
-  status: string;
-  approved: boolean;
-  scenes: ChapterScene[];
-};
-
-type ChapterScene = {
-  id: string;
-  title: string;
-  situation: string;
-  objective: string;
-  location: string;
-  participants: string[];
-};
-
-type GeneratedScene = {
-  sceneId: string;
-  status: string;
-  approved: boolean;
-  entryStep: string;
-  steps: unknown[];
-};
-
-function extractOutlineChapters(output: unknown): OutlineChapter[] {
-  if (!output || typeof output !== 'object') return [];
-  const raw = output as Record<string, unknown>;
-  const chapters = Array.isArray(raw.chapters) ? raw.chapters : [];
-  return chapters
-    .map((item) => {
-      const c = (item ?? {}) as Record<string, unknown>;
-      return {
-        id: String(c.id ?? ''),
-        title: String(c.title ?? ''),
-        purpose: String(c.purpose ?? ''),
-        locations: toStringArray(c.locations),
-        participants: toStringArray(c.participants),
-        facts: toStringArray(c.facts),
-      };
-    })
-    .filter((c) => c.id);
-}
-
-function extractGeneratedChapters(output: unknown): GeneratedChapter[] {
-  if (!output || typeof output !== 'object') return [];
-  const raw = output as Record<string, unknown>;
-  const chapters = Array.isArray(raw.chapters) ? raw.chapters : [];
-  return chapters
-    .map((item) => {
-      const c = (item ?? {}) as Record<string, unknown>;
-      return {
-        chapterId: String(c.chapterId ?? ''),
-        status: String(c.status ?? 'REVIEW'),
-        approved: Boolean(c.approved),
-        scenes: extractChapterScenes(c.scenes),
-      };
-    })
-    .filter((c) => c.chapterId);
-}
-
-function extractChapterScenes(rawScenes: unknown): ChapterScene[] {
-  if (!Array.isArray(rawScenes)) return [];
-  return rawScenes
-    .map((item) => {
-      const s = (item ?? {}) as Record<string, unknown>;
-      return {
-        id: String(s.id ?? ''),
-        title: String(s.title ?? ''),
-        situation: String(s.situation ?? ''),
-        objective: String(s.objective ?? ''),
-        location: String(s.location ?? ''),
-        participants: toStringArray(s.participants),
-      };
-    })
-    .filter((s) => s.id);
-}
-
-function extractGeneratedScenes(output: unknown): GeneratedScene[] {
-  if (!output || typeof output !== 'object') return [];
-  const raw = output as Record<string, unknown>;
-  const scenes = Array.isArray(raw.scenes) ? raw.scenes : [];
-  return scenes
-    .map((item) => {
-      const s = (item ?? {}) as Record<string, unknown>;
-      return {
-        sceneId: String(s.sceneId ?? ''),
-        status: String(s.status ?? 'REVIEW'),
-        approved: Boolean(s.approved),
-        entryStep: String(s.entryStep ?? ''),
-        steps: Array.isArray(s.steps) ? s.steps : [],
-      };
-    })
-    .filter((s) => s.sceneId);
-}
-
-function toStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.map((x) => String(x)).filter(Boolean) : [];
 }
