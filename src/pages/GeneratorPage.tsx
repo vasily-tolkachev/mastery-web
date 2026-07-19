@@ -10,6 +10,7 @@ import {
   approveStage,
   createGeneratorProject,
   exportProjectJson,
+  previewStagePrompt,
   generateAchievementScene,
   generateStage,
   generateStageStep,
@@ -18,7 +19,7 @@ import {
   importProjectJson,
 } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
-import type { GeneratorProject, GeneratorStage, GeneratorStageType } from '../types/generator';
+import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview } from '../types/generator';
 
 const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'KNOWLEDGE_CHAIN', 'ACHIEVEMENT_SCENES', 'ACTION_QUESTS'];
 
@@ -28,6 +29,7 @@ export function GeneratorPage() {
   const [loading, setLoading] = useState(true);
   const [, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [promptPreviews, setPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -77,11 +79,29 @@ export function GeneratorPage() {
     }
   };
 
-  const handleGenerate = async (stageType: GeneratorStageType) => {
+  const handlePreview = async (stageType: GeneratorStageType) => {
     if (!selectedProjectId) {
       return;
     }
-    const actionKey = `generate-${stageType}`;
+    const actionKey = `preview-${stageType}`;
+    try {
+      setBusyAction(actionKey);
+      setError(null);
+      const preview = await previewStagePrompt(selectedProjectId, stageType);
+      setPromptPreviews((prev) => ({ ...prev, [stageType]: preview }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to preview stage prompt');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSend = async (stageType: GeneratorStageType) => {
+    if (!selectedProjectId) {
+      return;
+    }
+    const actionKey = `send-${stageType}`;
     try {
       setBusyAction(actionKey);
       setError(null);
@@ -296,7 +316,9 @@ export function GeneratorPage() {
                 <StageRow
                   key={stage.type}
                   stage={stage}
-                  onGenerate={() => void handleGenerate(stage.type)}
+                  promptPreview={promptPreviews[stage.type] ?? null}
+                  onGenerate={() => void handlePreview(stage.type)}
+                  onSend={() => void handleSend(stage.type)}
                   onApprove={() => void handleApprove(stage.type)}
                   onGenerateStep={(step) => void handleGenerateStep(stage.type, step)}
                 />
@@ -363,12 +385,14 @@ export function GeneratorPage() {
 
 type StageRowProps = {
   stage: GeneratorStage;
+  promptPreview: StagePromptPreview | null;
   onGenerate: () => void;
+  onSend: () => void;
   onApprove: () => void;
   onGenerateStep: (_step: string) => void;
 };
 
-function StageRow({ stage, onGenerate, onApprove, onGenerateStep }: StageRowProps) {
+function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGenerateStep }: StageRowProps) {
   const steps: string[] = [];
 
   return (
@@ -400,6 +424,14 @@ function StageRow({ stage, onGenerate, onApprove, onGenerateStep }: StageRowProp
           </Button>
           <Button
             size="small"
+            variant="contained"
+            disabled={false}
+            onClick={onSend}
+          >
+            Send
+          </Button>
+          <Button
+            size="small"
             variant="outlined"
             startIcon={<CheckCircleRoundedIcon fontSize="small" />}
             disabled={false}
@@ -409,6 +441,26 @@ function StageRow({ stage, onGenerate, onApprove, onGenerateStep }: StageRowProp
           </Button>
         </Stack>
       </Stack>
+
+      {promptPreview ? (
+        <Box
+          component="pre"
+          sx={{
+            mt: 1.5,
+            mb: 0,
+            p: 1,
+            borderRadius: 1,
+            bgcolor: 'background.default',
+            maxHeight: 220,
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            fontSize: 12,
+          }}
+        >
+          {`SYSTEM:\n${promptPreview.systemPrompt}\n\nUSER:\n${promptPreview.userPrompt}`}
+        </Box>
+      ) : null}
 
       {stage.currentRevision ? (
         <Box

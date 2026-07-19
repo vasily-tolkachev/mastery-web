@@ -5,6 +5,7 @@ import type {
   GeneratorStage,
   GeneratorStageStatus,
   GeneratorStageType,
+  StagePromptPreview,
   StageRevision,
 } from '../types/generator';
 
@@ -47,6 +48,21 @@ export async function generateStage(projectId: string, stageType: GeneratorStage
     throw await toError(response, 'Не удалось сгенерировать этап');
   }
   return normalizeProject(await response.json());
+}
+
+export async function previewStagePrompt(projectId: string, stageType: GeneratorStageType): Promise<StagePromptPreview> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/${stageType}/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview stage prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    systemPrompt: String(raw.systemPrompt ?? ''),
+    userPrompt: String(raw.userPrompt ?? ''),
+  };
 }
 
 export async function generateStageStep(projectId: string, stageType: GeneratorStageType, step: string): Promise<GeneratorProject> {

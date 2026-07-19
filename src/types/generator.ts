@@ -35,3 +35,8 @@ export type GeneratorProjectSnapshot = {
     outputJson: unknown;
   }>;
 };
+
+export type StagePromptPreview = {
+  systemPrompt: string;
+  userPrompt: string;
+};
