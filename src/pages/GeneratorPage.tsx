@@ -6,6 +6,7 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
+  ApiRequestError,
   approveActionResolution,
   approveActionQuest,
   approveKnowledgeChain,
@@ -39,6 +40,8 @@ export function GeneratorPage() {
   const [loading, setLoading] = useState(true);
   const [, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationResult, setValidationResult] = useState<unknown>(null);
   const [promptPreviews, setPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
   const [wayPromptPreviews, setWayPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
 
@@ -47,10 +50,28 @@ export function GeneratorPage() {
     [projects, selectedProjectId],
   );
 
+  const clearUiError = () => {
+    setError(null);
+    setValidationErrors([]);
+    setValidationResult(null);
+  };
+
+  const applyUiError = (e: unknown, fallback: string) => {
+    const message = e instanceof Error ? e.message : fallback;
+    setError(message);
+    if (e instanceof ApiRequestError) {
+      setValidationErrors(e.errors ?? []);
+      setValidationResult(e.result ?? null);
+    } else {
+      setValidationErrors([]);
+      setValidationResult(null);
+    }
+  };
+
   const loadProjects = async () => {
     try {
       setLoading(true);
-      setError(null);
+      clearUiError();
       const loaded = await getGeneratorProjects();
       setProjects(loaded);
       if (!selectedProjectId && loaded.length > 0) {
@@ -79,12 +100,12 @@ export function GeneratorPage() {
   const handleCreateProject = async () => {
     try {
       setBusyAction('create-project');
-      setError(null);
+      clearUiError();
       const created = await createGeneratorProject(generateProjectName(), 'classic-adventure');
       setProjects((prev) => [created, ...prev]);
       setSelectedProjectId(created.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create project');
+      applyUiError(e, 'Failed to create project');
     } finally {
       setBusyAction(null);
     }
@@ -97,11 +118,11 @@ export function GeneratorPage() {
     const actionKey = `preview-${stageType}`;
     try {
       setBusyAction(actionKey);
-      setError(null);
+      clearUiError();
       const preview = await previewStagePrompt(selectedProjectId, stageType);
       setPromptPreviews((prev) => ({ ...prev, [stageType]: preview }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to preview stage prompt');
+      applyUiError(e, 'Failed to preview stage prompt');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -115,11 +136,11 @@ export function GeneratorPage() {
     const actionKey = `send-${stageType}`;
     try {
       setBusyAction(actionKey);
-      setError(null);
+      clearUiError();
       const updated = await generateStage(selectedProjectId, stageType);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate stage');
+      applyUiError(e, 'Failed to generate stage');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -133,11 +154,11 @@ export function GeneratorPage() {
     const actionKey = `approve-${stageType}`;
     try {
       setBusyAction(actionKey);
-      setError(null);
+      clearUiError();
       const updated = await approveStage(selectedProjectId, stageType);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve stage');
+      applyUiError(e, 'Failed to approve stage');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -151,11 +172,11 @@ export function GeneratorPage() {
     const actionKey = `step-${stageType}-${step}`;
     try {
       setBusyAction(actionKey);
-      setError(null);
+      clearUiError();
       const updated = await generateStageStep(selectedProjectId, stageType, step);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate step');
+      applyUiError(e, 'Failed to generate step');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -169,7 +190,7 @@ export function GeneratorPage() {
     }
     try {
       setBusyAction('export-json');
-      setError(null);
+      clearUiError();
       const snapshot = await exportProjectJson(selectedProjectId);
       const jsonText = JSON.stringify(snapshot, null, 2);
       const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
@@ -181,7 +202,7 @@ export function GeneratorPage() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to export JSON');
+      applyUiError(e, 'Failed to export JSON');
     } finally {
       setBusyAction(null);
     }
@@ -198,13 +219,13 @@ export function GeneratorPage() {
     }
     try {
       setBusyAction('import-json');
-      setError(null);
+      clearUiError();
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
       const updated = await importProjectJson(selectedProjectId, parsed);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to import JSON');
+      applyUiError(e, 'Failed to import JSON');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -228,11 +249,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`preview-as-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const preview = await previewAchievementScenePrompt(selectedProjectId, wayId);
       setWayPromptPreviews((prev) => ({ ...prev, [`ACHIEVEMENT_SCENES:${wayId.toUpperCase()}`]: preview }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to preview achievement scenes prompt');
+      applyUiError(e, 'Failed to preview achievement scenes prompt');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -243,11 +264,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`send-as-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const updated = await generateAchievementScene(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate achievement scenes');
+      applyUiError(e, 'Failed to generate achievement scenes');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -258,11 +279,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`preview-kc-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const preview = await previewKnowledgeChainPrompt(selectedProjectId, wayId);
       setWayPromptPreviews((prev) => ({ ...prev, [`KNOWLEDGE_CHAIN:${wayId.toUpperCase()}`]: preview }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to preview knowledge chain prompt');
+      applyUiError(e, 'Failed to preview knowledge chain prompt');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -273,11 +294,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`send-kc-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const updated = await generateKnowledgeChain(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate knowledge chain');
+      applyUiError(e, 'Failed to generate knowledge chain');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -288,11 +309,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`approve-kc-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const updated = await approveKnowledgeChain(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve knowledge chain');
+      applyUiError(e, 'Failed to approve knowledge chain');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -303,11 +324,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`approve-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const updated = await approveAchievementScene(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve achievement scenes');
+      applyUiError(e, 'Failed to approve achievement scenes');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -318,11 +339,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`preview-aq-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const preview = await previewActionQuestPrompt(selectedProjectId, wayId);
       setWayPromptPreviews((prev) => ({ ...prev, [`ACTION_QUESTS:${wayId.toUpperCase()}`]: preview }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to preview action quests prompt');
+      applyUiError(e, 'Failed to preview action quests prompt');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -333,11 +354,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`send-aq-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const updated = await generateActionQuest(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate action quests');
+      applyUiError(e, 'Failed to generate action quests');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -348,11 +369,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`approve-aq-way-${wayId}`);
-      setError(null);
+      clearUiError();
       const updated = await approveActionQuest(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve action quests');
+      applyUiError(e, 'Failed to approve action quests');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -363,11 +384,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`preview-aq-${wayId}-${sceneId}-${actionId}`);
-      setError(null);
+      clearUiError();
       const preview = await previewActionResolutionPrompt(selectedProjectId, wayId, sceneId, actionId);
       setWayPromptPreviews((prev) => ({ ...prev, [`ACTION_RESOLUTION:${wayId.toUpperCase()}:${sceneId.toUpperCase()}:${actionId.toUpperCase()}`]: preview }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to preview action resolution prompt');
+      applyUiError(e, 'Failed to preview action resolution prompt');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -378,11 +399,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`send-aq-${wayId}-${sceneId}-${actionId}`);
-      setError(null);
+      clearUiError();
       const updated = await generateActionResolution(selectedProjectId, wayId, sceneId, actionId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate action resolution');
+      applyUiError(e, 'Failed to generate action resolution');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -393,11 +414,11 @@ export function GeneratorPage() {
     if (!selectedProjectId) return;
     try {
       setBusyAction(`approve-aq-${wayId}-${sceneId}-${actionId}`);
-      setError(null);
+      clearUiError();
       const updated = await approveActionResolution(selectedProjectId, wayId, sceneId, actionId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to approve action resolution');
+      applyUiError(e, 'Failed to approve action resolution');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -408,6 +429,38 @@ export function GeneratorPage() {
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
+      {validationErrors.length ? (
+        <SectionCard title="Validation Errors">
+          <Stack spacing={0.5}>
+            {validationErrors.map((item, index) => (
+              <Typography key={`${index}-${item}`} variant="body2" color="error">
+                {index + 1}. {item}
+              </Typography>
+            ))}
+          </Stack>
+        </SectionCard>
+      ) : null}
+      {validationResult ? (
+        <SectionCard title="Validation Result">
+          <Box
+            component="pre"
+            sx={{
+              mt: 0,
+              mb: 0,
+              p: 1,
+              borderRadius: 1,
+              bgcolor: 'background.default',
+              maxHeight: 260,
+              overflow: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              fontSize: 12,
+            }}
+          >
+            {JSON.stringify(validationResult, null, 2)}
+          </Box>
+        </SectionCard>
+      ) : null}
 
       <SectionCard title="Quest Generator">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>

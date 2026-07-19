@@ -9,6 +9,20 @@ import type {
   StageRevision,
 } from '../types/generator';
 
+export class ApiRequestError extends Error {
+  code: string;
+  errors: string[];
+  result: unknown;
+
+  constructor(message: string, code = 'ERROR', errors: string[] = [], result: unknown = null) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.code = code;
+    this.errors = errors;
+    this.result = result;
+  }
+}
+
 export async function createGeneratorProject(name: string, questStyle: string): Promise<GeneratorProject> {
   const response = await authFetch('/api/generator/projects', {
     method: 'POST',
@@ -327,7 +341,10 @@ async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
     const message = typeof payload.message === 'string' && payload.message.trim() ? payload.message : fallback;
-    return new Error(`${message} (${response.status})`);
+    const code = typeof payload.code === 'string' ? payload.code : 'ERROR';
+    const errors = Array.isArray(payload.errors) ? payload.errors.map((item) => String(item ?? '')).filter((item) => item.trim().length > 0) : [];
+    const result = 'result' in payload ? payload.result : null;
+    return new ApiRequestError(`${message} (${response.status})`, code, errors, result);
   } catch {
     return new Error(`${fallback} (${response.status})`);
   }
