@@ -195,6 +195,28 @@ export async function approveKnowledgeChain(projectId: string, wayId: string): P
   return normalizeProject(await response.json());
 }
 
+export async function generateActionQuest(projectId: string, wayId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to generate action quests');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function approveActionQuest(projectId: string, wayId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to approve action quests');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;

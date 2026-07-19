@@ -6,12 +6,14 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
+  approveActionQuest,
   approveKnowledgeChain,
   approveAchievementScene,
   approveStage,
   createGeneratorProject,
   exportProjectJson,
   previewStagePrompt,
+  generateActionQuest,
   generateKnowledgeChain,
   generateAchievementScene,
   generateStage,
@@ -209,9 +211,11 @@ export function GeneratorPage() {
   const realisationStage = selectedProject?.stages.find((stage) => stage.type === 'ACHIEVEMENT_REALISATION') ?? null;
   const knowledgeChainStage = selectedProject?.stages.find((stage) => stage.type === 'KNOWLEDGE_CHAIN') ?? null;
   const achievementScenesStage = selectedProject?.stages.find((stage) => stage.type === 'ACHIEVEMENT_SCENES') ?? null;
+  const actionQuestsStage = selectedProject?.stages.find((stage) => stage.type === 'ACTION_QUESTS') ?? null;
   const ways = extractRealisationWays(realisationStage?.currentRevision?.outputJson);
   const generatedKnowledgeChains = extractGeneratedKnowledgeChains(knowledgeChainStage?.currentRevision?.outputJson);
   const generatedAchievementScenes = extractGeneratedWayScenes(achievementScenesStage?.currentRevision?.outputJson);
+  const generatedActionQuests = extractGeneratedActionQuestWays(actionQuestsStage?.currentRevision?.outputJson);
 
   const handleGenerateWay = async (wayId: string) => {
     if (!selectedProjectId) return;
@@ -267,6 +271,36 @@ export function GeneratorPage() {
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to approve achievement scenes');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleGenerateActionQuestWay = async (wayId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`generate-aq-way-${wayId}`);
+      setError(null);
+      const updated = await generateActionQuest(selectedProjectId, wayId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate action quests');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleApproveActionQuestWay = async (wayId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`approve-aq-way-${wayId}`);
+      setError(null);
+      const updated = await approveActionQuest(selectedProjectId, wayId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to approve action quests');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -355,8 +389,8 @@ export function GeneratorPage() {
                   onSend={() => void handleSend(stage.type)}
                   onApprove={() => void handleApprove(stage.type)}
                   onGenerateStep={(step) => void handleGenerateStep(stage.type, step)}
-                  disableStageSend={stage.type === 'KNOWLEDGE_CHAIN'}
-                  disableStageApprove={stage.type === 'KNOWLEDGE_CHAIN'}
+                  disableStageSend={stage.type === 'KNOWLEDGE_CHAIN' || stage.type === 'ACTION_QUESTS'}
+                  disableStageApprove={stage.type === 'KNOWLEDGE_CHAIN' || stage.type === 'ACTION_QUESTS'}
                 />
               ))}
           </Stack>
@@ -459,6 +493,59 @@ export function GeneratorPage() {
                         }}
                       >
                         {JSON.stringify(generated.quests, null, 2)}
+                      </Box>
+                    ) : null}
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </SectionCard>
+      ) : null}
+
+      {selectedProject ? (
+        <SectionCard title="Action Quests">
+          {!ways.length ? (
+            <Typography variant="body2" color="text.secondary">No ways found in ACHIEVEMENT_REALISATION.</Typography>
+          ) : (
+            <Stack spacing={1}>
+              {ways.map((way) => {
+                const generated = generatedActionQuests.find((item) => item.wayId.toUpperCase() === way.id.toUpperCase()) ?? null;
+                return (
+                  <Box key={way.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25 }}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' } }}>
+                      <Box>
+                        <Typography variant="subtitle2">{way.id}</Typography>
+                        <Typography variant="body2" color="text.secondary">Achievement: {way.achievementId}</Typography>
+                        <Typography variant="body2" color="text.secondary">{way.description}</Typography>
+                      </Box>
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                        <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
+                        <Button size="small" variant="contained" onClick={() => void handleGenerateActionQuestWay(way.id)} disabled={false}>
+                          Generate
+                        </Button>
+                        <Button size="small" variant="outlined" onClick={() => void handleApproveActionQuestWay(way.id)} disabled={false}>
+                          Approve
+                        </Button>
+                      </Stack>
+                    </Stack>
+                    {generated?.actionQuests ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          mt: 1,
+                          mb: 0,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: 'background.default',
+                          maxHeight: 260,
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          fontSize: 12,
+                        }}
+                      >
+                        {JSON.stringify(generated.actionQuests, null, 2)}
                       </Box>
                     ) : null}
                   </Box>
@@ -641,6 +728,14 @@ type GeneratedKnowledgeChain = {
   knowledgeChain: unknown;
 };
 
+type GeneratedActionQuestWay = {
+  wayId: string;
+  achievementId: string;
+  status: string;
+  approved: boolean;
+  actionQuests: unknown[];
+};
+
 function extractRealisationWays(output: unknown): RealisationWay[] {
   if (!output || typeof output !== 'object') return [];
   const raw = output as Record<string, unknown>;
@@ -696,6 +791,24 @@ function extractGeneratedKnowledgeChains(output: unknown): GeneratedKnowledgeCha
         status: String(a.status ?? 'REVIEW'),
         approved: Boolean(a.approved),
         knowledgeChain: a.knowledge_chain ?? null,
+      };
+    })
+    .filter((a) => a.wayId);
+}
+
+function extractGeneratedActionQuestWays(output: unknown): GeneratedActionQuestWay[] {
+  if (!output || typeof output !== 'object') return [];
+  const raw = output as Record<string, unknown>;
+  const ways = Array.isArray(raw.ways) ? raw.ways : [];
+  return ways
+    .map((item) => {
+      const a = (item ?? {}) as Record<string, unknown>;
+      return {
+        wayId: String(a.way_id ?? ''),
+        achievementId: String(a.achievement_id ?? ''),
+        status: String(a.status ?? 'REVIEW'),
+        approved: Boolean(a.approved),
+        actionQuests: Array.isArray(a.action_quests) ? a.action_quests : [],
       };
     })
     .filter((a) => a.wayId);
