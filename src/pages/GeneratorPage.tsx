@@ -6,6 +6,7 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
+  approveActionResolution,
   approveActionQuest,
   approveKnowledgeChain,
   approveAchievementScene,
@@ -13,6 +14,7 @@ import {
   createGeneratorProject,
   exportProjectJson,
   previewStagePrompt,
+  generateActionResolution,
   generateActionQuest,
   generateKnowledgeChain,
   generateAchievementScene,
@@ -21,6 +23,7 @@ import {
   getGeneratorProject,
   getGeneratorProjects,
   importProjectJson,
+  previewActionResolutionPrompt,
   previewActionQuestPrompt,
   previewAchievementScenePrompt,
   previewKnowledgeChainPrompt,
@@ -356,6 +359,51 @@ export function GeneratorPage() {
     }
   };
 
+  const handleGenerateActionResolution = async (wayId: string, sceneId: string, actionId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`preview-aq-${wayId}-${sceneId}-${actionId}`);
+      setError(null);
+      const preview = await previewActionResolutionPrompt(selectedProjectId, wayId, sceneId, actionId);
+      setWayPromptPreviews((prev) => ({ ...prev, [`ACTION_RESOLUTION:${wayId.toUpperCase()}:${sceneId.toUpperCase()}:${actionId.toUpperCase()}`]: preview }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to preview action resolution prompt');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSendActionResolution = async (wayId: string, sceneId: string, actionId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`send-aq-${wayId}-${sceneId}-${actionId}`);
+      setError(null);
+      const updated = await generateActionResolution(selectedProjectId, wayId, sceneId, actionId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate action resolution');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleApproveActionResolution = async (wayId: string, sceneId: string, actionId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`approve-aq-${wayId}-${sceneId}-${actionId}`);
+      setError(null);
+      const updated = await approveActionResolution(selectedProjectId, wayId, sceneId, actionId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to approve action resolution');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
 
   return (
     <Stack spacing={2}>
@@ -569,7 +617,7 @@ export function GeneratorPage() {
                         {`SYSTEM:\n${wayPromptPreviews[`ACHIEVEMENT_SCENES:${way.id.toUpperCase()}`]?.systemPrompt ?? ''}\n\nUSER:\n${wayPromptPreviews[`ACHIEVEMENT_SCENES:${way.id.toUpperCase()}`]?.userPrompt ?? ''}`}
                       </Box>
                     ) : null}
-                    {generated?.quests ? (
+                    {generated && ((generated.scenes?.length ?? 0) > 0 || (generated.quests?.length ?? 0) > 0) ? (
                       <Box
                         component="pre"
                         sx={{
@@ -585,7 +633,7 @@ export function GeneratorPage() {
                           fontSize: 12,
                         }}
                       >
-                        {JSON.stringify(generated.quests, null, 2)}
+                        {JSON.stringify((generated.scenes?.length ?? 0) > 0 ? generated.scenes : generated.quests, null, 2)}
                       </Box>
                     ) : null}
                   </Box>
@@ -604,6 +652,8 @@ export function GeneratorPage() {
             <Stack spacing={1}>
               {ways.map((way) => {
                 const generated = generatedActionQuests.find((item) => item.wayId.toUpperCase() === way.id.toUpperCase()) ?? null;
+                const scenesBlock = generatedAchievementScenes.find((item) => item.wayId.toUpperCase() === way.id.toUpperCase()) ?? null;
+                const actionCandidates = extractActionCandidatesFromScenes(way.id, scenesBlock?.scenes ?? []);
                 return (
                   <Box key={way.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25 }}>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' } }}>
@@ -644,7 +694,7 @@ export function GeneratorPage() {
                         {`SYSTEM:\n${wayPromptPreviews[`ACTION_QUESTS:${way.id.toUpperCase()}`]?.systemPrompt ?? ''}\n\nUSER:\n${wayPromptPreviews[`ACTION_QUESTS:${way.id.toUpperCase()}`]?.userPrompt ?? ''}`}
                       </Box>
                     ) : null}
-                    {generated?.actionQuests ? (
+                    {generated && ((generated.actionQuests?.length ?? 0) > 0 || (generated.resolutions?.length ?? 0) > 0) ? (
                       <Box
                         component="pre"
                         sx={{
@@ -660,8 +710,53 @@ export function GeneratorPage() {
                           fontSize: 12,
                         }}
                       >
-                        {JSON.stringify(generated.actionQuests, null, 2)}
+                        {JSON.stringify((generated.resolutions?.length ?? 0) > 0 ? generated.resolutions : generated.actionQuests, null, 2)}
                       </Box>
+                    ) : null}
+                    {actionCandidates.length ? (
+                      <Stack spacing={0.75} sx={{ mt: 1 }}>
+                        {actionCandidates.map((candidate) => {
+                          const previewKey = `ACTION_RESOLUTION:${candidate.wayId.toUpperCase()}:${candidate.sceneId.toUpperCase()}:${candidate.actionId.toUpperCase()}`;
+                          return (
+                            <Box key={`${candidate.sceneId}:${candidate.actionId}`} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                {candidate.sceneId} / {candidate.actionId}
+                              </Typography>
+                              <Typography variant="body2">{candidate.text}</Typography>
+                              <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                                <Button size="small" variant="contained" onClick={() => void handleGenerateActionResolution(candidate.wayId, candidate.sceneId, candidate.actionId)}>
+                                  Generate
+                                </Button>
+                                <Button size="small" variant="contained" onClick={() => void handleSendActionResolution(candidate.wayId, candidate.sceneId, candidate.actionId)}>
+                                  Send
+                                </Button>
+                                <Button size="small" variant="outlined" onClick={() => void handleApproveActionResolution(candidate.wayId, candidate.sceneId, candidate.actionId)}>
+                                  Approve
+                                </Button>
+                              </Stack>
+                              {wayPromptPreviews[previewKey] ? (
+                                <Box
+                                  component="pre"
+                                  sx={{
+                                    mt: 1,
+                                    mb: 0,
+                                    p: 1,
+                                    borderRadius: 1,
+                                    bgcolor: 'background.default',
+                                    maxHeight: 180,
+                                    overflow: 'auto',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {`SYSTEM:\n${wayPromptPreviews[previewKey]?.systemPrompt ?? ''}\n\nUSER:\n${wayPromptPreviews[previewKey]?.userPrompt ?? ''}`}
+                                </Box>
+                              ) : null}
+                            </Box>
+                          );
+                        })}
+                      </Stack>
                     ) : null}
                   </Box>
                 );
@@ -833,6 +928,7 @@ type GeneratedWayScenes = {
   status: string;
   approved: boolean;
   quests: unknown[];
+  scenes: unknown[];
 };
 
 type GeneratedKnowledgeChain = {
@@ -849,6 +945,14 @@ type GeneratedActionQuestWay = {
   status: string;
   approved: boolean;
   actionQuests: unknown[];
+  resolutions: unknown[];
+};
+
+type SceneActionCandidate = {
+  wayId: string;
+  sceneId: string;
+  actionId: string;
+  text: string;
 };
 
 function extractRealisationWays(output: unknown): RealisationWay[] {
@@ -888,6 +992,7 @@ function extractGeneratedWayScenes(output: unknown): GeneratedWayScenes[] {
         status: String(a.status ?? 'REVIEW'),
         approved: Boolean(a.approved),
         quests: Array.isArray(a.quests) ? a.quests : [],
+        scenes: Array.isArray(a.scenes) ? a.scenes : [],
       };
     })
     .filter((a) => a.wayId);
@@ -924,7 +1029,31 @@ function extractGeneratedActionQuestWays(output: unknown): GeneratedActionQuestW
         status: String(a.status ?? 'REVIEW'),
         approved: Boolean(a.approved),
         actionQuests: Array.isArray(a.action_quests) ? a.action_quests : [],
+        resolutions: Array.isArray(a.resolutions) ? a.resolutions : [],
       };
     })
     .filter((a) => a.wayId);
+}
+
+function extractActionCandidatesFromScenes(wayId: string, scenes: unknown[]): SceneActionCandidate[] {
+  const result: SceneActionCandidate[] = [];
+  scenes.forEach((scene) => {
+    if (!scene || typeof scene !== 'object') return;
+    const s = scene as Record<string, unknown>;
+    const sceneId = String(s.id ?? '');
+    const actions = Array.isArray(s.available_actions) ? s.available_actions : [];
+    actions.forEach((action) => {
+      if (!action || typeof action !== 'object') return;
+      const a = action as Record<string, unknown>;
+      const actionId = String(a.id ?? '');
+      if (!sceneId || !actionId) return;
+      result.push({
+        wayId,
+        sceneId,
+        actionId,
+        text: String(a.text ?? ''),
+      });
+    });
+  });
+  return result;
 }

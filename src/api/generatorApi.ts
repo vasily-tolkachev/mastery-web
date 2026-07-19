@@ -262,6 +262,67 @@ export async function previewActionQuestPrompt(projectId: string, wayId: string)
   };
 }
 
+export async function previewActionResolutionPrompt(
+  projectId: string,
+  wayId: string,
+  sceneId: string,
+  actionId: string,
+): Promise<StagePromptPreview> {
+  const response = await authFetch(
+    `/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/scenes/${encodeURIComponent(sceneId)}/actions/${encodeURIComponent(actionId)}/preview`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview action resolution prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    systemPrompt: String(raw.systemPrompt ?? ''),
+    userPrompt: String(raw.userPrompt ?? ''),
+  };
+}
+
+export async function generateActionResolution(
+  projectId: string,
+  wayId: string,
+  sceneId: string,
+  actionId: string,
+): Promise<GeneratorProject> {
+  const response = await authFetch(
+    `/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/scenes/${encodeURIComponent(sceneId)}/actions/${encodeURIComponent(actionId)}/generate`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  if (!response.ok) {
+    throw await toError(response, 'Failed to generate action resolution');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function approveActionResolution(
+  projectId: string,
+  wayId: string,
+  sceneId: string,
+  actionId: string,
+): Promise<GeneratorProject> {
+  const response = await authFetch(
+    `/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/scenes/${encodeURIComponent(sceneId)}/actions/${encodeURIComponent(actionId)}/approve`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  if (!response.ok) {
+    throw await toError(response, 'Failed to approve action resolution');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
