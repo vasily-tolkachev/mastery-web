@@ -173,6 +173,21 @@ export async function approveAchievementScene(projectId: string, wayId: string):
   return normalizeProject(await response.json());
 }
 
+export async function previewAchievementScenePrompt(projectId: string, wayId: string): Promise<StagePromptPreview> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACHIEVEMENT_SCENES/ways/${encodeURIComponent(wayId)}/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview achievement scenes prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    systemPrompt: String(raw.systemPrompt ?? ''),
+    userPrompt: String(raw.userPrompt ?? ''),
+  };
+}
+
 export async function generateKnowledgeChain(projectId: string, wayId: string): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${projectId}/stages/KNOWLEDGE_CHAIN/ways/${encodeURIComponent(wayId)}/generate`, {
     method: 'POST',
@@ -195,6 +210,21 @@ export async function approveKnowledgeChain(projectId: string, wayId: string): P
   return normalizeProject(await response.json());
 }
 
+export async function previewKnowledgeChainPrompt(projectId: string, wayId: string): Promise<StagePromptPreview> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/KNOWLEDGE_CHAIN/ways/${encodeURIComponent(wayId)}/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview knowledge chain prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    systemPrompt: String(raw.systemPrompt ?? ''),
+    userPrompt: String(raw.userPrompt ?? ''),
+  };
+}
+
 export async function generateActionQuest(projectId: string, wayId: string): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/generate`, {
     method: 'POST',
@@ -215,6 +245,21 @@ export async function approveActionQuest(projectId: string, wayId: string): Prom
     throw await toError(response, 'Failed to approve action quests');
   }
   return normalizeProject(await response.json());
+}
+
+export async function previewActionQuestPrompt(projectId: string, wayId: string): Promise<StagePromptPreview> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview action quests prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    systemPrompt: String(raw.systemPrompt ?? ''),
+    userPrompt: String(raw.userPrompt ?? ''),
+  };
 }
 
 async function toError(response: Response, fallback: string): Promise<Error> {

@@ -21,6 +21,9 @@ import {
   getGeneratorProject,
   getGeneratorProjects,
   importProjectJson,
+  previewActionQuestPrompt,
+  previewAchievementScenePrompt,
+  previewKnowledgeChainPrompt,
 } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview } from '../types/generator';
@@ -34,6 +37,7 @@ export function GeneratorPage() {
   const [, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [promptPreviews, setPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
+  const [wayPromptPreviews, setWayPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -220,7 +224,22 @@ export function GeneratorPage() {
   const handleGenerateWay = async (wayId: string) => {
     if (!selectedProjectId) return;
     try {
-      setBusyAction(`generate-way-${wayId}`);
+      setBusyAction(`preview-as-way-${wayId}`);
+      setError(null);
+      const preview = await previewAchievementScenePrompt(selectedProjectId, wayId);
+      setWayPromptPreviews((prev) => ({ ...prev, [`ACHIEVEMENT_SCENES:${wayId.toUpperCase()}`]: preview }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to preview achievement scenes prompt');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSendWay = async (wayId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`send-as-way-${wayId}`);
       setError(null);
       const updated = await generateAchievementScene(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
@@ -235,7 +254,22 @@ export function GeneratorPage() {
   const handleGenerateKnowledgeChainWay = async (wayId: string) => {
     if (!selectedProjectId) return;
     try {
-      setBusyAction(`generate-kc-way-${wayId}`);
+      setBusyAction(`preview-kc-way-${wayId}`);
+      setError(null);
+      const preview = await previewKnowledgeChainPrompt(selectedProjectId, wayId);
+      setWayPromptPreviews((prev) => ({ ...prev, [`KNOWLEDGE_CHAIN:${wayId.toUpperCase()}`]: preview }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to preview knowledge chain prompt');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSendKnowledgeChainWay = async (wayId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`send-kc-way-${wayId}`);
       setError(null);
       const updated = await generateKnowledgeChain(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
@@ -280,7 +314,22 @@ export function GeneratorPage() {
   const handleGenerateActionQuestWay = async (wayId: string) => {
     if (!selectedProjectId) return;
     try {
-      setBusyAction(`generate-aq-way-${wayId}`);
+      setBusyAction(`preview-aq-way-${wayId}`);
+      setError(null);
+      const preview = await previewActionQuestPrompt(selectedProjectId, wayId);
+      setWayPromptPreviews((prev) => ({ ...prev, [`ACTION_QUESTS:${wayId.toUpperCase()}`]: preview }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to preview action quests prompt');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSendActionQuestWay = async (wayId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`send-aq-way-${wayId}`);
       setError(null);
       const updated = await generateActionQuest(selectedProjectId, wayId);
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
@@ -418,11 +467,33 @@ export function GeneratorPage() {
                         <Button size="small" variant="contained" onClick={() => void handleGenerateKnowledgeChainWay(way.id)} disabled={false}>
                           Generate
                         </Button>
+                        <Button size="small" variant="contained" onClick={() => void handleSendKnowledgeChainWay(way.id)} disabled={false}>
+                          Send
+                        </Button>
                         <Button size="small" variant="outlined" onClick={() => void handleApproveKnowledgeChainWay(way.id)} disabled={false}>
                           Approve
                         </Button>
                       </Stack>
                     </Stack>
+                    {wayPromptPreviews[`KNOWLEDGE_CHAIN:${way.id.toUpperCase()}`] ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          mt: 1,
+                          mb: 0,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: 'background.default',
+                          maxHeight: 220,
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          fontSize: 12,
+                        }}
+                      >
+                        {`SYSTEM:\n${wayPromptPreviews[`KNOWLEDGE_CHAIN:${way.id.toUpperCase()}`]?.systemPrompt ?? ''}\n\nUSER:\n${wayPromptPreviews[`KNOWLEDGE_CHAIN:${way.id.toUpperCase()}`]?.userPrompt ?? ''}`}
+                      </Box>
+                    ) : null}
                     {generated?.knowledgeChain ? (
                       <Box
                         component="pre"
@@ -471,11 +542,33 @@ export function GeneratorPage() {
                         <Button size="small" variant="contained" onClick={() => void handleGenerateWay(way.id)} disabled={false}>
                           Generate
                         </Button>
+                        <Button size="small" variant="contained" onClick={() => void handleSendWay(way.id)} disabled={false}>
+                          Send
+                        </Button>
                         <Button size="small" variant="outlined" onClick={() => void handleApproveWay(way.id)} disabled={false}>
                           Approve
                         </Button>
                       </Stack>
                     </Stack>
+                    {wayPromptPreviews[`ACHIEVEMENT_SCENES:${way.id.toUpperCase()}`] ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          mt: 1,
+                          mb: 0,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: 'background.default',
+                          maxHeight: 220,
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          fontSize: 12,
+                        }}
+                      >
+                        {`SYSTEM:\n${wayPromptPreviews[`ACHIEVEMENT_SCENES:${way.id.toUpperCase()}`]?.systemPrompt ?? ''}\n\nUSER:\n${wayPromptPreviews[`ACHIEVEMENT_SCENES:${way.id.toUpperCase()}`]?.userPrompt ?? ''}`}
+                      </Box>
+                    ) : null}
                     {generated?.quests ? (
                       <Box
                         component="pre"
@@ -524,11 +617,33 @@ export function GeneratorPage() {
                         <Button size="small" variant="contained" onClick={() => void handleGenerateActionQuestWay(way.id)} disabled={false}>
                           Generate
                         </Button>
+                        <Button size="small" variant="contained" onClick={() => void handleSendActionQuestWay(way.id)} disabled={false}>
+                          Send
+                        </Button>
                         <Button size="small" variant="outlined" onClick={() => void handleApproveActionQuestWay(way.id)} disabled={false}>
                           Approve
                         </Button>
                       </Stack>
                     </Stack>
+                    {wayPromptPreviews[`ACTION_QUESTS:${way.id.toUpperCase()}`] ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          mt: 1,
+                          mb: 0,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: 'background.default',
+                          maxHeight: 220,
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          fontSize: 12,
+                        }}
+                      >
+                        {`SYSTEM:\n${wayPromptPreviews[`ACTION_QUESTS:${way.id.toUpperCase()}`]?.systemPrompt ?? ''}\n\nUSER:\n${wayPromptPreviews[`ACTION_QUESTS:${way.id.toUpperCase()}`]?.userPrompt ?? ''}`}
+                      </Box>
+                    ) : null}
                     {generated?.actionQuests ? (
                       <Box
                         component="pre"
