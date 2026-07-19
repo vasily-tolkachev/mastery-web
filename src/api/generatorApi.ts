@@ -173,6 +173,28 @@ export async function approveAchievementScene(projectId: string, wayId: string):
   return normalizeProject(await response.json());
 }
 
+export async function generateKnowledgeChain(projectId: string, wayId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/KNOWLEDGE_CHAIN/ways/${encodeURIComponent(wayId)}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to generate knowledge chain');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function approveKnowledgeChain(projectId: string, wayId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/stages/KNOWLEDGE_CHAIN/ways/${encodeURIComponent(wayId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to approve knowledge chain');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;

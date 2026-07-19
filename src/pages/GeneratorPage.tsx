@@ -6,11 +6,13 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
+  approveKnowledgeChain,
   approveAchievementScene,
   approveStage,
   createGeneratorProject,
   exportProjectJson,
   previewStagePrompt,
+  generateKnowledgeChain,
   generateAchievementScene,
   generateStage,
   generateStageStep,
@@ -205,8 +207,10 @@ export function GeneratorPage() {
   }
 
   const realisationStage = selectedProject?.stages.find((stage) => stage.type === 'ACHIEVEMENT_REALISATION') ?? null;
+  const knowledgeChainStage = selectedProject?.stages.find((stage) => stage.type === 'KNOWLEDGE_CHAIN') ?? null;
   const achievementScenesStage = selectedProject?.stages.find((stage) => stage.type === 'ACHIEVEMENT_SCENES') ?? null;
   const ways = extractRealisationWays(realisationStage?.currentRevision?.outputJson);
+  const generatedKnowledgeChains = extractGeneratedKnowledgeChains(knowledgeChainStage?.currentRevision?.outputJson);
   const generatedAchievementScenes = extractGeneratedWayScenes(achievementScenesStage?.currentRevision?.outputJson);
 
   const handleGenerateWay = async (wayId: string) => {
@@ -218,6 +222,36 @@ export function GeneratorPage() {
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to generate achievement scenes');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleGenerateKnowledgeChainWay = async (wayId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`generate-kc-way-${wayId}`);
+      setError(null);
+      const updated = await generateKnowledgeChain(selectedProjectId, wayId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate knowledge chain');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleApproveKnowledgeChainWay = async (wayId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`approve-kc-way-${wayId}`);
+      setError(null);
+      const updated = await approveKnowledgeChain(selectedProjectId, wayId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to approve knowledge chain');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -321,9 +355,64 @@ export function GeneratorPage() {
                   onSend={() => void handleSend(stage.type)}
                   onApprove={() => void handleApprove(stage.type)}
                   onGenerateStep={(step) => void handleGenerateStep(stage.type, step)}
+                  disableStageSend={stage.type === 'KNOWLEDGE_CHAIN'}
+                  disableStageApprove={stage.type === 'KNOWLEDGE_CHAIN'}
                 />
               ))}
           </Stack>
+        </SectionCard>
+      ) : null}
+
+      {selectedProject ? (
+        <SectionCard title="Knowledge Chain">
+          {!ways.length ? (
+            <Typography variant="body2" color="text.secondary">No ways found in ACHIEVEMENT_REALISATION.</Typography>
+          ) : (
+            <Stack spacing={1}>
+              {ways.map((way) => {
+                const generated = generatedKnowledgeChains.find((item) => item.wayId.toUpperCase() === way.id.toUpperCase()) ?? null;
+                return (
+                  <Box key={way.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25 }}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' } }}>
+                      <Box>
+                        <Typography variant="subtitle2">{way.id}</Typography>
+                        <Typography variant="body2" color="text.secondary">Achievement: {way.achievementId}</Typography>
+                        <Typography variant="body2" color="text.secondary">{way.description}</Typography>
+                      </Box>
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                        <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
+                        <Button size="small" variant="contained" onClick={() => void handleGenerateKnowledgeChainWay(way.id)} disabled={false}>
+                          Generate
+                        </Button>
+                        <Button size="small" variant="outlined" onClick={() => void handleApproveKnowledgeChainWay(way.id)} disabled={false}>
+                          Approve
+                        </Button>
+                      </Stack>
+                    </Stack>
+                    {generated?.knowledgeChain ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          mt: 1,
+                          mb: 0,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: 'background.default',
+                          maxHeight: 260,
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          fontSize: 12,
+                        }}
+                      >
+                        {JSON.stringify(generated.knowledgeChain, null, 2)}
+                      </Box>
+                    ) : null}
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
         </SectionCard>
       ) : null}
 
@@ -390,9 +479,11 @@ type StageRowProps = {
   onSend: () => void;
   onApprove: () => void;
   onGenerateStep: (_step: string) => void;
+  disableStageSend?: boolean;
+  disableStageApprove?: boolean;
 };
 
-function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGenerateStep }: StageRowProps) {
+function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGenerateStep, disableStageSend, disableStageApprove }: StageRowProps) {
   const steps: string[] = [];
 
   return (
@@ -425,7 +516,7 @@ function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGener
           <Button
             size="small"
             variant="contained"
-            disabled={false}
+            disabled={Boolean(disableStageSend)}
             onClick={onSend}
           >
             Send
@@ -434,7 +525,7 @@ function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGener
             size="small"
             variant="outlined"
             startIcon={<CheckCircleRoundedIcon fontSize="small" />}
-            disabled={false}
+            disabled={Boolean(disableStageApprove)}
             onClick={onApprove}
           >
             Approve
@@ -542,6 +633,14 @@ type GeneratedWayScenes = {
   quests: unknown[];
 };
 
+type GeneratedKnowledgeChain = {
+  wayId: string;
+  achievementId: string;
+  status: string;
+  approved: boolean;
+  knowledgeChain: unknown;
+};
+
 function extractRealisationWays(output: unknown): RealisationWay[] {
   if (!output || typeof output !== 'object') return [];
   const raw = output as Record<string, unknown>;
@@ -579,6 +678,24 @@ function extractGeneratedWayScenes(output: unknown): GeneratedWayScenes[] {
         status: String(a.status ?? 'REVIEW'),
         approved: Boolean(a.approved),
         quests: Array.isArray(a.quests) ? a.quests : [],
+      };
+    })
+    .filter((a) => a.wayId);
+}
+
+function extractGeneratedKnowledgeChains(output: unknown): GeneratedKnowledgeChain[] {
+  if (!output || typeof output !== 'object') return [];
+  const raw = output as Record<string, unknown>;
+  const chains = Array.isArray(raw.knowledge_chains) ? raw.knowledge_chains : [];
+  return chains
+    .map((item) => {
+      const a = (item ?? {}) as Record<string, unknown>;
+      return {
+        wayId: String(a.way_id ?? ''),
+        achievementId: String(a.achievement_id ?? ''),
+        status: String(a.status ?? 'REVIEW'),
+        approved: Boolean(a.approved),
+        knowledgeChain: a.knowledge_chain ?? null,
       };
     })
     .filter((a) => a.wayId);
