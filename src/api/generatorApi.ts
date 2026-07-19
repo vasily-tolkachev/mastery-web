@@ -239,28 +239,6 @@ export async function previewKnowledgeChainPrompt(projectId: string, wayId: stri
   };
 }
 
-export async function generateActionQuest(projectId: string, wayId: string): Promise<GeneratorProject> {
-  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!response.ok) {
-    throw await toError(response, 'Failed to generate action quests');
-  }
-  return normalizeProject(await response.json());
-}
-
-export async function approveActionQuest(projectId: string, wayId: string): Promise<GeneratorProject> {
-  const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/approve`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!response.ok) {
-    throw await toError(response, 'Failed to approve action quests');
-  }
-  return normalizeProject(await response.json());
-}
-
 export async function previewActionQuestPrompt(projectId: string, wayId: string): Promise<StagePromptPreview> {
   const response = await authFetch(`/api/generator/projects/${projectId}/stages/ACTION_QUESTS/ways/${encodeURIComponent(wayId)}/preview`, {
     method: 'POST',

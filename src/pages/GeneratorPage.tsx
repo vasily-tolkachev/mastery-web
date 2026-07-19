@@ -8,7 +8,6 @@ import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   ApiRequestError,
   approveActionResolution,
-  approveActionQuest,
   approveKnowledgeChain,
   approveAchievementScene,
   approveStage,
@@ -16,7 +15,6 @@ import {
   exportProjectJson,
   previewStagePrompt,
   generateActionResolution,
-  generateActionQuest,
   generateKnowledgeChain,
   generateAchievementScene,
   generateStage,
@@ -344,36 +342,6 @@ export function GeneratorPage() {
       setWayPromptPreviews((prev) => ({ ...prev, [`ACTION_QUESTS:${wayId.toUpperCase()}`]: preview }));
     } catch (e) {
       applyUiError(e, 'Failed to preview action quests prompt');
-      await refreshSelectedProject(selectedProjectId);
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
-  const handleSendActionQuestWay = async (wayId: string) => {
-    if (!selectedProjectId) return;
-    try {
-      setBusyAction(`send-aq-way-${wayId}`);
-      clearUiError();
-      const updated = await generateActionQuest(selectedProjectId, wayId);
-      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
-    } catch (e) {
-      applyUiError(e, 'Failed to generate action quests');
-      await refreshSelectedProject(selectedProjectId);
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
-  const handleApproveActionQuestWay = async (wayId: string) => {
-    if (!selectedProjectId) return;
-    try {
-      setBusyAction(`approve-aq-way-${wayId}`);
-      clearUiError();
-      const updated = await approveActionQuest(selectedProjectId, wayId);
-      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
-    } catch (e) {
-      applyUiError(e, 'Failed to approve action quests');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -719,12 +687,6 @@ export function GeneratorPage() {
                         <Chip size="small" label={generated?.status ?? 'NOT_STARTED'} color={generated?.approved ? 'success' : 'default'} />
                         <Button size="small" variant="contained" onClick={() => void handleGenerateActionQuestWay(way.id)} disabled={false}>
                           Generate
-                        </Button>
-                        <Button size="small" variant="contained" onClick={() => void handleSendActionQuestWay(way.id)} disabled={false}>
-                          Send
-                        </Button>
-                        <Button size="small" variant="outlined" onClick={() => void handleApproveActionQuestWay(way.id)} disabled={false}>
-                          Approve
                         </Button>
                       </Stack>
                     </Stack>
