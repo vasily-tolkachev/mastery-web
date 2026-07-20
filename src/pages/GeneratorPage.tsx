@@ -30,7 +30,7 @@ import {
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview } from '../types/generator';
 
-const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'KNOWLEDGE_CHAIN', 'ACHIEVEMENT_SCENES', 'ACTION_QUESTS'];
+const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['FIRST_SCENE', 'QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'KNOWLEDGE_CHAIN', 'ACHIEVEMENT_SCENES', 'ACTION_QUESTS'];
 
 export function GeneratorPage() {
   const [projects, setProjects] = useState<GeneratorProject[]>([]);
@@ -906,6 +906,7 @@ function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGener
 
 function stageTypeLabel(stage: GeneratorStage): string {
   if (stage.displayName?.trim()) return stage.displayName;
+  if (stage.type === 'FIRST_SCENE') return 'First Scene';
   if (stage.type === 'QUEST_DESCRIPTION' || stage.type === 'MYSTERY') return 'Quest Description';
   if (stage.type === 'QUEST_CONSTRAINTS') return 'Quest Constraints';
   if (stage.type === 'ACHIEVEMENT_RESOURCE_ANALYSIS') return 'Achievement Resource Analysis';
