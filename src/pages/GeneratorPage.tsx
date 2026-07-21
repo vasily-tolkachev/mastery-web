@@ -1466,7 +1466,7 @@ function NodeTreeList({ nodes, selectedNodeId, onSelectNode }: NodeTreeListProps
   roots.sort((a, b) => a.id.localeCompare(b.id));
   byParent.forEach((list) => list.sort((a, b) => a.id.localeCompare(b.id)));
 
-  const renderNode = (node: WorkspaceNode, level: number): JSX.Element => {
+  const renderNode = (node: WorkspaceNode, level: number) => {
     const children = byParent.get(node.id.toUpperCase()) ?? [];
     const groupedByAction = new Map<string, WorkspaceNode[]>();
     children.forEach((child) => {
