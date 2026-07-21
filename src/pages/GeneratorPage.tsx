@@ -33,6 +33,8 @@ import {
   generateWorkspaceNodeDescription,
   extractWorkspaceNodeKnowledge,
   generateWorkspaceNodeActions,
+  addWorkspaceGlobalKnowledge,
+  addNodeKnowledgeToGlobal,
 } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview, WorkspaceNode } from '../types/generator';
@@ -52,6 +54,7 @@ export function GeneratorPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [nodeDescriptionDraft, setNodeDescriptionDraft] = useState('');
   const [nodeActionDraft, setNodeActionDraft] = useState('');
+  const [globalKnowledgeDraft, setGlobalKnowledgeDraft] = useState('');
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -475,6 +478,38 @@ export function GeneratorPage() {
     }
   };
 
+  const handleAddGlobalKnowledge = async () => {
+    if (!selectedProjectId) return;
+    if (!globalKnowledgeDraft.trim()) return;
+    try {
+      setBusyAction('workspace-add-global-knowledge');
+      clearUiError();
+      const updated = await addWorkspaceGlobalKnowledge(selectedProjectId, globalKnowledgeDraft);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+      setGlobalKnowledgeDraft('');
+    } catch (e) {
+      applyUiError(e, 'Failed to add global knowledge');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleAddNodeKnowledgeToGlobal = async (text: string) => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-add-node-knowledge-to-global');
+      clearUiError();
+      const updated = await addNodeKnowledgeToGlobal(selectedProjectId, selectedNode.id, text);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to add node knowledge to global');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleGenerateActionResolution = async (wayId: string, sceneId: string, actionId: string) => {
     if (!selectedProjectId) return;
     try {
@@ -699,7 +734,16 @@ export function GeneratorPage() {
                       <Typography variant="caption" color="text.secondary">Knowledge draft</Typography>
                       <Stack spacing={0.25} sx={{ mt: 0.5 }}>
                         {selectedNode.extractedKnowledgeDraft.map((item, index) => (
-                          <Typography key={`${index}-${item}`} variant="body2">{index + 1}. {item}</Typography>
+                          <Stack key={`${index}-${item}`} direction="row" spacing={1}>
+                            <Typography variant="body2" sx={{ flex: 1 }}>{index + 1}. {item}</Typography>
+                            <Button
+                              size="small"
+                              variant="text"
+                              onClick={() => void handleAddNodeKnowledgeToGlobal(item)}
+                            >
+                              Add to Global
+                            </Button>
+                          </Stack>
                         ))}
                       </Stack>
                     </Box>
@@ -772,6 +816,35 @@ export function GeneratorPage() {
                   </Stack>
                 </>
               )}
+            </Stack>
+          </Stack>
+        </SectionCard>
+      ) : null}
+
+      {selectedProject ? (
+        <SectionCard title="Global Knowledge">
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={1}>
+              <TextField
+                label="New Knowledge"
+                size="small"
+                value={globalKnowledgeDraft}
+                onChange={(event) => setGlobalKnowledgeDraft(event.target.value)}
+                fullWidth
+              />
+              <Button size="small" variant="contained" onClick={() => void handleAddGlobalKnowledge()}>
+                Add
+              </Button>
+            </Stack>
+            <Stack spacing={0.5}>
+              {(selectedProject.nodeWorkspace?.globalKnowledge ?? []).map((item, index) => (
+                <Typography key={`${index}-${item}`} variant="body2">
+                  {index + 1}. {item}
+                </Typography>
+              ))}
+              {!(selectedProject.nodeWorkspace?.globalKnowledge?.length) ? (
+                <Typography variant="body2" color="text.secondary">No global knowledge yet.</Typography>
+              ) : null}
             </Stack>
           </Stack>
         </SectionCard>

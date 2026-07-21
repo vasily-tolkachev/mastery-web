@@ -408,6 +408,30 @@ export async function generateWorkspaceNodeActions(projectId: string, nodeId: st
   return normalizeProject(await response.json());
 }
 
+export async function addWorkspaceGlobalKnowledge(projectId: string, text: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/global-knowledge`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to add global knowledge');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function addNodeKnowledgeToGlobal(projectId: string, nodeId: string, text: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/knowledge/add-to-global`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to add node knowledge to global');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
