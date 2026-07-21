@@ -601,11 +601,19 @@ function normalizeNodeWorkspace(rawValue: unknown): GeneratorProject['nodeWorksp
 function normalizeWorkspaceNode(rawValue: unknown): WorkspaceNode {
   const raw = (rawValue ?? {}) as Record<string, unknown>;
   const actions = Array.isArray(raw.actions) ? raw.actions : [];
+  const legacyDescription = String(raw.description ?? '');
+  const actionDescription = String(raw.actionDescription ?? '');
+  const stateDescription = String(raw.stateDescription ?? '');
+  const normalizedActionDescription = actionDescription || (stateDescription ? '' : legacyDescription);
+  const normalizedStateDescription = stateDescription || (actionDescription ? '' : legacyDescription);
+  const generatedLegacyDescription = String(raw.generatedDescriptionDraft ?? '');
+  const generatedActionDescriptionDraft = String(raw.generatedActionDescriptionDraft ?? '');
+  const generatedStateDescriptionDraft = String(raw.generatedStateDescriptionDraft ?? '');
   return {
     id: String(raw.id ?? ''),
-    description: String(raw.description ?? ''),
-    actionDescription: String(raw.actionDescription ?? ''),
-    stateDescription: String(raw.stateDescription ?? ''),
+    description: legacyDescription,
+    actionDescription: normalizedActionDescription,
+    stateDescription: normalizedStateDescription,
     actions: actions.map((action) => {
       const a = (action ?? {}) as Record<string, unknown>;
       return {
@@ -616,9 +624,9 @@ function normalizeWorkspaceNode(rawValue: unknown): WorkspaceNode {
     sourceNodeId: raw.sourceNodeId == null ? null : String(raw.sourceNodeId),
     sourceActionId: raw.sourceActionId == null ? null : String(raw.sourceActionId),
     updatedAt: String(raw.updatedAt ?? ''),
-    generatedDescriptionDraft: String(raw.generatedDescriptionDraft ?? ''),
-    generatedActionDescriptionDraft: String(raw.generatedActionDescriptionDraft ?? ''),
-    generatedStateDescriptionDraft: String(raw.generatedStateDescriptionDraft ?? ''),
+    generatedDescriptionDraft: generatedLegacyDescription,
+    generatedActionDescriptionDraft: generatedActionDescriptionDraft || (generatedStateDescriptionDraft ? '' : generatedLegacyDescription),
+    generatedStateDescriptionDraft: generatedStateDescriptionDraft || (generatedActionDescriptionDraft ? '' : generatedLegacyDescription),
     extractedKnowledgeDraft: Array.isArray(raw.extractedKnowledgeDraft) ? raw.extractedKnowledgeDraft.map((item) => String(item ?? '')) : [],
     generatedActionsDraft: Array.isArray(raw.generatedActionsDraft) ? raw.generatedActionsDraft.map((item) => String(item ?? '')) : [],
   };
