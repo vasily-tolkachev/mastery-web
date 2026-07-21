@@ -7,6 +7,7 @@ import type {
   GeneratorStageType,
   StagePromptPreview,
   StageRevision,
+  WorkspaceNode,
 } from '../types/generator';
 
 export class ApiRequestError extends Error {
@@ -315,6 +316,65 @@ export async function approveActionResolution(
   return normalizeProject(await response.json());
 }
 
+export async function createWorkspaceNode(projectId: string, sourceNodeId?: string, sourceActionId?: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sourceNodeId, sourceActionId }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to create node');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function updateWorkspaceNodeDescription(projectId: string, nodeId: string, description: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/description`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ description }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to update node description');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function addWorkspaceNodeAction(projectId: string, nodeId: string, text: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/actions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to add node action');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function updateWorkspaceNodeAction(projectId: string, nodeId: string, actionId: string, text: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/actions/${encodeURIComponent(actionId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to update node action');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function createNextWorkspaceNode(projectId: string, nodeId: string, actionId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/actions/${encodeURIComponent(actionId)}/create-next-node`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to create next node');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
@@ -337,6 +397,41 @@ function normalizeProject(rawValue: unknown): GeneratorProject {
     questStyle: String(raw.questStyle ?? ''),
     status: String(raw.status ?? ''),
     stages: stagesRaw.map(normalizeStage),
+    nodeWorkspace: normalizeNodeWorkspace(raw.nodeWorkspace),
+  };
+}
+
+function normalizeNodeWorkspace(rawValue: unknown): GeneratorProject['nodeWorkspace'] {
+  if (!rawValue || typeof rawValue !== 'object') {
+    return null;
+  }
+  const raw = rawValue as Record<string, unknown>;
+  const nodesRaw = Array.isArray(raw.nodes) ? raw.nodes : [];
+  return {
+    nodes: nodesRaw.map(normalizeWorkspaceNode),
+    globalKnowledge: Array.isArray(raw.globalKnowledge) ? raw.globalKnowledge.map((item) => String(item ?? '')) : [],
+    expansionSuggestions: Array.isArray(raw.expansionSuggestions) ? raw.expansionSuggestions.map((item) => String(item ?? '')) : [],
+    nextNodeIndex: Number(raw.nextNodeIndex ?? 1),
+    nextActionIndex: Number(raw.nextActionIndex ?? 1),
+  };
+}
+
+function normalizeWorkspaceNode(rawValue: unknown): WorkspaceNode {
+  const raw = (rawValue ?? {}) as Record<string, unknown>;
+  const actions = Array.isArray(raw.actions) ? raw.actions : [];
+  return {
+    id: String(raw.id ?? ''),
+    description: String(raw.description ?? ''),
+    actions: actions.map((action) => {
+      const a = (action ?? {}) as Record<string, unknown>;
+      return {
+        id: String(a.id ?? ''),
+        text: String(a.text ?? ''),
+      };
+    }).filter((action) => action.id),
+    sourceNodeId: raw.sourceNodeId == null ? null : String(raw.sourceNodeId),
+    sourceActionId: raw.sourceActionId == null ? null : String(raw.sourceActionId),
+    updatedAt: String(raw.updatedAt ?? ''),
   };
 }
 

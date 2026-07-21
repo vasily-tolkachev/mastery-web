@@ -3,7 +3,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   ApiRequestError,
@@ -26,9 +26,13 @@ import {
   previewActionQuestPrompt,
   previewAchievementScenePrompt,
   previewKnowledgeChainPrompt,
+  createWorkspaceNode,
+  updateWorkspaceNodeDescription,
+  addWorkspaceNodeAction,
+  createNextWorkspaceNode,
 } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
-import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview } from '../types/generator';
+import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview, WorkspaceNode } from '../types/generator';
 
 const ORDERED_STAGE_TYPES: GeneratorStageType[] = ['FIRST_SCENE', 'QUEST_DESCRIPTION', 'QUEST_CONSTRAINTS', 'ACHIEVEMENT_RESOURCE_ANALYSIS', 'WORLD', 'ACHIEVEMENT_REALISATION', 'ACHIEVEMENT_INFORMATION_FLOW', 'KNOWLEDGE_CHAIN', 'ACHIEVEMENT_SCENES', 'ACTION_QUESTS'];
 
@@ -42,10 +46,19 @@ export function GeneratorPage() {
   const [validationResult, setValidationResult] = useState<unknown>(null);
   const [promptPreviews, setPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
   const [wayPromptPreviews, setWayPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [nodeDescriptionDraft, setNodeDescriptionDraft] = useState('');
+  const [nodeActionDraft, setNodeActionDraft] = useState('');
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
+  );
+
+  const workspaceNodes = selectedProject?.nodeWorkspace?.nodes ?? [];
+  const selectedNode = useMemo(
+    () => workspaceNodes.find((node) => node.id === selectedNodeId) ?? null,
+    [workspaceNodes, selectedNodeId],
   );
 
   const clearUiError = () => {
@@ -87,6 +100,21 @@ export function GeneratorPage() {
   useEffect(() => {
     void loadProjects();
   }, []);
+
+  useEffect(() => {
+    if (!workspaceNodes.length) {
+      setSelectedNodeId(null);
+      setNodeDescriptionDraft('');
+      return;
+    }
+    if (!selectedNodeId || !workspaceNodes.some((node) => node.id === selectedNodeId)) {
+      setSelectedNodeId(workspaceNodes[0].id);
+    }
+  }, [workspaceNodes, selectedNodeId]);
+
+  useEffect(() => {
+    setNodeDescriptionDraft(selectedNode?.description ?? '');
+  }, [selectedNode?.id, selectedNode?.description]);
 
   const refreshSelectedProject = async (projectId: string) => {
     const refreshed = await getGeneratorProject(projectId);
@@ -348,6 +376,57 @@ export function GeneratorPage() {
     }
   };
 
+  const handleCreateWorkspaceNode = async (sourceNodeId?: string, sourceActionId?: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction('workspace-create-node');
+      clearUiError();
+      const updated = await createWorkspaceNode(selectedProjectId, sourceNodeId, sourceActionId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+      const nodes = updated.nodeWorkspace?.nodes ?? [];
+      if (nodes.length) {
+        setSelectedNodeId(nodes[nodes.length - 1].id);
+      }
+    } catch (e) {
+      applyUiError(e, 'Failed to create workspace node');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSaveNodeDescription = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-save-description');
+      clearUiError();
+      const updated = await updateWorkspaceNodeDescription(selectedProjectId, selectedNode.id, nodeDescriptionDraft);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to save node description');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleAddNodeAction = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    if (!nodeActionDraft.trim()) return;
+    try {
+      setBusyAction('workspace-add-action');
+      clearUiError();
+      const updated = await addWorkspaceNodeAction(selectedProjectId, selectedNode.id, nodeActionDraft);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+      setNodeActionDraft('');
+    } catch (e) {
+      applyUiError(e, 'Failed to add node action');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleGenerateActionResolution = async (wayId: string, sceneId: string, actionId: string) => {
     if (!selectedProjectId) return;
     try {
@@ -480,6 +559,117 @@ export function GeneratorPage() {
           ))}
         </Stack>
       </SectionCard>
+
+      {selectedProject ? (
+        <SectionCard
+          title="Node Workspace"
+          action={(
+            <Button size="small" variant="contained" onClick={() => void handleCreateWorkspaceNode()}>
+              Create Node
+            </Button>
+          )}
+        >
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+            <Stack spacing={1} sx={{ minWidth: { md: 260 }, maxWidth: { md: 320 } }}>
+              <Typography variant="subtitle2">Nodes</Typography>
+              {!workspaceNodes.length ? <Typography variant="body2" color="text.secondary">No nodes yet.</Typography> : null}
+              {workspaceNodes.map((node) => (
+                <Box
+                  key={node.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedNodeId(node.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      setSelectedNodeId(node.id);
+                    }
+                  }}
+                  sx={{
+                    border: 1,
+                    borderColor: selectedNodeId === node.id ? 'primary.main' : 'divider',
+                    borderRadius: 1,
+                    p: 1,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    actions: {node.actions.length}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+
+            <Stack spacing={1} sx={{ flex: 1 }}>
+              {!selectedNode ? (
+                <Typography variant="body2" color="text.secondary">Select node to edit.</Typography>
+              ) : (
+                <>
+                  <Typography variant="subtitle2">Node {selectedNode.id}</Typography>
+                  <TextField
+                    label="Description"
+                    value={nodeDescriptionDraft}
+                    onChange={(event) => setNodeDescriptionDraft(event.target.value)}
+                    fullWidth
+                    multiline
+                    minRows={4}
+                  />
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="contained" onClick={() => void handleSaveNodeDescription()}>
+                      Save Description
+                    </Button>
+                  </Stack>
+
+                  <Typography variant="subtitle2" sx={{ pt: 1 }}>Actions</Typography>
+                  <Stack direction="row" spacing={1}>
+                    <TextField
+                      label="New Action"
+                      size="small"
+                      value={nodeActionDraft}
+                      onChange={(event) => setNodeActionDraft(event.target.value)}
+                      fullWidth
+                    />
+                    <Button size="small" variant="contained" onClick={() => void handleAddNodeAction()}>
+                      Add
+                    </Button>
+                  </Stack>
+
+                  <Stack spacing={0.75}>
+                    {selectedNode.actions.map((action) => (
+                      <ActionRow
+                        key={action.id}
+                        node={selectedNode}
+                        action={action}
+                        onCreateNextNode={async () => {
+                          if (!selectedProjectId) return;
+                          try {
+                            setBusyAction(`workspace-next-${selectedNode.id}-${action.id}`);
+                            clearUiError();
+                            const updated = await createNextWorkspaceNode(selectedProjectId, selectedNode.id, action.id);
+                            setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+                            const nodes = updated.nodeWorkspace?.nodes ?? [];
+                            if (nodes.length) {
+                              setSelectedNodeId(nodes[nodes.length - 1].id);
+                            }
+                          } catch (e) {
+                            applyUiError(e, 'Failed to create next node');
+                            await refreshSelectedProject(selectedProjectId);
+                          } finally {
+                            setBusyAction(null);
+                          }
+                        }}
+                      />
+                    ))}
+                    {!selectedNode.actions.length ? (
+                      <Typography variant="body2" color="text.secondary">No actions yet.</Typography>
+                    ) : null}
+                  </Stack>
+                </>
+              )}
+            </Stack>
+          </Stack>
+        </SectionCard>
+      ) : null}
 
       {selectedProject ? (
         <SectionCard
@@ -794,6 +984,31 @@ type StageRowProps = {
   disableStageSend?: boolean;
   disableStageApprove?: boolean;
 };
+
+type ActionRowProps = {
+  node: WorkspaceNode;
+  action: { id: string; text: string };
+  onCreateNextNode: () => void;
+};
+
+function ActionRow({ node, action, onCreateNextNode }: ActionRowProps) {
+  return (
+    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+      <Typography variant="caption" color="text.secondary">
+        {action.id}
+      </Typography>
+      <Typography variant="body2">{action.text}</Typography>
+      <Button size="small" variant="outlined" sx={{ mt: 0.5 }} onClick={onCreateNextNode}>
+        Create Next Node
+      </Button>
+      {node.sourceNodeId ? (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+          from {node.sourceNodeId}/{node.sourceActionId}
+        </Typography>
+      ) : null}
+    </Box>
+  );
+}
 
 function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGenerateStep, disableStageSend, disableStageApprove }: StageRowProps) {
   const steps: string[] = [];

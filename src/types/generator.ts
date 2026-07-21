@@ -22,6 +22,29 @@ export type GeneratorProject = {
   questStyle: string;
   status: string;
   stages: GeneratorStage[];
+  nodeWorkspace?: NodeWorkspace | null;
+};
+
+export type NodeWorkspace = {
+  nodes: WorkspaceNode[];
+  globalKnowledge: string[];
+  expansionSuggestions: string[];
+  nextNodeIndex: number;
+  nextActionIndex: number;
+};
+
+export type WorkspaceNode = {
+  id: string;
+  description: string;
+  actions: WorkspaceAction[];
+  sourceNodeId?: string | null;
+  sourceActionId?: string | null;
+  updatedAt?: string;
+};
+
+export type WorkspaceAction = {
+  id: string;
+  text: string;
 };
 
 export type GeneratorProjectSnapshot = {
