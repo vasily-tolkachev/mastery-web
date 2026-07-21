@@ -386,6 +386,18 @@ export async function generateWorkspaceNodeDescription(projectId: string, nodeId
   return normalizeProject(await response.json());
 }
 
+export async function previewWorkspaceNodeDescriptionPrompt(projectId: string, nodeId: string): Promise<StagePromptPreview> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/generate-description/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview node description prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
+}
+
 export async function extractWorkspaceNodeKnowledge(projectId: string, nodeId: string): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/extract-knowledge`, {
     method: 'POST',
@@ -397,6 +409,18 @@ export async function extractWorkspaceNodeKnowledge(projectId: string, nodeId: s
   return normalizeProject(await response.json());
 }
 
+export async function previewWorkspaceNodeKnowledgePrompt(projectId: string, nodeId: string): Promise<StagePromptPreview> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/extract-knowledge/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview node knowledge prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
+}
+
 export async function generateWorkspaceNodeActions(projectId: string, nodeId: string): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/generate-actions`, {
     method: 'POST',
@@ -406,6 +430,18 @@ export async function generateWorkspaceNodeActions(projectId: string, nodeId: st
     throw await toError(response, 'Failed to generate node actions');
   }
   return normalizeProject(await response.json());
+}
+
+export async function previewWorkspaceNodeActionsPrompt(projectId: string, nodeId: string): Promise<StagePromptPreview> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/generate-actions/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to preview node actions prompt');
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
 }
 
 export async function addWorkspaceGlobalKnowledge(projectId: string, text: string): Promise<GeneratorProject> {
@@ -514,9 +550,23 @@ function normalizeNodeWorkspace(rawValue: unknown): GeneratorProject['nodeWorksp
         };
       }).filter((item) => item.id)
       : [],
+    aiRequests: Array.isArray(raw.aiRequests)
+      ? raw.aiRequests.map((item) => {
+        const r = (item ?? {}) as Record<string, unknown>;
+        return {
+          id: String(r.id ?? ''),
+          stage: String(r.stage ?? ''),
+          nodeId: r.nodeId == null ? null : String(r.nodeId),
+          systemPrompt: String(r.systemPrompt ?? ''),
+          userPrompt: String(r.userPrompt ?? ''),
+          createdAt: String(r.createdAt ?? ''),
+        };
+      }).filter((item) => item.id)
+      : [],
     nextNodeIndex: Number(raw.nextNodeIndex ?? 1),
     nextActionIndex: Number(raw.nextActionIndex ?? 1),
     nextSuggestionIndex: Number(raw.nextSuggestionIndex ?? 1),
+    nextAiRequestIndex: Number(raw.nextAiRequestIndex ?? 1),
   };
 }
 

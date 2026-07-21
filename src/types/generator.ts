@@ -29,9 +29,11 @@ export type NodeWorkspace = {
   nodes: WorkspaceNode[];
   globalKnowledge: string[];
   expansionSuggestions: WorkspaceExpansionSuggestion[];
+  aiRequests: WorkspaceAiRequestLog[];
   nextNodeIndex: number;
   nextActionIndex: number;
   nextSuggestionIndex: number;
+  nextAiRequestIndex: number;
 };
 
 export type WorkspaceNode = {
@@ -58,6 +60,15 @@ export type WorkspaceExpansionSuggestion = {
   reason: string;
   status: string;
   sourceKnowledge: string[];
+};
+
+export type WorkspaceAiRequestLog = {
+  id: string;
+  stage: string;
+  nodeId?: string | null;
+  systemPrompt: string;
+  userPrompt: string;
+  createdAt: string;
 };
 
 export type GeneratorProjectSnapshot = {

@@ -31,8 +31,11 @@ import {
   addWorkspaceNodeAction,
   createNextWorkspaceNode,
   generateWorkspaceNodeDescription,
+  previewWorkspaceNodeDescriptionPrompt,
   extractWorkspaceNodeKnowledge,
+  previewWorkspaceNodeKnowledgePrompt,
   generateWorkspaceNodeActions,
+  previewWorkspaceNodeActionsPrompt,
   addWorkspaceGlobalKnowledge,
   addNodeKnowledgeToGlobal,
   runWorkspaceExpansion,
@@ -54,6 +57,7 @@ export function GeneratorPage() {
   const [validationResult, setValidationResult] = useState<unknown>(null);
   const [promptPreviews, setPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
   const [wayPromptPreviews, setWayPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
+  const [workspacePromptPreviews, setWorkspacePromptPreviews] = useState<Record<string, StagePromptPreview>>({});
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [nodeDescriptionDraft, setNodeDescriptionDraft] = useState('');
   const [nodeActionDraft, setNodeActionDraft] = useState('');
@@ -451,6 +455,21 @@ export function GeneratorPage() {
     }
   };
 
+  const handlePreviewNodeDescription = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-preview-description');
+      clearUiError();
+      const preview = await previewWorkspaceNodeDescriptionPrompt(selectedProjectId, selectedNode.id);
+      setWorkspacePromptPreviews((prev) => ({ ...prev, [`DESC:${selectedNode.id}`]: preview }));
+    } catch (e) {
+      applyUiError(e, 'Failed to preview node description prompt');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleExtractNodeKnowledge = async () => {
     if (!selectedProjectId || !selectedNode) return;
     try {
@@ -466,6 +485,21 @@ export function GeneratorPage() {
     }
   };
 
+  const handlePreviewNodeKnowledge = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-preview-knowledge');
+      clearUiError();
+      const preview = await previewWorkspaceNodeKnowledgePrompt(selectedProjectId, selectedNode.id);
+      setWorkspacePromptPreviews((prev) => ({ ...prev, [`KNOW:${selectedNode.id}`]: preview }));
+    } catch (e) {
+      applyUiError(e, 'Failed to preview node knowledge prompt');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleGenerateNodeActions = async () => {
     if (!selectedProjectId || !selectedNode) return;
     try {
@@ -475,6 +509,21 @@ export function GeneratorPage() {
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       applyUiError(e, 'Failed to generate node actions');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handlePreviewNodeActions = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-preview-actions');
+      clearUiError();
+      const preview = await previewWorkspaceNodeActionsPrompt(selectedProjectId, selectedNode.id);
+      setWorkspacePromptPreviews((prev) => ({ ...prev, [`ACT:${selectedNode.id}`]: preview }));
+    } catch (e) {
+      applyUiError(e, 'Failed to preview node actions prompt');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -751,13 +800,24 @@ export function GeneratorPage() {
                     minRows={4}
                   />
                   <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="outlined" onClick={() => void handleGenerateNodeDescription()}>
-                      Generate Description
+                    <Button size="small" variant="contained" onClick={() => void handlePreviewNodeDescription()}>
+                      Description Generate
+                    </Button>
+                    <Button size="small" variant="contained" onClick={() => void handleGenerateNodeDescription()}>
+                      Description Send
                     </Button>
                     <Button size="small" variant="contained" onClick={() => void handleSaveNodeDescription()}>
                       Save Description
                     </Button>
                   </Stack>
+                  {workspacePromptPreviews[`DESC:${selectedNode.id}`] ? (
+                    <Box
+                      component="pre"
+                      sx={{ mt: 0, mb: 0, p: 1, borderRadius: 1, bgcolor: 'background.default', maxHeight: 220, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12 }}
+                    >
+                      {`SYSTEM:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.userPrompt ?? ''}`}
+                    </Box>
+                  ) : null}
                   {selectedNode.generatedDescriptionDraft?.trim() ? (
                     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
                       <Typography variant="caption" color="text.secondary">Description draft</Typography>
@@ -774,13 +834,35 @@ export function GeneratorPage() {
                   ) : null}
 
                   <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="outlined" onClick={() => void handleExtractNodeKnowledge()}>
-                      Extract Knowledge
+                    <Button size="small" variant="contained" onClick={() => void handlePreviewNodeKnowledge()}>
+                      Knowledge Generate
                     </Button>
-                    <Button size="small" variant="outlined" onClick={() => void handleGenerateNodeActions()}>
-                      Generate Actions
+                    <Button size="small" variant="contained" onClick={() => void handleExtractNodeKnowledge()}>
+                      Knowledge Send
+                    </Button>
+                    <Button size="small" variant="contained" onClick={() => void handlePreviewNodeActions()}>
+                      Actions Generate
+                    </Button>
+                    <Button size="small" variant="contained" onClick={() => void handleGenerateNodeActions()}>
+                      Actions Send
                     </Button>
                   </Stack>
+                  {workspacePromptPreviews[`KNOW:${selectedNode.id}`] ? (
+                    <Box
+                      component="pre"
+                      sx={{ mt: 0, mb: 0, p: 1, borderRadius: 1, bgcolor: 'background.default', maxHeight: 220, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12 }}
+                    >
+                      {`SYSTEM:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.userPrompt ?? ''}`}
+                    </Box>
+                  ) : null}
+                  {workspacePromptPreviews[`ACT:${selectedNode.id}`] ? (
+                    <Box
+                      component="pre"
+                      sx={{ mt: 0, mb: 0, p: 1, borderRadius: 1, bgcolor: 'background.default', maxHeight: 220, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12 }}
+                    >
+                      {`SYSTEM:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.userPrompt ?? ''}`}
+                    </Box>
+                  ) : null}
 
                   {selectedNode.extractedKnowledgeDraft?.length ? (
                     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
@@ -949,6 +1031,43 @@ export function GeneratorPage() {
             ))}
             {!(selectedProject.nodeWorkspace?.expansionSuggestions?.length) ? (
               <Typography variant="body2" color="text.secondary">No expansion suggestions yet.</Typography>
+            ) : null}
+          </Stack>
+        </SectionCard>
+      ) : null}
+
+      {selectedProject ? (
+        <SectionCard title="AI Requests">
+          <Stack spacing={1}>
+            {(selectedProject.nodeWorkspace?.aiRequests ?? []).slice().reverse().map((item) => (
+              <Box key={item.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {item.id} - {item.stage} {item.nodeId ? `(${item.nodeId})` : ''}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                </Typography>
+                <Box
+                  component="pre"
+                  sx={{
+                    mt: 1,
+                    mb: 0,
+                    p: 1,
+                    borderRadius: 1,
+                    bgcolor: 'background.default',
+                    maxHeight: 220,
+                    overflow: 'auto',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    fontSize: 12,
+                  }}
+                >
+                  {`SYSTEM:\n${item.systemPrompt}\n\nUSER:\n${item.userPrompt}`}
+                </Box>
+              </Box>
+            ))}
+            {!(selectedProject.nodeWorkspace?.aiRequests?.length) ? (
+              <Typography variant="body2" color="text.secondary">No AI requests yet.</Typography>
             ) : null}
           </Stack>
         </SectionCard>
