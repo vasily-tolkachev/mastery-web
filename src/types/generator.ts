@@ -28,9 +28,10 @@ export type GeneratorProject = {
 export type NodeWorkspace = {
   nodes: WorkspaceNode[];
   globalKnowledge: string[];
-  expansionSuggestions: string[];
+  expansionSuggestions: WorkspaceExpansionSuggestion[];
   nextNodeIndex: number;
   nextActionIndex: number;
+  nextSuggestionIndex: number;
 };
 
 export type WorkspaceNode = {
@@ -48,6 +49,15 @@ export type WorkspaceNode = {
 export type WorkspaceAction = {
   id: string;
   text: string;
+};
+
+export type WorkspaceExpansionSuggestion = {
+  id: string;
+  nodeId: string;
+  actionText: string;
+  reason: string;
+  status: string;
+  sourceKnowledge: string[];
 };
 
 export type GeneratorProjectSnapshot = {

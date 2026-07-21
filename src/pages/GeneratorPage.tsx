@@ -35,6 +35,9 @@ import {
   generateWorkspaceNodeActions,
   addWorkspaceGlobalKnowledge,
   addNodeKnowledgeToGlobal,
+  runWorkspaceExpansion,
+  acceptWorkspaceExpansionSuggestion,
+  dismissWorkspaceExpansionSuggestion,
 } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview, WorkspaceNode } from '../types/generator';
@@ -510,6 +513,51 @@ export function GeneratorPage() {
     }
   };
 
+  const handleRunExpansion = async () => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction('workspace-run-expansion');
+      clearUiError();
+      const updated = await runWorkspaceExpansion(selectedProjectId, selectedProject?.nodeWorkspace?.globalKnowledge ?? []);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to run expansion');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleAcceptExpansion = async (suggestionId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`workspace-accept-expansion-${suggestionId}`);
+      clearUiError();
+      const updated = await acceptWorkspaceExpansionSuggestion(selectedProjectId, suggestionId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to accept expansion suggestion');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleDismissExpansion = async (suggestionId: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction(`workspace-dismiss-expansion-${suggestionId}`);
+      clearUiError();
+      const updated = await dismissWorkspaceExpansionSuggestion(selectedProjectId, suggestionId);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to dismiss expansion suggestion');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleGenerateActionResolution = async (wayId: string, sceneId: string, actionId: string) => {
     if (!selectedProjectId) return;
     try {
@@ -647,9 +695,14 @@ export function GeneratorPage() {
         <SectionCard
           title="Node Workspace"
           action={(
-            <Button size="small" variant="contained" onClick={() => void handleCreateWorkspaceNode()}>
-              Create Node
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button size="small" variant="outlined" onClick={() => void handleRunExpansion()}>
+                Run Expansion
+              </Button>
+              <Button size="small" variant="contained" onClick={() => void handleCreateWorkspaceNode()}>
+                Create Node
+              </Button>
+            </Stack>
           )}
         >
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
@@ -846,6 +899,57 @@ export function GeneratorPage() {
                 <Typography variant="body2" color="text.secondary">No global knowledge yet.</Typography>
               ) : null}
             </Stack>
+          </Stack>
+        </SectionCard>
+      ) : null}
+
+      {selectedProject ? (
+        <SectionCard title="Expansion Queue">
+          <Stack spacing={1}>
+            {(selectedProject.nodeWorkspace?.expansionSuggestions ?? []).map((item) => (
+              <Box key={item.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {item.id} - {item.status}
+                    </Typography>
+                    <Typography variant="body2">Node: {item.nodeId}</Typography>
+                    <Typography variant="body2">Action: {item.actionText}</Typography>
+                    {item.reason ? (
+                      <Typography variant="caption" color="text.secondary">Reason: {item.reason}</Typography>
+                    ) : null}
+                  </Box>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={() => setSelectedNodeId(item.nodeId)}
+                    >
+                      Open Node
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      disabled={item.status !== 'PENDING'}
+                      onClick={() => void handleAcceptExpansion(item.id)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={item.status !== 'PENDING'}
+                      onClick={() => void handleDismissExpansion(item.id)}
+                    >
+                      Dismiss
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Box>
+            ))}
+            {!(selectedProject.nodeWorkspace?.expansionSuggestions?.length) ? (
+              <Typography variant="body2" color="text.secondary">No expansion suggestions yet.</Typography>
+            ) : null}
           </Stack>
         </SectionCard>
       ) : null}

@@ -432,6 +432,40 @@ export async function addNodeKnowledgeToGlobal(projectId: string, nodeId: string
   return normalizeProject(await response.json());
 }
 
+export async function runWorkspaceExpansion(projectId: string, knowledge: string[] = []): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/run-expansion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ knowledge }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to run expansion');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function acceptWorkspaceExpansionSuggestion(projectId: string, suggestionId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/expansion/${encodeURIComponent(suggestionId)}/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to accept expansion suggestion');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function dismissWorkspaceExpansionSuggestion(projectId: string, suggestionId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/expansion/${encodeURIComponent(suggestionId)}/dismiss`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to dismiss expansion suggestion');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
@@ -467,9 +501,22 @@ function normalizeNodeWorkspace(rawValue: unknown): GeneratorProject['nodeWorksp
   return {
     nodes: nodesRaw.map(normalizeWorkspaceNode),
     globalKnowledge: Array.isArray(raw.globalKnowledge) ? raw.globalKnowledge.map((item) => String(item ?? '')) : [],
-    expansionSuggestions: Array.isArray(raw.expansionSuggestions) ? raw.expansionSuggestions.map((item) => String(item ?? '')) : [],
+    expansionSuggestions: Array.isArray(raw.expansionSuggestions)
+      ? raw.expansionSuggestions.map((item) => {
+        const s = (item ?? {}) as Record<string, unknown>;
+        return {
+          id: String(s.id ?? ''),
+          nodeId: String(s.nodeId ?? ''),
+          actionText: String(s.actionText ?? ''),
+          reason: String(s.reason ?? ''),
+          status: String(s.status ?? 'PENDING'),
+          sourceKnowledge: Array.isArray(s.sourceKnowledge) ? s.sourceKnowledge.map((value) => String(value ?? '')) : [],
+        };
+      }).filter((item) => item.id)
+      : [],
     nextNodeIndex: Number(raw.nextNodeIndex ?? 1),
     nextActionIndex: Number(raw.nextActionIndex ?? 1),
+    nextSuggestionIndex: Number(raw.nextSuggestionIndex ?? 1),
   };
 }
 
