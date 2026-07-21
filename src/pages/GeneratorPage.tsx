@@ -30,6 +30,9 @@ import {
   updateWorkspaceNodeDescription,
   addWorkspaceNodeAction,
   createNextWorkspaceNode,
+  generateWorkspaceNodeDescription,
+  extractWorkspaceNodeKnowledge,
+  generateWorkspaceNodeActions,
 } from '../api/generatorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { GeneratorProject, GeneratorStage, GeneratorStageType, StagePromptPreview, WorkspaceNode } from '../types/generator';
@@ -427,6 +430,51 @@ export function GeneratorPage() {
     }
   };
 
+  const handleGenerateNodeDescription = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-generate-description');
+      clearUiError();
+      const updated = await generateWorkspaceNodeDescription(selectedProjectId, selectedNode.id);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to generate node description');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleExtractNodeKnowledge = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-extract-knowledge');
+      clearUiError();
+      const updated = await extractWorkspaceNodeKnowledge(selectedProjectId, selectedNode.id);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to extract node knowledge');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleGenerateNodeActions = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-generate-actions');
+      clearUiError();
+      const updated = await generateWorkspaceNodeActions(selectedProjectId, selectedNode.id);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to generate node actions');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleGenerateActionResolution = async (wayId: string, sceneId: string, actionId: string) => {
     if (!selectedProjectId) return;
     try {
@@ -615,10 +663,47 @@ export function GeneratorPage() {
                     minRows={4}
                   />
                   <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="outlined" onClick={() => void handleGenerateNodeDescription()}>
+                      Generate Description
+                    </Button>
                     <Button size="small" variant="contained" onClick={() => void handleSaveNodeDescription()}>
                       Save Description
                     </Button>
                   </Stack>
+                  {selectedNode.generatedDescriptionDraft?.trim() ? (
+                    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                      <Typography variant="caption" color="text.secondary">Description draft</Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selectedNode.generatedDescriptionDraft}</Typography>
+                      <Button
+                        size="small"
+                        variant="text"
+                        sx={{ mt: 0.5 }}
+                        onClick={() => setNodeDescriptionDraft(selectedNode.generatedDescriptionDraft ?? '')}
+                      >
+                        Use Draft
+                      </Button>
+                    </Box>
+                  ) : null}
+
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="outlined" onClick={() => void handleExtractNodeKnowledge()}>
+                      Extract Knowledge
+                    </Button>
+                    <Button size="small" variant="outlined" onClick={() => void handleGenerateNodeActions()}>
+                      Generate Actions
+                    </Button>
+                  </Stack>
+
+                  {selectedNode.extractedKnowledgeDraft?.length ? (
+                    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                      <Typography variant="caption" color="text.secondary">Knowledge draft</Typography>
+                      <Stack spacing={0.25} sx={{ mt: 0.5 }}>
+                        {selectedNode.extractedKnowledgeDraft.map((item, index) => (
+                          <Typography key={`${index}-${item}`} variant="body2">{index + 1}. {item}</Typography>
+                        ))}
+                      </Stack>
+                    </Box>
+                  ) : null}
 
                   <Typography variant="subtitle2" sx={{ pt: 1 }}>Actions</Typography>
                   <Stack direction="row" spacing={1}>
@@ -635,6 +720,27 @@ export function GeneratorPage() {
                   </Stack>
 
                   <Stack spacing={0.75}>
+                    {selectedNode.generatedActionsDraft?.length ? (
+                      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                        <Typography variant="caption" color="text.secondary">Generated actions draft</Typography>
+                        <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                          {selectedNode.generatedActionsDraft.map((draftText, index) => (
+                            <Stack key={`${index}-${draftText}`} direction="row" spacing={1}>
+                              <Typography variant="body2" sx={{ flex: 1 }}>{draftText}</Typography>
+                              <Button
+                                size="small"
+                                variant="text"
+                                onClick={() => {
+                                  setNodeActionDraft(draftText);
+                                }}
+                              >
+                                Use
+                              </Button>
+                            </Stack>
+                          ))}
+                        </Stack>
+                      </Box>
+                    ) : null}
                     {selectedNode.actions.map((action) => (
                       <ActionRow
                         key={action.id}

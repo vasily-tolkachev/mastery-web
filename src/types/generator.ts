@@ -40,6 +40,9 @@ export type WorkspaceNode = {
   sourceNodeId?: string | null;
   sourceActionId?: string | null;
   updatedAt?: string;
+  generatedDescriptionDraft?: string;
+  extractedKnowledgeDraft?: string[];
+  generatedActionsDraft?: string[];
 };
 
 export type WorkspaceAction = {

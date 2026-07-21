@@ -375,6 +375,39 @@ export async function createNextWorkspaceNode(projectId: string, nodeId: string,
   return normalizeProject(await response.json());
 }
 
+export async function generateWorkspaceNodeDescription(projectId: string, nodeId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/generate-description`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to generate node description');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function extractWorkspaceNodeKnowledge(projectId: string, nodeId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/extract-knowledge`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to extract node knowledge');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function generateWorkspaceNodeActions(projectId: string, nodeId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/generate-actions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to generate node actions');
+  }
+  return normalizeProject(await response.json());
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
@@ -432,6 +465,9 @@ function normalizeWorkspaceNode(rawValue: unknown): WorkspaceNode {
     sourceNodeId: raw.sourceNodeId == null ? null : String(raw.sourceNodeId),
     sourceActionId: raw.sourceActionId == null ? null : String(raw.sourceActionId),
     updatedAt: String(raw.updatedAt ?? ''),
+    generatedDescriptionDraft: String(raw.generatedDescriptionDraft ?? ''),
+    extractedKnowledgeDraft: Array.isArray(raw.extractedKnowledgeDraft) ? raw.extractedKnowledgeDraft.map((item) => String(item ?? '')) : [],
+    generatedActionsDraft: Array.isArray(raw.generatedActionsDraft) ? raw.generatedActionsDraft.map((item) => String(item ?? '')) : [],
   };
 }
 
