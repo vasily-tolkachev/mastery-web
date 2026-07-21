@@ -328,11 +328,16 @@ export async function createWorkspaceNode(projectId: string, sourceNodeId?: stri
   return normalizeProject(await response.json());
 }
 
-export async function updateWorkspaceNodeDescription(projectId: string, nodeId: string, description: string): Promise<GeneratorProject> {
+export async function updateWorkspaceNodeDescription(
+  projectId: string,
+  nodeId: string,
+  actionDescription: string,
+  stateDescription: string,
+): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}/description`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ description }),
+    body: JSON.stringify({ actionDescription, stateDescription }),
   });
   if (!response.ok) {
     throw await toError(response, 'Failed to update node description');
@@ -371,6 +376,17 @@ export async function createNextWorkspaceNode(projectId: string, nodeId: string,
   });
   if (!response.ok) {
     throw await toError(response, 'Failed to create next node');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function deleteWorkspaceNode(projectId: string, nodeId: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/nodes/${encodeURIComponent(nodeId)}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to delete node');
   }
   return normalizeProject(await response.json());
 }
@@ -452,6 +468,18 @@ export async function addWorkspaceGlobalKnowledge(projectId: string, text: strin
   });
   if (!response.ok) {
     throw await toError(response, 'Failed to add global knowledge');
+  }
+  return normalizeProject(await response.json());
+}
+
+export async function removeWorkspaceGlobalKnowledge(projectId: string, text: string): Promise<GeneratorProject> {
+  const response = await authFetch(`/api/generator/projects/${projectId}/node-workspace/global-knowledge/remove`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw await toError(response, 'Failed to remove global knowledge');
   }
   return normalizeProject(await response.json());
 }
@@ -576,6 +604,8 @@ function normalizeWorkspaceNode(rawValue: unknown): WorkspaceNode {
   return {
     id: String(raw.id ?? ''),
     description: String(raw.description ?? ''),
+    actionDescription: String(raw.actionDescription ?? ''),
+    stateDescription: String(raw.stateDescription ?? ''),
     actions: actions.map((action) => {
       const a = (action ?? {}) as Record<string, unknown>;
       return {
@@ -587,6 +617,8 @@ function normalizeWorkspaceNode(rawValue: unknown): WorkspaceNode {
     sourceActionId: raw.sourceActionId == null ? null : String(raw.sourceActionId),
     updatedAt: String(raw.updatedAt ?? ''),
     generatedDescriptionDraft: String(raw.generatedDescriptionDraft ?? ''),
+    generatedActionDescriptionDraft: String(raw.generatedActionDescriptionDraft ?? ''),
+    generatedStateDescriptionDraft: String(raw.generatedStateDescriptionDraft ?? ''),
     extractedKnowledgeDraft: Array.isArray(raw.extractedKnowledgeDraft) ? raw.extractedKnowledgeDraft.map((item) => String(item ?? '')) : [],
     generatedActionsDraft: Array.isArray(raw.generatedActionsDraft) ? raw.generatedActionsDraft.map((item) => String(item ?? '')) : [],
   };

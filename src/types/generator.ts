@@ -39,11 +39,15 @@ export type NodeWorkspace = {
 export type WorkspaceNode = {
   id: string;
   description: string;
+  actionDescription?: string;
+  stateDescription?: string;
   actions: WorkspaceAction[];
   sourceNodeId?: string | null;
   sourceActionId?: string | null;
   updatedAt?: string;
   generatedDescriptionDraft?: string;
+  generatedActionDescriptionDraft?: string;
+  generatedStateDescriptionDraft?: string;
   extractedKnowledgeDraft?: string[];
   generatedActionsDraft?: string[];
 };

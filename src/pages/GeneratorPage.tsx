@@ -27,6 +27,7 @@ import {
   previewAchievementScenePrompt,
   previewKnowledgeChainPrompt,
   createWorkspaceNode,
+  deleteWorkspaceNode,
   updateWorkspaceNodeDescription,
   addWorkspaceNodeAction,
   createNextWorkspaceNode,
@@ -37,6 +38,7 @@ import {
   generateWorkspaceNodeActions,
   previewWorkspaceNodeActionsPrompt,
   addWorkspaceGlobalKnowledge,
+  removeWorkspaceGlobalKnowledge,
   addNodeKnowledgeToGlobal,
   runWorkspaceExpansion,
   acceptWorkspaceExpansionSuggestion,
@@ -59,7 +61,8 @@ export function GeneratorPage() {
   const [wayPromptPreviews, setWayPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
   const [workspacePromptPreviews, setWorkspacePromptPreviews] = useState<Record<string, StagePromptPreview>>({});
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [nodeDescriptionDraft, setNodeDescriptionDraft] = useState('');
+  const [nodeActionDescriptionDraft, setNodeActionDescriptionDraft] = useState('');
+  const [nodeStateDescriptionDraft, setNodeStateDescriptionDraft] = useState('');
   const [nodeActionDraft, setNodeActionDraft] = useState('');
   const [globalKnowledgeDraft, setGlobalKnowledgeDraft] = useState('');
 
@@ -117,7 +120,8 @@ export function GeneratorPage() {
   useEffect(() => {
     if (!workspaceNodes.length) {
       setSelectedNodeId(null);
-      setNodeDescriptionDraft('');
+      setNodeActionDescriptionDraft('');
+      setNodeStateDescriptionDraft('');
       return;
     }
     if (!selectedNodeId || !workspaceNodes.some((node) => node.id === selectedNodeId)) {
@@ -126,8 +130,9 @@ export function GeneratorPage() {
   }, [workspaceNodes, selectedNodeId]);
 
   useEffect(() => {
-    setNodeDescriptionDraft(selectedNode?.description ?? '');
-  }, [selectedNode?.id, selectedNode?.description]);
+    setNodeActionDescriptionDraft(selectedNode?.actionDescription ?? '');
+    setNodeStateDescriptionDraft(selectedNode?.stateDescription ?? '');
+  }, [selectedNode?.id, selectedNode?.actionDescription, selectedNode?.stateDescription]);
 
   const refreshSelectedProject = async (projectId: string) => {
     const refreshed = await getGeneratorProject(projectId);
@@ -413,10 +418,32 @@ export function GeneratorPage() {
     try {
       setBusyAction('workspace-save-description');
       clearUiError();
-      const updated = await updateWorkspaceNodeDescription(selectedProjectId, selectedNode.id, nodeDescriptionDraft);
+      const updated = await updateWorkspaceNodeDescription(
+        selectedProjectId,
+        selectedNode.id,
+        nodeActionDescriptionDraft,
+        nodeStateDescriptionDraft,
+      );
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       applyUiError(e, 'Failed to save node description');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleDeleteNode = async () => {
+    if (!selectedProjectId || !selectedNode) return;
+    try {
+      setBusyAction('workspace-delete-node');
+      clearUiError();
+      const updated = await deleteWorkspaceNode(selectedProjectId, selectedNode.id);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+      const nodes = updated.nodeWorkspace?.nodes ?? [];
+      setSelectedNodeId(nodes.length ? nodes[0].id : null);
+    } catch (e) {
+      applyUiError(e, 'Failed to delete node');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -541,6 +568,21 @@ export function GeneratorPage() {
       setGlobalKnowledgeDraft('');
     } catch (e) {
       applyUiError(e, 'Failed to add global knowledge');
+      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleRemoveGlobalKnowledge = async (text: string) => {
+    if (!selectedProjectId) return;
+    try {
+      setBusyAction('workspace-remove-global-knowledge');
+      clearUiError();
+      const updated = await removeWorkspaceGlobalKnowledge(selectedProjectId, text);
+      setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+    } catch (e) {
+      applyUiError(e, 'Failed to remove global knowledge');
       await refreshSelectedProject(selectedProjectId);
     } finally {
       setBusyAction(null);
@@ -755,34 +797,14 @@ export function GeneratorPage() {
           )}
         >
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-            <Stack spacing={1} sx={{ minWidth: { md: 260 }, maxWidth: { md: 320 } }}>
+            <Stack spacing={1} sx={{ minWidth: { md: 260 }, maxWidth: { md: 360 } }}>
               <Typography variant="subtitle2">Nodes</Typography>
               {!workspaceNodes.length ? <Typography variant="body2" color="text.secondary">No nodes yet.</Typography> : null}
-              {workspaceNodes.map((node) => (
-                <Box
-                  key={node.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedNodeId(node.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      setSelectedNodeId(node.id);
-                    }
-                  }}
-                  sx={{
-                    border: 1,
-                    borderColor: selectedNodeId === node.id ? 'primary.main' : 'divider',
-                    borderRadius: 1,
-                    p: 1,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    actions: {node.actions.length}
-                  </Typography>
-                </Box>
-              ))}
+              <NodeTreeList
+                nodes={workspaceNodes}
+                selectedNodeId={selectedNodeId}
+                onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
+              />
             </Stack>
 
             <Stack spacing={1} sx={{ flex: 1 }}>
@@ -791,10 +813,23 @@ export function GeneratorPage() {
               ) : (
                 <>
                   <Typography variant="subtitle2">Node {selectedNode.id}</Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="outlined" color="error" onClick={() => void handleDeleteNode()}>
+                      Delete Node (with subnodes)
+                    </Button>
+                  </Stack>
                   <TextField
-                    label="Description"
-                    value={nodeDescriptionDraft}
-                    onChange={(event) => setNodeDescriptionDraft(event.target.value)}
+                    label="Action Description (what player does now)"
+                    value={nodeActionDescriptionDraft}
+                    onChange={(event) => setNodeActionDescriptionDraft(event.target.value)}
+                    fullWidth
+                    multiline
+                    minRows={3}
+                  />
+                  <TextField
+                    label="State Description (state after action)"
+                    value={nodeStateDescriptionDraft}
+                    onChange={(event) => setNodeStateDescriptionDraft(event.target.value)}
                     fullWidth
                     multiline
                     minRows={4}
@@ -818,15 +853,23 @@ export function GeneratorPage() {
                       {`SYSTEM:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.userPrompt ?? ''}`}
                     </Box>
                   ) : null}
-                  {selectedNode.generatedDescriptionDraft?.trim() ? (
+                  {(selectedNode.generatedActionDescriptionDraft?.trim() || selectedNode.generatedStateDescriptionDraft?.trim() || selectedNode.generatedDescriptionDraft?.trim()) ? (
                     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
-                      <Typography variant="caption" color="text.secondary">Description draft</Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selectedNode.generatedDescriptionDraft}</Typography>
+                      <Typography variant="caption" color="text.secondary">Generated description draft</Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        Action: {selectedNode.generatedActionDescriptionDraft || '-'}
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>
+                        State: {selectedNode.generatedStateDescriptionDraft || '-'}
+                      </Typography>
                       <Button
                         size="small"
                         variant="text"
                         sx={{ mt: 0.5 }}
-                        onClick={() => setNodeDescriptionDraft(selectedNode.generatedDescriptionDraft ?? '')}
+                        onClick={() => {
+                          setNodeActionDescriptionDraft(selectedNode.generatedActionDescriptionDraft ?? '');
+                          setNodeStateDescriptionDraft(selectedNode.generatedStateDescriptionDraft ?? '');
+                        }}
                       >
                         Use Draft
                       </Button>
@@ -973,9 +1016,14 @@ export function GeneratorPage() {
             </Stack>
             <Stack spacing={0.5}>
               {(selectedProject.nodeWorkspace?.globalKnowledge ?? []).map((item, index) => (
-                <Typography key={`${index}-${item}`} variant="body2">
-                  {index + 1}. {item}
-                </Typography>
+                <Stack key={`${index}-${item}`} direction="row" spacing={1}>
+                  <Typography variant="body2" sx={{ flex: 1 }}>
+                    {index + 1}. {item}
+                  </Typography>
+                  <Button size="small" variant="text" color="error" onClick={() => void handleRemoveGlobalKnowledge(item)}>
+                    Delete
+                  </Button>
+                </Stack>
               ))}
               {!(selectedProject.nodeWorkspace?.globalKnowledge?.length) ? (
                 <Typography variant="body2" color="text.secondary">No global knowledge yet.</Typography>
@@ -1392,6 +1440,92 @@ type ActionRowProps = {
   action: { id: string; text: string };
   onCreateNextNode: () => void;
 };
+
+type NodeTreeListProps = {
+  nodes: WorkspaceNode[];
+  selectedNodeId: string | null;
+  onSelectNode: (_nodeId: string) => void;
+};
+
+function NodeTreeList({ nodes, selectedNodeId, onSelectNode }: NodeTreeListProps) {
+  const byParent = new Map<string, WorkspaceNode[]>();
+  const roots: WorkspaceNode[] = [];
+
+  nodes.forEach((node) => {
+    const parentId = (node.sourceNodeId ?? '').trim();
+    if (!parentId) {
+      roots.push(node);
+      return;
+    }
+    const key = parentId.toUpperCase();
+    const list = byParent.get(key) ?? [];
+    list.push(node);
+    byParent.set(key, list);
+  });
+
+  roots.sort((a, b) => a.id.localeCompare(b.id));
+  byParent.forEach((list) => list.sort((a, b) => a.id.localeCompare(b.id)));
+
+  const renderNode = (node: WorkspaceNode, level: number): JSX.Element => {
+    const children = byParent.get(node.id.toUpperCase()) ?? [];
+    const groupedByAction = new Map<string, WorkspaceNode[]>();
+    children.forEach((child) => {
+      const actionKey = (child.sourceActionId ?? 'NO_ACTION').toUpperCase();
+      const list = groupedByAction.get(actionKey) ?? [];
+      list.push(child);
+      groupedByAction.set(actionKey, list);
+    });
+    const actionOrder = Array.from(groupedByAction.keys()).sort();
+
+    return (
+      <Box key={node.id} sx={{ ml: level * 1.5 }}>
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={() => onSelectNode(node.id)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              onSelectNode(node.id);
+            }
+          }}
+          sx={{
+            border: 1,
+            borderColor: selectedNodeId === node.id ? 'primary.main' : 'divider',
+            borderRadius: 1,
+            p: 1,
+            cursor: 'pointer',
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            actions: {node.actions.length}
+          </Typography>
+        </Box>
+
+        {actionOrder.map((actionId) => {
+          const actionText = node.actions.find((a) => a.id.toUpperCase() === actionId)?.text ?? actionId;
+          const groupedChildren = groupedByAction.get(actionId) ?? [];
+          return (
+            <Box key={`${node.id}-${actionId}`} sx={{ mt: 0.5, ml: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                from action: {actionText}
+              </Typography>
+              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                {groupedChildren.map((child) => renderNode(child, level + 1))}
+              </Stack>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  };
+
+  return (
+    <Stack spacing={0.75}>
+      {roots.map((root) => renderNode(root, 0))}
+    </Stack>
+  );
+}
 
 function ActionRow({ node, action, onCreateNextNode }: ActionRowProps) {
   return (
