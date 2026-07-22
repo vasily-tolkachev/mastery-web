@@ -20,6 +20,7 @@ import {
   previewWorkspaceNodeActionsPrompt,
   previewWorkspaceNodeDescriptionPrompt,
   previewWorkspaceNodeKnowledgePrompt,
+  type PromptOverride,
   renameNodeGeneratorProject,
   removeWorkspaceGlobalKnowledge,
   runWorkspaceExpansion,
@@ -42,6 +43,7 @@ export function NodeGeneratorPage() {
   const [globalKnowledgeDraft, setGlobalKnowledgeDraft] = useState('');
   const [renameProjectNameDraft, setRenameProjectNameDraft] = useState('');
   const [workspacePromptPreviews, setWorkspacePromptPreviews] = useState<Record<string, StagePromptPreview>>({});
+  const [promptOverrides, setPromptOverrides] = useState<Record<string, PromptOverride>>({});
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -151,10 +153,36 @@ export function NodeGeneratorPage() {
       clearUiError();
       const preview = await action();
       setWorkspacePromptPreviews((prev) => ({ ...prev, [key]: preview }));
+      setPromptOverrides((prev) => ({
+        ...prev,
+        [key]: {
+          systemPrompt: preview.systemPrompt,
+          userPrompt: preview.userPrompt,
+        },
+      }));
     } catch (e) {
       applyUiError(e, fallback);
       await refreshSelectedProject(selectedProjectId);
     }
+  };
+
+  const getPromptOverride = (key: string): PromptOverride | undefined => {
+    const current = promptOverrides[key];
+    if (!current) return undefined;
+    const systemPrompt = (current.systemPrompt ?? '').trim();
+    const userPrompt = (current.userPrompt ?? '').trim();
+    if (!systemPrompt && !userPrompt) return undefined;
+    return { systemPrompt, userPrompt };
+  };
+
+  const updatePromptOverrideField = (key: string, field: 'systemPrompt' | 'userPrompt', value: string) => {
+    setPromptOverrides((prev) => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] ?? {}),
+        [field]: value,
+      },
+    }));
   };
 
   const handleCreateProject = async () => {
@@ -295,6 +323,10 @@ export function NodeGeneratorPage() {
       <SectionCard title="Генератор сцен">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
           <Button variant="contained" onClick={() => void handleCreateProject()}>Новый проект</Button>
+          <Button variant="contained" component="label">
+            Импорт JSON
+            <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
+          </Button>
           <Button variant="outlined" onClick={() => void loadProjects()}>Обновить список</Button>
           <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
             Проектов: {projects.length}
@@ -439,7 +471,7 @@ export function NodeGeneratorPage() {
                       size="small"
                       variant="contained"
                       onClick={() => void runAndRefresh(
-                        () => generateWorkspaceNodeDescription(selectedProject.id, selectedNode.id),
+                        () => generateWorkspaceNodeDescription(selectedProject.id, selectedNode.id, getPromptOverride(`DESC:${selectedNode.id}`)),
                         'Не удалось запросить описание',
                       )}
                     >
@@ -466,6 +498,26 @@ export function NodeGeneratorPage() {
                     <Box component="pre" sx={preSx}>
                       {`SYSTEM:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.userPrompt ?? ''}`}
                     </Box>
+                  ) : null}
+                  {promptOverrides[`DESC:${selectedNode.id}`] ? (
+                    <Stack spacing={1}>
+                      <TextField
+                        label="SYSTEM prompt (редактируемый)"
+                        value={promptOverrides[`DESC:${selectedNode.id}`]?.systemPrompt ?? ''}
+                        onChange={(event) => updatePromptOverrideField(`DESC:${selectedNode.id}`, 'systemPrompt', event.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                      />
+                      <TextField
+                        label="USER prompt (редактируемый)"
+                        value={promptOverrides[`DESC:${selectedNode.id}`]?.userPrompt ?? ''}
+                        onChange={(event) => updatePromptOverrideField(`DESC:${selectedNode.id}`, 'userPrompt', event.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={4}
+                      />
+                    </Stack>
                   ) : null}
                   {(selectedNode.generatedActionDescriptionDraft?.trim() || selectedNode.generatedStateDescriptionDraft?.trim()) ? (
                     <Box sx={draftSx}>
@@ -504,7 +556,7 @@ export function NodeGeneratorPage() {
                       size="small"
                       variant="contained"
                       onClick={() => void runAndRefresh(
-                        () => extractWorkspaceNodeKnowledge(selectedProject.id, selectedNode.id),
+                        () => extractWorkspaceNodeKnowledge(selectedProject.id, selectedNode.id, getPromptOverride(`KNOW:${selectedNode.id}`)),
                         'Не удалось запросить знания',
                       )}
                     >
@@ -525,7 +577,7 @@ export function NodeGeneratorPage() {
                       size="small"
                       variant="contained"
                       onClick={() => void runAndRefresh(
-                        () => generateWorkspaceNodeActions(selectedProject.id, selectedNode.id),
+                        () => generateWorkspaceNodeActions(selectedProject.id, selectedNode.id, getPromptOverride(`ACT:${selectedNode.id}`)),
                         'Не удалось запросить действия',
                       )}
                     >
@@ -537,10 +589,50 @@ export function NodeGeneratorPage() {
                       {`SYSTEM:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.userPrompt ?? ''}`}
                     </Box>
                   ) : null}
+                  {promptOverrides[`KNOW:${selectedNode.id}`] ? (
+                    <Stack spacing={1}>
+                      <TextField
+                        label="SYSTEM prompt знаний (редактируемый)"
+                        value={promptOverrides[`KNOW:${selectedNode.id}`]?.systemPrompt ?? ''}
+                        onChange={(event) => updatePromptOverrideField(`KNOW:${selectedNode.id}`, 'systemPrompt', event.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                      />
+                      <TextField
+                        label="USER prompt знаний (редактируемый)"
+                        value={promptOverrides[`KNOW:${selectedNode.id}`]?.userPrompt ?? ''}
+                        onChange={(event) => updatePromptOverrideField(`KNOW:${selectedNode.id}`, 'userPrompt', event.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                      />
+                    </Stack>
+                  ) : null}
                   {workspacePromptPreviews[`ACT:${selectedNode.id}`] ? (
                     <Box component="pre" sx={preSx}>
                       {`SYSTEM:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.userPrompt ?? ''}`}
                     </Box>
+                  ) : null}
+                  {promptOverrides[`ACT:${selectedNode.id}`] ? (
+                    <Stack spacing={1}>
+                      <TextField
+                        label="SYSTEM prompt действий (редактируемый)"
+                        value={promptOverrides[`ACT:${selectedNode.id}`]?.systemPrompt ?? ''}
+                        onChange={(event) => updatePromptOverrideField(`ACT:${selectedNode.id}`, 'systemPrompt', event.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                      />
+                      <TextField
+                        label="USER prompt действий (редактируемый)"
+                        value={promptOverrides[`ACT:${selectedNode.id}`]?.userPrompt ?? ''}
+                        onChange={(event) => updatePromptOverrideField(`ACT:${selectedNode.id}`, 'userPrompt', event.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                      />
+                    </Stack>
                   ) : null}
 
                   {selectedNode.extractedKnowledgeDraft?.length ? (

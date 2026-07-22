@@ -1,6 +1,11 @@
 import { authFetch } from './http';
 import type { NodeGeneratorProject, StagePromptPreview, WorkspaceNode } from '../types/nodeGenerator';
 
+export type PromptOverride = {
+  systemPrompt?: string | null;
+  userPrompt?: string | null;
+};
+
 export class ApiRequestError extends Error {
   code: string;
   errors: string[];
@@ -115,10 +120,11 @@ export async function previewWorkspaceNodeDescriptionPrompt(projectId: string, n
   return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
 }
 
-export async function generateWorkspaceNodeDescription(projectId: string, nodeId: string): Promise<NodeGeneratorProject> {
+export async function generateWorkspaceNodeDescription(projectId: string, nodeId: string, promptOverride?: PromptOverride): Promise<NodeGeneratorProject> {
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/generate-description`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(promptOverride ?? {}),
   });
   if (!response.ok) throw await toError(response, 'Не удалось сгенерировать описание');
   return normalizeProject(await response.json());
@@ -134,10 +140,11 @@ export async function previewWorkspaceNodeKnowledgePrompt(projectId: string, nod
   return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
 }
 
-export async function extractWorkspaceNodeKnowledge(projectId: string, nodeId: string): Promise<NodeGeneratorProject> {
+export async function extractWorkspaceNodeKnowledge(projectId: string, nodeId: string, promptOverride?: PromptOverride): Promise<NodeGeneratorProject> {
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/extract-knowledge`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(promptOverride ?? {}),
   });
   if (!response.ok) throw await toError(response, 'Не удалось извлечь знания');
   return normalizeProject(await response.json());
@@ -153,10 +160,11 @@ export async function previewWorkspaceNodeActionsPrompt(projectId: string, nodeI
   return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
 }
 
-export async function generateWorkspaceNodeActions(projectId: string, nodeId: string): Promise<NodeGeneratorProject> {
+export async function generateWorkspaceNodeActions(projectId: string, nodeId: string, promptOverride?: PromptOverride): Promise<NodeGeneratorProject> {
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/generate-actions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(promptOverride ?? {}),
   });
   if (!response.ok) throw await toError(response, 'Не удалось сгенерировать действия');
   return normalizeProject(await response.json());
