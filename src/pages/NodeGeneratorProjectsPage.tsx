@@ -1,6 +1,6 @@
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import { Alert, Box, Button, IconButton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +20,7 @@ export function NodeGeneratorProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [projectToDelete, setProjectToDelete] = useState<NodeGeneratorProject | null>(null);
 
   const clearUiError = () => {
     setError(null);
@@ -77,12 +78,16 @@ export function NodeGeneratorProjectsPage() {
   };
 
   const handleDeleteProject = async (project: NodeGeneratorProject) => {
-    const confirmed = window.confirm(`Удалить квест "${project.name}"?`);
-    if (!confirmed) return;
+    setProjectToDelete(project);
+  };
+
+  const handleConfirmDeleteProject = async () => {
+    if (!projectToDelete) return;
     try {
       clearUiError();
-      await deleteNodeGeneratorProject(project.id);
+      await deleteNodeGeneratorProject(projectToDelete.id);
       await loadProjects();
+      setProjectToDelete(null);
     } catch (e) {
       applyUiError(e, 'Не удалось удалить квест');
     }
@@ -182,6 +187,26 @@ export function NodeGeneratorProjectsPage() {
           ))}
         </Stack>
       </SectionCard>
+
+      <Dialog
+        open={Boolean(projectToDelete)}
+        onClose={() => setProjectToDelete(null)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Удалить квест?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {projectToDelete ? `Квест "${projectToDelete.name}" будет удален без возможности восстановления.` : ''}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setProjectToDelete(null)}>Отмена</Button>
+          <Button color="error" variant="contained" onClick={() => void handleConfirmDeleteProject()}>
+            Удалить
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }
