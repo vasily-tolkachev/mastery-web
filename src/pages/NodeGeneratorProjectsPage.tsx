@@ -4,8 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   ApiRequestError,
   createNodeGeneratorProject,
+  deleteNodeGeneratorProject,
+  exportProjectJson,
   getNodeGeneratorProjects,
   importNodeGeneratorProjectJson,
+  renameNodeGeneratorProject,
 } from '../api/nodeGeneratorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { NodeGeneratorProject } from '../types/nodeGenerator';
@@ -73,6 +76,47 @@ export function NodeGeneratorProjectsPage() {
     }
   };
 
+  const handleRenameProject = async (project: NodeGeneratorProject) => {
+    const nextName = window.prompt('Новое имя квеста', project.name)?.trim() ?? '';
+    if (!nextName) return;
+    try {
+      clearUiError();
+      await renameNodeGeneratorProject(project.id, nextName);
+      await loadProjects();
+    } catch (e) {
+      applyUiError(e, 'Не удалось переименовать квест');
+    }
+  };
+
+  const handleDeleteProject = async (project: NodeGeneratorProject) => {
+    const confirmed = window.confirm(`Удалить квест "${project.name}"?`);
+    if (!confirmed) return;
+    try {
+      clearUiError();
+      await deleteNodeGeneratorProject(project.id);
+      await loadProjects();
+    } catch (e) {
+      applyUiError(e, 'Не удалось удалить квест');
+    }
+  };
+
+  const handleExportProject = async (project: NodeGeneratorProject) => {
+    try {
+      clearUiError();
+      const snapshot = await exportProjectJson(project.id);
+      const jsonText = JSON.stringify(snapshot, null, 2);
+      const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${project.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'quest'}-scene-snapshot.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      applyUiError(e, 'Не удалось экспортировать квест');
+    }
+  };
+
   if (loading) return <LoadingState message="Загрузка квестов..." />;
 
   return (
@@ -90,7 +134,7 @@ export function NodeGeneratorProjectsPage() {
         </SectionCard>
       ) : null}
 
-      <SectionCard title="Генератор сцен">
+      <SectionCard title="Конструктор квестов">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
           <Button variant="contained" onClick={() => void handleCreateProject()}>+ Создать квест</Button>
           <Button variant="outlined" component="label">
@@ -124,8 +168,42 @@ export function NodeGeneratorProjectsPage() {
                 justifyContent: 'space-between',
               }}
             >
-              <Typography variant="subtitle1">📖 {project.name}</Typography>
-              <Typography variant="body2" color="text.secondary">></Typography>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: { md: 'center' }, width: '100%' }}>
+                <Typography variant="subtitle1" sx={{ flex: 1 }}>📖 {project.name}</Typography>
+                <Stack direction="row" spacing={0.5}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleRenameProject(project);
+                    }}
+                  >
+                    Переименовать
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleExportProject(project);
+                    }}
+                  >
+                    Экспорт
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    variant="text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleDeleteProject(project);
+                    }}
+                  >
+                    Удалить
+                  </Button>
+                </Stack>
+              </Stack>
             </Box>
           ))}
         </Stack>

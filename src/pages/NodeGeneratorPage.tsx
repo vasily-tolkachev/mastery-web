@@ -327,7 +327,7 @@ export function NodeGeneratorPage() {
 
       {!selectedProject ? (
         <>
-          <SectionCard title="Генератор сцен">
+          <SectionCard title="Конструктор квестов">
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
               <Button variant="contained" onClick={() => void handleCreateProject()}>Новый проект</Button>
               <Button variant="contained" component="label">

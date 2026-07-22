@@ -1,19 +1,16 @@
 import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import {
   ApiRequestError,
-  deleteNodeGeneratorProject,
   exportProjectJson,
   getNodeGeneratorProject,
-  importNodeGeneratorProjectJson,
   renameNodeGeneratorProject,
 } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
 import type { NodeGeneratorProject } from '../types/nodeGenerator';
 
 export function NodeGeneratorProjectHomePage() {
-  const navigate = useNavigate();
   const { projectId = '' } = useParams();
   const [project, setProject] = useState<NodeGeneratorProject | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,19 +66,6 @@ export function NodeGeneratorProjectHomePage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!project) return;
-    const confirmed = window.confirm(`Удалить квест "${project.name}"?`);
-    if (!confirmed) return;
-    try {
-      clearUiError();
-      await deleteNodeGeneratorProject(project.id);
-      navigate('/node-generator');
-    } catch (e) {
-      applyUiError(e, 'Не удалось удалить проект');
-    }
-  };
-
   const handleExport = async () => {
     if (!project) return;
     try {
@@ -97,20 +81,6 @@ export function NodeGeneratorProjectHomePage() {
       URL.revokeObjectURL(url);
     } catch (e) {
       applyUiError(e, 'Не удалось экспортировать JSON');
-    }
-  };
-
-  const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    event.currentTarget.value = '';
-    if (!file) return;
-    try {
-      clearUiError();
-      const parsed = JSON.parse(await file.text()) as unknown;
-      const imported = await importNodeGeneratorProjectJson(parsed);
-      navigate(`/node-generator/projects/${imported.id}`);
-    } catch (e) {
-      applyUiError(e, 'Не удалось импортировать JSON');
     }
   };
 
@@ -146,7 +116,7 @@ export function NodeGeneratorProjectHomePage() {
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
             <TextField size="small" label="Имя квеста" value={renameDraft} onChange={(e) => setRenameDraft(e.target.value)} />
             <Button variant="outlined" onClick={() => void handleRename()} disabled={!renameDraft.trim()}>Переименовать</Button>
-            <Button variant="outlined" color="error" onClick={() => void handleDelete()}>Удалить</Button>
+            <Button variant="outlined" onClick={() => void handleExport()}>Экспорт</Button>
           </Stack>
         </Stack>
       </SectionCard>
@@ -165,10 +135,6 @@ export function NodeGeneratorProjectHomePage() {
           <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} />
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Button variant="outlined" onClick={() => void handleExport()}>📦 Экспорт</Button>
-            <Button variant="outlined" component="label">
-              Импорт JSON
-              <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImport(event)} />
-            </Button>
           </Box>
         </Stack>
       </SectionCard>
