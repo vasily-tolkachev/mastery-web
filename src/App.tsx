@@ -28,7 +28,7 @@ export default function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<Navigate to="/quests" replace />} />
+        <Route path="/" element={<Navigate to="/node-generator" replace />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/learning" element={<LearningPage />} />
         <Route path="/programs" element={<ProgramsPage />} />
@@ -39,7 +39,7 @@ export default function App() {
         <Route path="/generator" element={<GeneratorPage />} />
         <Route path="/node-generator" element={<NodeGeneratorPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/quests" replace />} />
+        <Route path="*" element={<Navigate to="/node-generator" replace />} />
       </Routes>
     </AppLayout>
   );
