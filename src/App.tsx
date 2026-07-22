@@ -7,6 +7,7 @@ import { GeneratorPage } from './pages/GeneratorPage';
 import { HomePage } from './pages/HomePage';
 import { LearningPage } from './pages/LearningPage';
 import { LoginPage } from './pages/LoginPage';
+import { NodeGeneratorPage } from './pages/NodeGeneratorPage';
 import { ProgramsPage } from './pages/ProgramsPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { QuestsPage } from './pages/QuestsPage';
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/quests" element={<QuestsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/generator" element={<GeneratorPage />} />
+        <Route path="/node-generator" element={<NodeGeneratorPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/quests" replace />} />
       </Routes>

@@ -23,6 +23,7 @@ const sidebarItems = [
   { label: 'Прогресс', path: '/progress', icon: <InsightsRoundedIcon fontSize="small" /> },
   { label: 'Квесты', path: '/quests', icon: <AutoStoriesRoundedIcon fontSize="small" /> },
   { label: 'Генератор', path: '/generator', icon: <AutoFixHighRoundedIcon fontSize="small" /> },
+  { label: 'Генератор нодов', path: '/node-generator', icon: <AutoFixHighRoundedIcon fontSize="small" /> },
   { label: 'Цели', path: '/goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
   { label: 'Настройки', path: '/settings', icon: <SettingsRoundedIcon fontSize="small" /> },
 ] as const;
