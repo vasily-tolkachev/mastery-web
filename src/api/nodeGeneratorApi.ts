@@ -6,6 +6,11 @@ export type PromptOverride = {
   userPrompt?: string | null;
 };
 
+export type CreatedQuest = {
+  id: string;
+  title: string;
+};
+
 export class ApiRequestError extends Error {
   code: string;
   errors: string[];
@@ -252,6 +257,19 @@ export async function importNodeGeneratorProjectJson(snapshotJson: unknown): Pro
   });
   if (!response.ok) throw await toError(response, 'Не удалось импортировать проект из JSON');
   return normalizeProject(await response.json());
+}
+
+export async function createQuestFromNodeGeneratorProject(projectId: string): Promise<CreatedQuest> {
+  const response = await authFetch(`/api/node-generator/projects/${projectId}/create-quest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw await toError(response, 'Не удалось создать квест из проекта');
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    id: String(raw.id ?? ''),
+    title: String(raw.title ?? ''),
+  };
 }
 
 async function toError(response: Response, fallback: string): Promise<Error> {

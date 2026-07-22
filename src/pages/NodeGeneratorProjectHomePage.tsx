@@ -1,17 +1,19 @@
-import { Alert, Box, Breadcrumbs, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ApiRequestError, renameNodeGeneratorProject } from '../api/nodeGeneratorApi';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ApiRequestError, createQuestFromNodeGeneratorProject, renameNodeGeneratorProject } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
 import { useNodeGeneratorProject, useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
 
 export function NodeGeneratorProjectHomePage() {
+  const navigate = useNavigate();
   const { projectId = '' } = useParams();
   const { data: project, isLoading, isError, error: projectError } = useNodeGeneratorProject(projectId);
   const setProjectCache = useSetNodeGeneratorProjectCache();
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [renameDraft, setRenameDraft] = useState('');
+  const [createQuestPending, setCreateQuestPending] = useState(false);
 
   useEffect(() => {
     setRenameDraft(project?.name ?? '');
@@ -47,6 +49,20 @@ export function NodeGeneratorProjectHomePage() {
     } catch (e) {
       applyUiError(e, 'Не удалось сохранить название');
       setRenameDraft(project.name);
+    }
+  };
+
+  const handleCreateQuest = async () => {
+    if (!project) return;
+    try {
+      clearUiError();
+      setCreateQuestPending(true);
+      await createQuestFromNodeGeneratorProject(project.id);
+      navigate('/quests');
+    } catch (e) {
+      applyUiError(e, 'Не удалось создать квест');
+    } finally {
+      setCreateQuestPending(false);
     }
   };
 
@@ -92,6 +108,9 @@ export function NodeGeneratorProjectHomePage() {
 
       <SectionCard title="Разделы квеста">
         <Stack spacing={1}>
+          <Button variant="contained" onClick={() => void handleCreateQuest()} disabled={createQuestPending}>
+            Создать квест из текущих данных
+          </Button>
           <NavCard
             title="Продолжить работу"
             to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(project.workspace?.nodes?.[0]?.id ?? 'N1')}`}
