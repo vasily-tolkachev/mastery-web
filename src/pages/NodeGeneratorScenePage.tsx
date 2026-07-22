@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -88,7 +88,15 @@ export function NodeGeneratorScenePage() {
   if (!scene) {
     return (
       <Stack spacing={2}>
-        <Button component={Link} to={`/node-generator/projects/${project.id}`} sx={{ alignSelf: 'flex-start' }}>← {project.name}</Button>
+        <Breadcrumbs aria-label="breadcrumb">
+          <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
+            Все квесты
+          </MuiLink>
+          <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
+            {project.name}
+          </MuiLink>
+          <Typography color="text.primary">Сцены</Typography>
+        </Breadcrumbs>
         <SectionCard title="Сцены">
           <Typography variant="body2" color="text.secondary">Сцен пока нет.</Typography>
           <Button variant="contained" onClick={() => void handleCreateScene()} sx={{ mt: 1 }}>Создать первую сцену</Button>
@@ -99,10 +107,16 @@ export function NodeGeneratorScenePage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">
-        Все квесты / {project.name} / Сцена {scene.id}
-      </Typography>
-      <Button component={Link} to={`/node-generator/projects/${project.id}`} sx={{ alignSelf: 'flex-start' }}>← {project.name}</Button>
+      <Breadcrumbs aria-label="breadcrumb">
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
+          Все квесты
+        </MuiLink>
+        <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
+          {project.name}
+        </MuiLink>
+        <Typography color="text.primary">Сцена {scene.id}</Typography>
+      </Breadcrumbs>
+
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <SectionCard title="Граф сцен">
           <SceneTreeList
@@ -115,20 +129,8 @@ export function NodeGeneratorScenePage() {
         <Stack spacing={2} sx={{ flex: 1 }}>
           <SectionCard title={`Сцена ${scene.id}`}>
             <Stack spacing={1}>
-              <TextField
-                label="Описание действия"
-                value={actionDescriptionDraft}
-                onChange={(e) => setActionDescriptionDraft(e.target.value)}
-                multiline
-                minRows={3}
-              />
-              <TextField
-                label="Описание состояния"
-                value={stateDescriptionDraft}
-                onChange={(e) => setStateDescriptionDraft(e.target.value)}
-                multiline
-                minRows={4}
-              />
+              <TextField label="Описание действия" value={actionDescriptionDraft} onChange={(e) => setActionDescriptionDraft(e.target.value)} multiline minRows={3} />
+              <TextField label="Описание состояния" value={stateDescriptionDraft} onChange={(e) => setStateDescriptionDraft(e.target.value)} multiline minRows={4} />
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
                 <Button variant="contained" onClick={() => void handleSaveDescription()}>Сохранить описание</Button>
                 <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/generate`}>
@@ -221,12 +223,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
       <Box key={node.id} sx={{ ml: level * 1.25 }}>
         <Stack direction="row" spacing={0.5}>
           {children.length > 0 ? (
-            <Button
-              size="small"
-              variant="text"
-              onClick={() => toggleExpanded(node.id)}
-              sx={{ minWidth: 28, px: 0.5, alignSelf: 'flex-start' }}
-            >
+            <Button size="small" variant="text" onClick={() => toggleExpanded(node.id)} sx={{ minWidth: 28, px: 0.5, alignSelf: 'flex-start' }}>
               {expandedNodeIds[node.id.toUpperCase()] ? '−' : '+'}
             </Button>
           ) : (

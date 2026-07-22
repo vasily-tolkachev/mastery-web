@@ -1,6 +1,6 @@
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, IconButton, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -157,37 +157,25 @@ export function NodeGeneratorProjectsPage() {
 
               <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
                 <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                  <Button
+                  <IconButton
                     size="small"
-                    variant="text"
                     aria-label="Экспорт"
-                    onTouchStart={(event) => event.stopPropagation()}
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleExportProject(project);
-                    }}
-                    sx={{ minWidth: 34, width: 34, height: 34, p: 0 }}
+                    onClick={() => void handleExportProject(project)}
+                    sx={{ width: 34, height: 34, p: 0 }}
                   >
                     <FileDownloadOutlinedIcon fontSize="small" />
-                  </Button>
+                  </IconButton>
                 </Box>
                 <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                  <Button
+                  <IconButton
                     size="small"
                     color="error"
-                    variant="text"
                     aria-label="Удалить"
-                    onTouchStart={(event) => event.stopPropagation()}
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleDeleteProject(project);
-                    }}
-                    sx={{ minWidth: 34, width: 34, height: 34, p: 0 }}
+                    onClick={() => void handleDeleteProject(project)}
+                    sx={{ width: 34, height: 34, p: 0 }}
                   >
                     <DeleteOutlineRoundedIcon fontSize="small" />
-                  </Button>
+                  </IconButton>
                 </Box>
               </Stack>
             </Stack>

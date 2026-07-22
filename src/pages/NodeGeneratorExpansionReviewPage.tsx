@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -40,12 +40,15 @@ export function NodeGeneratorExpansionReviewPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">
-        Все квесты / {project.name} / Проверка изменений
-      </Typography>
-      <Button component={Link} to={`/node-generator/projects/${project.id}`} sx={{ alignSelf: 'flex-start' }}>
-        ← {project.name}
-      </Button>
+      <Breadcrumbs aria-label="breadcrumb">
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
+          Все квесты
+        </MuiLink>
+        <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
+          {project.name}
+        </MuiLink>
+        <Typography color="text.primary">Проверка изменений</Typography>
+      </Breadcrumbs>
 
       <SectionCard title="Обновление действий">
         <Stack spacing={1}>

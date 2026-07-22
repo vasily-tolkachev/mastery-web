@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -102,12 +102,12 @@ export function NodeGeneratorProjectHomePage() {
         </SectionCard>
       ) : null}
 
-      <Typography variant="body2" color="text.secondary">
-        Все квесты / {project.name}
-      </Typography>
-      <Button component={Link} to="/node-generator" variant="text" sx={{ alignSelf: 'flex-start' }}>
-        ← Все квесты
-      </Button>
+      <Breadcrumbs aria-label="breadcrumb">
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
+          Все квесты
+        </MuiLink>
+        <Typography color="text.primary">{project.name}</Typography>
+      </Breadcrumbs>
 
       <SectionCard title="Главная квеста">
         <Stack spacing={1.5}>

@@ -1,4 +1,4 @@
-import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { addWorkspaceGlobalKnowledge, getNodeGeneratorProject, removeWorkspaceGlobalKnowledge } from '../api/nodeGeneratorApi';
@@ -36,12 +36,16 @@ export function NodeGeneratorKnowledgePage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">
-        Все квесты / {project.name} / Глобальные знания
-      </Typography>
-      <Button component={Link} to={`/node-generator/projects/${project.id}`} sx={{ alignSelf: 'flex-start' }}>
-        ← {project.name}
-      </Button>
+      <Breadcrumbs aria-label="breadcrumb">
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
+          Все квесты
+        </MuiLink>
+        <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
+          {project.name}
+        </MuiLink>
+        <Typography color="text.primary">Глобальные знания</Typography>
+      </Breadcrumbs>
+
       <SectionCard title="Глобальные знания">
         <Stack spacing={1}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>

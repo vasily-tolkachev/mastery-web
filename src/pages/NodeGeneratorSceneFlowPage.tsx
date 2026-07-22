@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Stack, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -92,12 +92,18 @@ export function NodeGeneratorSceneFlowPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">
-        Все квесты / {project.name} / Сцена {scene.id} / Генерация
-      </Typography>
-      <Button component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}`} sx={{ alignSelf: 'flex-start' }}>
-        ← Сцена {scene.id}
-      </Button>
+      <Breadcrumbs aria-label="breadcrumb">
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
+          Все квесты
+        </MuiLink>
+        <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
+          {project.name}
+        </MuiLink>
+        <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}`} underline="hover" color="inherit">
+          Сцена {scene.id}
+        </MuiLink>
+        <Typography color="text.primary">Генерация</Typography>
+      </Breadcrumbs>
 
       <SectionCard title={`Создание сцены ${scene.id}`}>
         <Stepper activeStep={activeStep} alternativeLabel>
@@ -265,20 +271,8 @@ function PromptEditor({ preview, override, onChange, systemLabel, userLabel }: P
           {`SYSTEM:\n${preview.systemPrompt ?? ''}\n\nUSER:\n${preview.userPrompt ?? ''}`}
         </Box>
       ) : null}
-      <TextField
-        label={systemLabel}
-        value={override?.systemPrompt ?? ''}
-        onChange={(e) => onChange('systemPrompt', e.target.value)}
-        multiline
-        minRows={3}
-      />
-      <TextField
-        label={userLabel}
-        value={override?.userPrompt ?? ''}
-        onChange={(e) => onChange('userPrompt', e.target.value)}
-        multiline
-        minRows={3}
-      />
+      <TextField label={systemLabel} value={override?.systemPrompt ?? ''} onChange={(e) => onChange('systemPrompt', e.target.value)} multiline minRows={3} />
+      <TextField label={userLabel} value={override?.userPrompt ?? ''} onChange={(e) => onChange('userPrompt', e.target.value)} multiline minRows={3} />
     </Stack>
   );
 }
