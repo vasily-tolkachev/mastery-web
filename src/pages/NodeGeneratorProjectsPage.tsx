@@ -66,8 +66,7 @@ export function NodeGeneratorProjectsPage() {
     if (!file) return;
     try {
       clearUiError();
-      const text = await file.text();
-      const parsed = JSON.parse(text) as unknown;
+      const parsed = JSON.parse(await file.text()) as unknown;
       const imported = await importNodeGeneratorProjectJson(parsed);
       navigate(`/node-generator/projects/${imported.id}`);
     } catch (e) {
@@ -136,70 +135,34 @@ export function NodeGeneratorProjectsPage() {
         {!projects.length ? <EmptyState message="Пока нет квестов." /> : null}
         <Stack spacing={1}>
           {projects.map((project) => (
-            <Box
-              key={project.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate(`/node-generator/projects/${project.id}`)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') navigate(`/node-generator/projects/${project.id}`);
-              }}
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 1,
-                p: 1.25,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: { md: 'center' }, width: '100%' }}>
-                <Box
-                  role="button"
-                  tabIndex={0}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    navigate(`/node-generator/projects/${project.id}`);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.stopPropagation();
-                      navigate(`/node-generator/projects/${project.id}`);
-                    }
-                  }}
-                  sx={{ flex: 1, cursor: 'pointer', py: 0.25 }}
-                >
-                  <Typography variant="subtitle1">📖 {project.name}</Typography>
-                </Box>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.5}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleExportProject(project);
-                    }}
-                  >
-                    Экспорт
-                  </Button>
-                  <Button
-                    size="small"
-                    color="error"
-                    variant="outlined"
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleDeleteProject(project);
-                    }}
-                  >
-                    Удалить
-                  </Button>
-                </Stack>
+            <Stack key={project.id} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+              <Box
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/node-generator/projects/${project.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') navigate(`/node-generator/projects/${project.id}`);
+                }}
+                sx={{
+                  flex: 1,
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  p: 1.25,
+                  cursor: 'pointer',
+                }}
+              >
+                <Typography variant="subtitle1">📖 {project.name}</Typography>
+              </Box>
+              <Stack direction={{ xs: 'row', sm: 'column' }} spacing={0.5} sx={{ minWidth: { sm: 120 } }}>
+                <Button size="small" variant="outlined" onClick={() => void handleExportProject(project)}>
+                  Экспорт
+                </Button>
+                <Button size="small" color="error" variant="outlined" onClick={() => void handleDeleteProject(project)}>
+                  Удалить
+                </Button>
               </Stack>
-            </Box>
+            </Stack>
           ))}
         </Stack>
       </SectionCard>
