@@ -303,6 +303,11 @@ export function NodeGeneratorPage() {
     }
   };
 
+  const handleExitProject = () => {
+    setSelectedProjectId(null);
+    setSelectedNodeId(null);
+  };
+
   if (loading) return <LoadingState message="Загрузка проектов генератора сцен..." />;
 
   return (
@@ -320,70 +325,71 @@ export function NodeGeneratorPage() {
         </SectionCard>
       ) : null}
 
-      <SectionCard title="Генератор сцен">
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-          <Button variant="contained" onClick={() => void handleCreateProject()}>Новый проект</Button>
-          <Button variant="contained" component="label">
-            Импорт JSON
-            <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
-          </Button>
-          <Button variant="outlined" onClick={() => void loadProjects()}>Обновить список</Button>
-          <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
-            Проектов: {projects.length}
-          </Typography>
-        </Stack>
-        {selectedProject ? (
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>
-            <TextField
-              size="small"
-              label="Имя проекта"
-              value={renameProjectNameDraft}
-              onChange={(event) => setRenameProjectNameDraft(event.target.value)}
-              sx={{ minWidth: { md: 320 } }}
-            />
-            <Button variant="outlined" onClick={() => void handleRenameProject()} disabled={!renameProjectNameDraft.trim()}>
-              Переименовать
-            </Button>
-            <Button variant="outlined" color="error" onClick={() => void handleDeleteProject()}>
-              Удалить проект
-            </Button>
-          </Stack>
-        ) : null}
-      </SectionCard>
+      {!selectedProject ? (
+        <>
+          <SectionCard title="Генератор сцен">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+              <Button variant="contained" onClick={() => void handleCreateProject()}>Новый проект</Button>
+              <Button variant="contained" component="label">
+                Импорт JSON
+                <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
+              </Button>
+              <Button variant="outlined" onClick={() => void loadProjects()}>Обновить список</Button>
+              <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                Проектов: {projects.length}
+              </Typography>
+            </Stack>
+          </SectionCard>
 
-      <SectionCard title="Шаг 1. Выберите проект">
-        {!projects.length ? <EmptyState message="Пока нет проектов." /> : null}
-        <Stack spacing={1}>
-          {projects.map((project) => (
-            <Box
-              key={project.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSelectedProjectId(project.id)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') setSelectedProjectId(project.id);
-              }}
-              sx={{
-                border: 1,
-                borderColor: selectedProjectId === project.id ? 'primary.main' : 'divider',
-                borderRadius: 1,
-                p: 1.25,
-                cursor: 'pointer',
-                bgcolor: selectedProjectId === project.id ? 'action.selected' : 'background.paper',
-              }}
-            >
-              <Typography variant="subtitle1">{project.name}</Typography>
-              <Typography variant="body2" color="text.secondary">Стиль: {project.questStyle}</Typography>
-            </Box>
-          ))}
-        </Stack>
-      </SectionCard>
+          <SectionCard title="Шаг 1. Выберите проект">
+            {!projects.length ? <EmptyState message="Пока нет проектов." /> : null}
+            <Stack spacing={1}>
+              {projects.map((project) => (
+                <Box
+                  key={project.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedProjectId(project.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') setSelectedProjectId(project.id);
+                  }}
+                  sx={{
+                    border: 1,
+                    borderColor: selectedProjectId === project.id ? 'primary.main' : 'divider',
+                    borderRadius: 1,
+                    p: 1.25,
+                    cursor: 'pointer',
+                    bgcolor: selectedProjectId === project.id ? 'action.selected' : 'background.paper',
+                  }}
+                >
+                  <Typography variant="subtitle1">{project.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">Стиль: {project.questStyle}</Typography>
+                </Box>
+              ))}
+            </Stack>
+          </SectionCard>
+        </>
+      ) : null}
 
       {selectedProject ? (
         <SectionCard
           title={`Шаг 2. Работа со сценами: ${selectedProject.name}`}
           action={(
             <Stack direction="row" spacing={1}>
+              <Button size="small" variant="outlined" onClick={() => handleExitProject()}>К проектам</Button>
+              <TextField
+                size="small"
+                label="Имя проекта"
+                value={renameProjectNameDraft}
+                onChange={(event) => setRenameProjectNameDraft(event.target.value)}
+                sx={{ minWidth: { md: 220 } }}
+              />
+              <Button size="small" variant="outlined" onClick={() => void handleRenameProject()} disabled={!renameProjectNameDraft.trim()}>
+                Переименовать
+              </Button>
+              <Button size="small" variant="outlined" color="error" onClick={() => void handleDeleteProject()}>
+                Удалить проект
+              </Button>
               <Button size="small" variant="outlined" onClick={() => void handleExportJson()}>Экспорт JSON</Button>
               <Button size="small" variant="contained" component="label">
                 Импорт JSON
