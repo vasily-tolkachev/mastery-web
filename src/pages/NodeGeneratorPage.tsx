@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Divider, Stack, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   ApiRequestError,
@@ -60,9 +60,9 @@ export function NodeGeneratorPage() {
     setError(message);
     if (e instanceof ApiRequestError) {
       setValidationErrors(e.errors ?? []);
-    } else {
-      setValidationErrors([]);
+      return;
     }
+    setValidationErrors([]);
   };
 
   const loadProjects = async () => {
@@ -72,7 +72,9 @@ export function NodeGeneratorPage() {
       const loaded = await getNodeGeneratorProjects();
       setProjects(loaded);
       if (!selectedProjectId && loaded.length > 0) setSelectedProjectId(loaded[0].id);
-      if (selectedProjectId && !loaded.some((p) => p.id === selectedProjectId)) setSelectedProjectId(loaded[0]?.id ?? null);
+      if (selectedProjectId && !loaded.some((project) => project.id === selectedProjectId)) {
+        setSelectedProjectId(loaded[0]?.id ?? null);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты');
     } finally {
@@ -108,33 +110,21 @@ export function NodeGeneratorPage() {
     return refreshed;
   };
 
-  const handleCreateProject = async () => {
-    try {
-      setBusyAction('create-project');
-      clearUiError();
-      const created = await createNodeGeneratorProject(generateProjectName(), 'classic-adventure');
-      setProjects((prev) => [created, ...prev]);
-      setSelectedProjectId(created.id);
-    } catch (e) {
-      applyUiError(e, 'Не удалось создать проект');
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
   const updateProject = (updated: NodeGeneratorProject) => {
     setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
   };
 
-  const runAndRefresh = async (action: () => Promise<NodeGeneratorProject>, fallback: string) => {
-    if (!selectedProjectId) return;
+  const runAndRefresh = async (action: () => Promise<NodeGeneratorProject>, fallback: string): Promise<NodeGeneratorProject | null> => {
+    if (!selectedProjectId) return null;
     try {
       clearUiError();
       const updated = await action();
       updateProject(updated);
+      return updated;
     } catch (e) {
       applyUiError(e, fallback);
       await refreshSelectedProject(selectedProjectId);
+      return null;
     }
   };
 
@@ -150,6 +140,45 @@ export function NodeGeneratorPage() {
     }
   };
 
+  const handleCreateProject = async () => {
+    try {
+      setBusyAction('create-project');
+      clearUiError();
+      const created = await createNodeGeneratorProject(generateProjectName(), 'classic-adventure');
+      setProjects((prev) => [created, ...prev]);
+      setSelectedProjectId(created.id);
+      setSelectedNodeId(null);
+    } catch (e) {
+      applyUiError(e, 'Не удалось создать проект');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleCreateScene = async () => {
+    if (!selectedProject) return;
+    const previousIds = new Set((selectedProject.workspace?.nodes ?? []).map((node) => node.id));
+    const updated = await runAndRefresh(
+      () => createWorkspaceNode(selectedProject.id),
+      'Не удалось создать сцену',
+    );
+    if (!updated) return;
+    const created = (updated.workspace?.nodes ?? []).find((node) => !previousIds.has(node.id));
+    if (created) setSelectedNodeId(created.id);
+  };
+
+  const handleCreateNextScene = async (actionId: string) => {
+    if (!selectedProject || !selectedNode) return;
+    const previousIds = new Set((selectedProject.workspace?.nodes ?? []).map((node) => node.id));
+    const updated = await runAndRefresh(
+      () => createNextWorkspaceNode(selectedProject.id, selectedNode.id, actionId),
+      'Не удалось создать следующую сцену',
+    );
+    if (!updated) return;
+    const created = (updated.workspace?.nodes ?? []).find((node) => !previousIds.has(node.id));
+    if (created) setSelectedNodeId(created.id);
+  };
+
   const handleExportJson = async () => {
     if (!selectedProjectId || !selectedProject) return;
     try {
@@ -161,8 +190,8 @@ export function NodeGeneratorPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const safeName = selectedProject.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'node_generator_project';
-      link.download = `${safeName}-node-snapshot.json`;
+      const safeName = selectedProject.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'scene_generator_project';
+      link.download = `${safeName}-scene-snapshot.json`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -192,13 +221,13 @@ export function NodeGeneratorPage() {
     }
   };
 
-  if (loading) return <LoadingState message="Загрузка проектов генератора нодов..." />;
+  if (loading) return <LoadingState message="Загрузка проектов генератора сцен..." />;
 
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
       {validationErrors.length ? (
-        <SectionCard title="Ошибки">
+        <SectionCard title="Ошибки валидации">
           <Stack spacing={0.5}>
             {validationErrors.map((item, index) => (
               <Typography key={`${index}-${item}`} variant="body2" color="error">
@@ -209,14 +238,17 @@ export function NodeGeneratorPage() {
         </SectionCard>
       ) : null}
 
-      <SectionCard title="Генератор нодов">
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-          <Button variant="contained" onClick={() => void handleCreateProject()}>Создать проект</Button>
-          <Button variant="outlined" onClick={() => void loadProjects()}>Обновить</Button>
+      <SectionCard title="Генератор сцен">
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+          <Button variant="contained" onClick={() => void handleCreateProject()}>Новый проект</Button>
+          <Button variant="outlined" onClick={() => void loadProjects()}>Обновить список</Button>
+          <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+            Проектов: {projects.length}
+          </Typography>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Проекты">
+      <SectionCard title="Шаг 1. Выберите проект">
         {!projects.length ? <EmptyState message="Пока нет проектов." /> : null}
         <Stack spacing={1}>
           {projects.map((project) => (
@@ -225,8 +257,17 @@ export function NodeGeneratorPage() {
               role="button"
               tabIndex={0}
               onClick={() => setSelectedProjectId(project.id)}
-              onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setSelectedProjectId(project.id); }}
-              sx={{ border: 1, borderColor: selectedProjectId === project.id ? 'primary.main' : 'divider', borderRadius: 1, p: 1.25, cursor: 'pointer' }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') setSelectedProjectId(project.id);
+              }}
+              sx={{
+                border: 1,
+                borderColor: selectedProjectId === project.id ? 'primary.main' : 'divider',
+                borderRadius: 1,
+                p: 1.25,
+                cursor: 'pointer',
+                bgcolor: selectedProjectId === project.id ? 'action.selected' : 'background.paper',
+              }}
             >
               <Typography variant="subtitle1">{project.name}</Typography>
               <Typography variant="body2" color="text.secondary">Стиль: {project.questStyle}</Typography>
@@ -237,7 +278,7 @@ export function NodeGeneratorPage() {
 
       {selectedProject ? (
         <SectionCard
-          title={`Рабочая область нодов: ${selectedProject.name}`}
+          title={`Шаг 2. Работа со сценами: ${selectedProject.name}`}
           action={(
             <Stack direction="row" spacing={1}>
               <Button size="small" variant="outlined" onClick={() => void handleExportJson()}>Экспорт JSON</Button>
@@ -248,38 +289,106 @@ export function NodeGeneratorPage() {
             </Stack>
           )}
         >
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-            <Stack spacing={1} sx={{ minWidth: { md: 260 }, maxWidth: { md: 360 } }}>
-              <Button size="small" variant="contained" onClick={() => void runAndRefresh(() => createWorkspaceNode(selectedProject.id), 'Не удалось создать нод')}>
-                Создать нод
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <Stack spacing={1} sx={{ minWidth: { md: 300 }, maxWidth: { md: 380 } }}>
+              <Typography variant="body2" color="text.secondary">
+                Сцен: {workspaceNodes.length}
+              </Typography>
+              <Button size="small" variant="contained" onClick={() => void handleCreateScene()}>
+                Создать корневую сцену
               </Button>
-              <Button size="small" variant="outlined" onClick={() => void runAndRefresh(() => runWorkspaceExpansion(selectedProject.id, selectedProject.workspace?.globalKnowledge ?? []), 'Не удалось запустить обновление')}>
-                Обновить старые ноды
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => void runAndRefresh(
+                  () => runWorkspaceExpansion(selectedProject.id, selectedProject.workspace?.globalKnowledge ?? []),
+                  'Не удалось обновить сцены по новым знаниям',
+                )}
+              >
+                Обновить сцены по новым знаниям
               </Button>
-              <Typography variant="subtitle2">Ноды</Typography>
-              {!workspaceNodes.length ? <Typography variant="body2" color="text.secondary">Нодов пока нет.</Typography> : null}
-              <NodeTreeList nodes={workspaceNodes} selectedNodeId={selectedNodeId} onSelectNode={(id) => setSelectedNodeId(id)} />
+              <Divider />
+              <Typography variant="subtitle2">Дерево сцен</Typography>
+              {!workspaceNodes.length ? (
+                <Typography variant="body2" color="text.secondary">Сцен пока нет.</Typography>
+              ) : null}
+              <NodeTreeList nodes={workspaceNodes} selectedNodeId={selectedNodeId} onSelectNode={setSelectedNodeId} />
             </Stack>
 
-            <Stack spacing={1} sx={{ flex: 1 }}>
-              {!selectedNode ? <Typography variant="body2" color="text.secondary">Выберите нод.</Typography> : (
+            <Stack spacing={1.25} sx={{ flex: 1 }}>
+              {!selectedNode ? (
+                <Typography variant="body2" color="text.secondary">Выберите сцену в дереве слева.</Typography>
+              ) : (
                 <>
-                  <Typography variant="subtitle2">Нод {selectedNode.id}</Typography>
-                  <Button size="small" variant="outlined" color="error" onClick={() => void runAndRefresh(() => deleteWorkspaceNode(selectedProject.id, selectedNode.id), 'Не удалось удалить нод')}>
-                    Удалить нод (с поднодами)
-                  </Button>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: 'space-between' }}>
+                    <Typography variant="subtitle2">Сцена {selectedNode.id}</Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      onClick={() => void runAndRefresh(
+                        () => deleteWorkspaceNode(selectedProject.id, selectedNode.id),
+                        'Не удалось удалить сцену',
+                      )}
+                    >
+                      Удалить сцену с дочерними
+                    </Button>
+                  </Stack>
 
-                  <TextField label="Описание действия" value={nodeActionDescriptionDraft} onChange={(e) => setNodeActionDescriptionDraft(e.target.value)} fullWidth multiline minRows={3} />
-                  <TextField label="Описание состояния" value={nodeStateDescriptionDraft} onChange={(e) => setNodeStateDescriptionDraft(e.target.value)} fullWidth multiline minRows={4} />
-                  <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="contained" onClick={() => void runPreview(() => previewWorkspaceNodeDescriptionPrompt(selectedProject.id, selectedNode.id), `DESC:${selectedNode.id}`, 'Не удалось получить prompt')}>
-                      Описание: Generate
+                  <Typography variant="subtitle2">Шаг 2.1 Описание сцены</Typography>
+                  <TextField
+                    label="Описание действия (что делает игрок)"
+                    value={nodeActionDescriptionDraft}
+                    onChange={(e) => setNodeActionDescriptionDraft(e.target.value)}
+                    fullWidth
+                    multiline
+                    minRows={3}
+                  />
+                  <TextField
+                    label="Описание состояния (что видит игрок после действия)"
+                    value={nodeStateDescriptionDraft}
+                    onChange={(e) => setNodeStateDescriptionDraft(e.target.value)}
+                    fullWidth
+                    multiline
+                    minRows={4}
+                  />
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => void runPreview(
+                        () => previewWorkspaceNodeDescriptionPrompt(selectedProject.id, selectedNode.id),
+                        `DESC:${selectedNode.id}`,
+                        'Не удалось получить запрос',
+                      )}
+                    >
+                      Описание: посмотреть запрос
                     </Button>
-                    <Button size="small" variant="contained" onClick={() => void runAndRefresh(() => generateWorkspaceNodeDescription(selectedProject.id, selectedNode.id), 'Не удалось сгенерировать описание')}>
-                      Описание: Send
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => void runAndRefresh(
+                        () => generateWorkspaceNodeDescription(selectedProject.id, selectedNode.id),
+                        'Не удалось запросить описание',
+                      )}
+                    >
+                      Описание: запросить
                     </Button>
-                    <Button size="small" variant="contained" onClick={() => void runAndRefresh(() => updateWorkspaceNodeDescription(selectedProject.id, selectedNode.id, nodeActionDescriptionDraft, nodeStateDescriptionDraft), 'Не удалось сохранить описание')}>
-                      Сохранить
+                    <Button
+                      size="small"
+                      variant="contained"
+                      disabled={!nodeActionDescriptionDraft.trim() && !nodeStateDescriptionDraft.trim()}
+                      onClick={() => void runAndRefresh(
+                        () => updateWorkspaceNodeDescription(
+                          selectedProject.id,
+                          selectedNode.id,
+                          nodeActionDescriptionDraft,
+                          nodeStateDescriptionDraft,
+                        ),
+                        'Не удалось сохранить описание',
+                      )}
+                    >
+                      Описание: сохранить
                     </Button>
                   </Stack>
                   {workspacePromptPreviews[`DESC:${selectedNode.id}`] ? (
@@ -287,61 +396,136 @@ export function NodeGeneratorPage() {
                       {`SYSTEM:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`DESC:${selectedNode.id}`]?.userPrompt ?? ''}`}
                     </Box>
                   ) : null}
-                  {(selectedNode.generatedActionDescriptionDraft?.trim() || selectedNode.generatedStateDescriptionDraft?.trim() || selectedNode.generatedDescriptionDraft?.trim()) ? (
-                    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                  {(selectedNode.generatedActionDescriptionDraft?.trim() || selectedNode.generatedStateDescriptionDraft?.trim()) ? (
+                    <Box sx={draftSx}>
                       <Typography variant="caption" color="text.secondary">Сгенерированный черновик</Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>Action: {selectedNode.generatedActionDescriptionDraft || '-'}</Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>State: {selectedNode.generatedStateDescriptionDraft || '-'}</Typography>
-                      <Button size="small" variant="text" sx={{ mt: 0.5 }} onClick={() => { setNodeActionDescriptionDraft(selectedNode.generatedActionDescriptionDraft ?? ''); setNodeStateDescriptionDraft(selectedNode.generatedStateDescriptionDraft ?? ''); }}>
-                        Использовать
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>Действие: {selectedNode.generatedActionDescriptionDraft || '-'}</Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>Состояние: {selectedNode.generatedStateDescriptionDraft || '-'}</Typography>
+                      <Button
+                        size="small"
+                        variant="text"
+                        sx={{ mt: 0.5 }}
+                        onClick={() => {
+                          setNodeActionDescriptionDraft(selectedNode.generatedActionDescriptionDraft ?? '');
+                          setNodeStateDescriptionDraft(selectedNode.generatedStateDescriptionDraft ?? '');
+                        }}
+                      >
+                        Подставить в поля
                       </Button>
                     </Box>
                   ) : null}
 
-                  <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="contained" onClick={() => void runPreview(() => previewWorkspaceNodeKnowledgePrompt(selectedProject.id, selectedNode.id), `KNOW:${selectedNode.id}`, 'Не удалось получить prompt')}>
-                      Знания: Generate
+                  <Divider />
+                  <Typography variant="subtitle2">Шаг 2.2 Знания и действия</Typography>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => void runPreview(
+                        () => previewWorkspaceNodeKnowledgePrompt(selectedProject.id, selectedNode.id),
+                        `KNOW:${selectedNode.id}`,
+                        'Не удалось получить запрос',
+                      )}
+                    >
+                      Знания: посмотреть запрос
                     </Button>
-                    <Button size="small" variant="contained" onClick={() => void runAndRefresh(() => extractWorkspaceNodeKnowledge(selectedProject.id, selectedNode.id), 'Не удалось извлечь знания')}>
-                      Знания: Send
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => void runAndRefresh(
+                        () => extractWorkspaceNodeKnowledge(selectedProject.id, selectedNode.id),
+                        'Не удалось запросить знания',
+                      )}
+                    >
+                      Знания: запросить
                     </Button>
-                    <Button size="small" variant="contained" onClick={() => void runPreview(() => previewWorkspaceNodeActionsPrompt(selectedProject.id, selectedNode.id), `ACT:${selectedNode.id}`, 'Не удалось получить prompt')}>
-                      Действия: Generate
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => void runPreview(
+                        () => previewWorkspaceNodeActionsPrompt(selectedProject.id, selectedNode.id),
+                        `ACT:${selectedNode.id}`,
+                        'Не удалось получить запрос',
+                      )}
+                    >
+                      Действия: посмотреть запрос
                     </Button>
-                    <Button size="small" variant="contained" onClick={() => void runAndRefresh(() => generateWorkspaceNodeActions(selectedProject.id, selectedNode.id), 'Не удалось сгенерировать действия')}>
-                      Действия: Send
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => void runAndRefresh(
+                        () => generateWorkspaceNodeActions(selectedProject.id, selectedNode.id),
+                        'Не удалось запросить действия',
+                      )}
+                    >
+                      Действия: запросить
                     </Button>
                   </Stack>
-                  {workspacePromptPreviews[`KNOW:${selectedNode.id}`] ? <Box component="pre" sx={preSx}>{`SYSTEM:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.userPrompt ?? ''}`}</Box> : null}
-                  {workspacePromptPreviews[`ACT:${selectedNode.id}`] ? <Box component="pre" sx={preSx}>{`SYSTEM:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.userPrompt ?? ''}`}</Box> : null}
+                  {workspacePromptPreviews[`KNOW:${selectedNode.id}`] ? (
+                    <Box component="pre" sx={preSx}>
+                      {`SYSTEM:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`KNOW:${selectedNode.id}`]?.userPrompt ?? ''}`}
+                    </Box>
+                  ) : null}
+                  {workspacePromptPreviews[`ACT:${selectedNode.id}`] ? (
+                    <Box component="pre" sx={preSx}>
+                      {`SYSTEM:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.systemPrompt ?? ''}\n\nUSER:\n${workspacePromptPreviews[`ACT:${selectedNode.id}`]?.userPrompt ?? ''}`}
+                    </Box>
+                  ) : null}
 
                   {selectedNode.extractedKnowledgeDraft?.length ? (
-                    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                    <Box sx={draftSx}>
                       <Typography variant="caption" color="text.secondary">Черновик знаний</Typography>
                       <Stack spacing={0.25} sx={{ mt: 0.5 }}>
                         {selectedNode.extractedKnowledgeDraft.map((item, index) => (
                           <Stack key={`${index}-${item}`} direction="row" spacing={1}>
                             <Typography variant="body2" sx={{ flex: 1 }}>{index + 1}. {item}</Typography>
-                            <Button size="small" variant="text" onClick={() => void runAndRefresh(() => addNodeKnowledgeToGlobal(selectedProject.id, selectedNode.id, item), 'Не удалось добавить знание')}>В global</Button>
+                            <Button
+                              size="small"
+                              variant="text"
+                              onClick={() => void runAndRefresh(
+                                () => addNodeKnowledgeToGlobal(selectedProject.id, selectedNode.id, item),
+                                'Не удалось добавить знание',
+                              )}
+                            >
+                              В глобальные знания
+                            </Button>
                           </Stack>
                         ))}
                       </Stack>
                     </Box>
                   ) : null}
 
-                  <Typography variant="subtitle2">Действия</Typography>
-                  <Stack direction="row" spacing={1}>
-                    <TextField label="Новое действие" size="small" value={nodeActionDraft} onChange={(event) => setNodeActionDraft(event.target.value)} fullWidth />
-                    <Button size="small" variant="contained" onClick={() => void runAndRefresh(() => addWorkspaceNodeAction(selectedProject.id, selectedNode.id, nodeActionDraft), 'Не удалось добавить действие')}>Добавить</Button>
+                  <Typography variant="subtitle2">Шаг 2.3 Действия сцены</Typography>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                    <TextField
+                      label="Новое действие"
+                      size="small"
+                      value={nodeActionDraft}
+                      onChange={(event) => setNodeActionDraft(event.target.value)}
+                      fullWidth
+                    />
+                    <Button
+                      size="small"
+                      variant="contained"
+                      disabled={!nodeActionDraft.trim()}
+                      onClick={() => void runAndRefresh(
+                        () => addWorkspaceNodeAction(selectedProject.id, selectedNode.id, nodeActionDraft),
+                        'Не удалось добавить действие',
+                      )}
+                    >
+                      Добавить
+                    </Button>
                   </Stack>
                   {selectedNode.generatedActionsDraft?.length ? (
-                    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                    <Box sx={draftSx}>
                       <Typography variant="caption" color="text.secondary">Сгенерированные действия</Typography>
                       <Stack spacing={0.5} sx={{ mt: 0.5 }}>
                         {selectedNode.generatedActionsDraft.map((draftText, index) => (
                           <Stack key={`${index}-${draftText}`} direction="row" spacing={1}>
                             <Typography variant="body2" sx={{ flex: 1 }}>{draftText}</Typography>
-                            <Button size="small" variant="text" onClick={() => setNodeActionDraft(draftText)}>Использовать</Button>
+                            <Button size="small" variant="text" onClick={() => setNodeActionDraft(draftText)}>
+                              Подставить
+                            </Button>
                           </Stack>
                         ))}
                       </Stack>
@@ -352,8 +536,13 @@ export function NodeGeneratorPage() {
                       <Box key={action.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
                         <Typography variant="caption" color="text.secondary">{action.id}</Typography>
                         <Typography variant="body2">{action.text}</Typography>
-                        <Button size="small" variant="outlined" sx={{ mt: 0.5 }} onClick={() => void runAndRefresh(() => createNextWorkspaceNode(selectedProject.id, selectedNode.id, action.id), 'Не удалось создать следующий нод')}>
-                          Создать следующий нод
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          sx={{ mt: 0.5 }}
+                          onClick={() => void handleCreateNextScene(action.id)}
+                        >
+                          Создать следующую сцену
                         </Button>
                       </Box>
                     ))}
@@ -367,20 +556,48 @@ export function NodeGeneratorPage() {
       ) : null}
 
       {selectedProject ? (
-        <SectionCard title="Глобальные знания">
+        <SectionCard title="Шаг 3. Глобальные знания мира">
           <Stack spacing={1}>
-            <Stack direction="row" spacing={1}>
-              <TextField label="Новое знание" size="small" value={globalKnowledgeDraft} onChange={(event) => setGlobalKnowledgeDraft(event.target.value)} fullWidth />
-              <Button size="small" variant="contained" onClick={() => void runAndRefresh(() => addWorkspaceGlobalKnowledge(selectedProject.id, globalKnowledgeDraft), 'Не удалось добавить знание')}>Добавить</Button>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+              <TextField
+                label="Новое знание"
+                size="small"
+                value={globalKnowledgeDraft}
+                onChange={(event) => setGlobalKnowledgeDraft(event.target.value)}
+                fullWidth
+              />
+              <Button
+                size="small"
+                variant="contained"
+                disabled={!globalKnowledgeDraft.trim()}
+                onClick={() => void runAndRefresh(
+                  () => addWorkspaceGlobalKnowledge(selectedProject.id, globalKnowledgeDraft),
+                  'Не удалось добавить знание',
+                )}
+              >
+                Добавить
+              </Button>
             </Stack>
             <Stack spacing={0.5}>
               {(selectedProject.workspace?.globalKnowledge ?? []).map((item, index) => (
                 <Stack key={`${index}-${item}`} direction="row" spacing={1}>
                   <Typography variant="body2" sx={{ flex: 1 }}>{index + 1}. {item}</Typography>
-                  <Button size="small" variant="text" color="error" onClick={() => void runAndRefresh(() => removeWorkspaceGlobalKnowledge(selectedProject.id, item), 'Не удалось удалить знание')}>Удалить</Button>
+                  <Button
+                    size="small"
+                    variant="text"
+                    color="error"
+                    onClick={() => void runAndRefresh(
+                      () => removeWorkspaceGlobalKnowledge(selectedProject.id, item),
+                      'Не удалось удалить знание',
+                    )}
+                  >
+                    Удалить
+                  </Button>
                 </Stack>
               ))}
-              {!(selectedProject.workspace?.globalKnowledge?.length) ? <Typography variant="body2" color="text.secondary">Список глобальных знаний пуст.</Typography> : null}
+              {!(selectedProject.workspace?.globalKnowledge?.length) ? (
+                <Typography variant="body2" color="text.secondary">Список глобальных знаний пуст.</Typography>
+              ) : null}
             </Stack>
           </Stack>
         </SectionCard>
@@ -400,6 +617,13 @@ const preSx = {
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
   fontSize: 12,
+} as const;
+
+const draftSx = {
+  border: 1,
+  borderColor: 'divider',
+  borderRadius: 1,
+  p: 1,
 } as const;
 
 type NodeTreeListProps = {
@@ -439,7 +663,7 @@ function NodeTreeList({ nodes, selectedNodeId, onSelectNode }: NodeTreeListProps
     const actionOrder = Array.from(groupedByAction.keys()).sort();
 
     return (
-      <Box key={node.id} sx={{ ml: level * 1.5 }}>
+      <Box key={node.id} sx={{ ml: level * 1.25 }}>
         <Box
           role="button"
           tabIndex={0}
@@ -447,13 +671,19 @@ function NodeTreeList({ nodes, selectedNodeId, onSelectNode }: NodeTreeListProps
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') onSelectNode(node.id);
           }}
-          sx={{ border: 1, borderColor: selectedNodeId === node.id ? 'primary.main' : 'divider', borderRadius: 1, p: 1, cursor: 'pointer' }}
+          sx={{
+            border: 1,
+            borderColor: selectedNodeId === node.id ? 'primary.main' : 'divider',
+            borderRadius: 1,
+            p: 1,
+            cursor: 'pointer',
+          }}
         >
           <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
           <Typography variant="caption" color="text.secondary">действий: {node.actions.length}</Typography>
         </Box>
         {actionOrder.map((actionId) => {
-          const actionText = node.actions.find((a) => a.id.toUpperCase() === actionId)?.text ?? actionId;
+          const actionText = node.actions.find((action) => action.id.toUpperCase() === actionId)?.text ?? actionId;
           const groupedChildren = groupedByAction.get(actionId) ?? [];
           return (
             <Box key={`${node.id}-${actionId}`} sx={{ mt: 0.5, ml: 1 }}>
@@ -475,5 +705,5 @@ function generateProjectName(): string {
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
   const time = now.toISOString().slice(11, 19).replace(/:/g, '-');
-  return `Нод-проект ${date} ${time}`;
+  return `Сцена-проект ${date} ${time}`;
 }
