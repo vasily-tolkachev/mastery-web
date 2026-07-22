@@ -104,7 +104,7 @@ export function NodeGeneratorScenePage() {
       </Typography>
       <Button component={Link} to={`/node-generator/projects/${project.id}`} sx={{ alignSelf: 'flex-start' }}>← {project.name}</Button>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <SectionCard title="Дерево сцен">
+        <SectionCard title="Граф сцен">
           <SceneTreeList
             nodes={nodes}
             selectedSceneId={scene.id}

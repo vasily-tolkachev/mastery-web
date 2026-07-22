@@ -59,7 +59,7 @@ export function LoginPage() {
     googleCredentialHandler = async (credential: string) => {
       try {
         await loginWithGoogle(credential);
-        navigate('/quests', { replace: true });
+        navigate('/node-generator', { replace: true });
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Не удалось войти');
       }
@@ -117,7 +117,7 @@ export function LoginPage() {
         </Typography>
         {error ? <Alert severity="error">{error}</Alert> : null}
         <Box id="google-signin-button" sx={{ minHeight: 42 }} />
-        <Button variant="text" onClick={() => navigate('/quests', { replace: true })}>
+        <Button variant="text" onClick={() => navigate('/node-generator', { replace: true })}>
           Продолжить без входа
         </Button>
       </Stack>

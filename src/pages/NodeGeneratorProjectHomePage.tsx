@@ -109,13 +109,20 @@ export function NodeGeneratorProjectHomePage() {
         ← Все квесты
       </Button>
 
-      <SectionCard title={project.name}>
+      <SectionCard title="Главная квеста">
         <Stack spacing={1.5}>
+          <TextField
+            label="Название квеста"
+            value={renameDraft}
+            onChange={(e) => setRenameDraft(e.target.value)}
+            fullWidth
+          />
           <Typography variant="body2">Сцен: {sceneCount}</Typography>
           <Typography variant="body2">Знаний: {knowledgeCount}</Typography>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-            <TextField size="small" label="Имя квеста" value={renameDraft} onChange={(e) => setRenameDraft(e.target.value)} />
-            <Button variant="outlined" onClick={() => void handleRename()} disabled={!renameDraft.trim()}>Переименовать</Button>
+            <Button variant="outlined" onClick={() => void handleRename()} disabled={!renameDraft.trim() || renameDraft.trim() === project.name}>
+              Сохранить название
+            </Button>
             <Button variant="outlined" onClick={() => void handleExport()}>Экспорт</Button>
           </Stack>
         </Stack>
@@ -124,11 +131,7 @@ export function NodeGeneratorProjectHomePage() {
       <SectionCard title="Разделы квеста">
         <Stack spacing={1}>
           <NavCard
-            title="▶ Продолжить создание"
-            to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(project.workspace?.nodes?.[0]?.id ?? 'N1')}`}
-          />
-          <NavCard
-            title="🌳 Дерево сцен"
+            title="🕸️ Граф сцен"
             to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(project.workspace?.nodes?.[0]?.id ?? 'N1')}`}
           />
           <NavCard title="🌍 Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />

@@ -151,18 +151,11 @@ export function NodeGeneratorProjectsPage() {
           {projects.map((project) => (
             <Box
               key={project.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate(`/node-generator/projects/${project.id}`)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') navigate(`/node-generator/projects/${project.id}`);
-              }}
               sx={{
                 border: 1,
                 borderColor: 'divider',
                 borderRadius: 1,
                 p: 1.25,
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -170,24 +163,25 @@ export function NodeGeneratorProjectsPage() {
             >
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: { md: 'center' }, width: '100%' }}>
                 <Typography variant="subtitle1" sx={{ flex: 1 }}>📖 {project.name}</Typography>
-                <Stack direction="row" spacing={0.5}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.5}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={() => navigate(`/node-generator/projects/${project.id}`)}
+                  >
+                    Открыть
+                  </Button>
                   <Button
                     size="small"
                     variant="text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleRenameProject(project);
-                    }}
+                    onClick={() => void handleRenameProject(project)}
                   >
                     Переименовать
                   </Button>
                   <Button
                     size="small"
                     variant="text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleExportProject(project);
-                    }}
+                    onClick={() => void handleExportProject(project)}
                   >
                     Экспорт
                   </Button>
@@ -195,10 +189,7 @@ export function NodeGeneratorProjectsPage() {
                     size="small"
                     color="error"
                     variant="text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleDeleteProject(project);
-                    }}
+                    onClick={() => void handleDeleteProject(project)}
                   >
                     Удалить
                   </Button>
