@@ -5,7 +5,6 @@ import {
   createNodeGeneratorProject,
   createWorkspaceNode,
   generateFirstSceneIdeas,
-  generateWorkspaceNodeDescription,
   type FirstSceneIdea,
   updateWorkspaceNodeDescription,
 } from '../api/nodeGeneratorApi';
@@ -51,14 +50,6 @@ export function NodeGeneratorNewQuestPage() {
 
       const baseText = firstSceneText.trim();
       await updateWorkspaceNodeDescription(created.id, targetNodeId, baseText, baseText);
-
-      const generated = await generateWorkspaceNodeDescription(created.id, targetNodeId);
-      const generatedNode = findNodeById(generated.workspace?.nodes ?? [], targetNodeId);
-      if (generatedNode) {
-        const actionText = generatedNode.generatedActionDescriptionDraft?.trim() || generatedNode.actionDescription || '';
-        const stateText = generatedNode.generatedStateDescriptionDraft?.trim() || generatedNode.stateDescription || '';
-        await updateWorkspaceNodeDescription(created.id, targetNodeId, actionText, stateText);
-      }
 
       navigate(`/node-generator/projects/${created.id}/scenes/${encodeURIComponent(targetNodeId)}`);
     } catch (e) {
@@ -125,11 +116,4 @@ function findNewNodeId(previousIdsSource: { id: string }[], nextIdsSource: { id:
   const previousIds = new Set(previousIdsSource.map((node) => node.id.toUpperCase()));
   const created = nextIdsSource.find((node) => !previousIds.has(node.id.toUpperCase()));
   return created?.id ?? null;
-}
-
-function findNodeById(
-  nodes: { id: string; generatedActionDescriptionDraft?: string; actionDescription?: string; generatedStateDescriptionDraft?: string; stateDescription?: string }[],
-  nodeId: string,
-) {
-  return nodes.find((node) => node.id.toUpperCase() === nodeId.toUpperCase()) ?? null;
 }
