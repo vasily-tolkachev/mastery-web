@@ -1,9 +1,8 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ApiRequestError,
-  exportProjectJson,
   getNodeGeneratorProject,
   renameNodeGeneratorProject,
 } from '../api/nodeGeneratorApi';
@@ -54,33 +53,18 @@ export function NodeGeneratorProjectHomePage() {
     void loadProject();
   }, [projectId]);
 
-  const handleRename = async () => {
+  const handleRenameOnBlur = async () => {
     if (!project) return;
+    const nextName = renameDraft.trim();
+    if (!nextName || nextName === project.name) return;
     try {
       clearUiError();
-      const updated = await renameNodeGeneratorProject(project.id, renameDraft);
+      const updated = await renameNodeGeneratorProject(project.id, nextName);
       setProject(updated);
       setRenameDraft(updated.name);
     } catch (e) {
-      applyUiError(e, 'Не удалось переименовать проект');
-    }
-  };
-
-  const handleExport = async () => {
-    if (!project) return;
-    try {
-      clearUiError();
-      const snapshot = await exportProjectJson(project.id);
-      const jsonText = JSON.stringify(snapshot, null, 2);
-      const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${project.name.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'quest'}-scene-snapshot.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      applyUiError(e, 'Не удалось экспортировать JSON');
+      applyUiError(e, 'Не удалось сохранить название');
+      setRenameDraft(project.name);
     }
   };
 
@@ -115,16 +99,11 @@ export function NodeGeneratorProjectHomePage() {
             label="Название квеста"
             value={renameDraft}
             onChange={(e) => setRenameDraft(e.target.value)}
+            onBlur={() => void handleRenameOnBlur()}
             fullWidth
           />
           <Typography variant="body2">Сцен: {sceneCount}</Typography>
           <Typography variant="body2">Знаний: {knowledgeCount}</Typography>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-            <Button variant="outlined" onClick={() => void handleRename()} disabled={!renameDraft.trim() || renameDraft.trim() === project.name}>
-              Сохранить название
-            </Button>
-            <Button variant="outlined" onClick={() => void handleExport()}>Экспорт</Button>
-          </Stack>
         </Stack>
       </SectionCard>
 
@@ -136,9 +115,6 @@ export function NodeGeneratorProjectHomePage() {
           />
           <NavCard title="🌍 Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
           <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} />
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button variant="outlined" onClick={() => void handleExport()}>📦 Экспорт</Button>
-          </Box>
         </Stack>
       </SectionCard>
     </Stack>
