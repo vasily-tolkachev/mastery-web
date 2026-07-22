@@ -39,6 +39,24 @@ export async function getNodeGeneratorProject(id: string): Promise<NodeGenerator
   return normalizeProject(await response.json());
 }
 
+export async function renameNodeGeneratorProject(projectId: string, name: string): Promise<NodeGeneratorProject> {
+  const response = await authFetch(`/api/node-generator/projects/${projectId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) throw await toError(response, 'Не удалось переименовать проект');
+  return normalizeProject(await response.json());
+}
+
+export async function deleteNodeGeneratorProject(projectId: string): Promise<void> {
+  const response = await authFetch(`/api/node-generator/projects/${projectId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw await toError(response, 'Не удалось удалить проект');
+}
+
 export async function createWorkspaceNode(projectId: string, sourceNodeId?: string, sourceActionId?: string): Promise<NodeGeneratorProject> {
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes`, {
     method: 'POST',
@@ -215,6 +233,16 @@ export async function importProjectJson(projectId: string, snapshotJson: unknown
     body: JSON.stringify({ snapshotJson }),
   });
   if (!response.ok) throw await toError(response, 'Не удалось импортировать JSON');
+  return normalizeProject(await response.json());
+}
+
+export async function importNodeGeneratorProjectJson(snapshotJson: unknown): Promise<NodeGeneratorProject> {
+  const response = await authFetch('/api/node-generator/projects/import-json', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ snapshotJson }),
+  });
+  if (!response.ok) throw await toError(response, 'Не удалось импортировать проект из JSON');
   return normalizeProject(await response.json());
 }
 

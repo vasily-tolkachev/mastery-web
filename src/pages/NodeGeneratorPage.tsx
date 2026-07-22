@@ -8,6 +8,7 @@ import {
   createNextWorkspaceNode,
   createNodeGeneratorProject,
   createWorkspaceNode,
+  deleteNodeGeneratorProject,
   deleteWorkspaceNode,
   exportProjectJson,
   extractWorkspaceNodeKnowledge,
@@ -15,10 +16,11 @@ import {
   generateWorkspaceNodeDescription,
   getNodeGeneratorProject,
   getNodeGeneratorProjects,
-  importProjectJson,
+  importNodeGeneratorProjectJson,
   previewWorkspaceNodeActionsPrompt,
   previewWorkspaceNodeDescriptionPrompt,
   previewWorkspaceNodeKnowledgePrompt,
+  renameNodeGeneratorProject,
   removeWorkspaceGlobalKnowledge,
   runWorkspaceExpansion,
   updateWorkspaceNodeDescription,
@@ -38,6 +40,7 @@ export function NodeGeneratorPage() {
   const [nodeStateDescriptionDraft, setNodeStateDescriptionDraft] = useState('');
   const [nodeActionDraft, setNodeActionDraft] = useState('');
   const [globalKnowledgeDraft, setGlobalKnowledgeDraft] = useState('');
+  const [renameProjectNameDraft, setRenameProjectNameDraft] = useState('');
   const [workspacePromptPreviews, setWorkspacePromptPreviews] = useState<Record<string, StagePromptPreview>>({});
 
   const selectedProject = useMemo(
@@ -103,6 +106,10 @@ export function NodeGeneratorPage() {
     setNodeStateDescriptionDraft(selectedNode?.stateDescription ?? '');
   }, [selectedNode?.id, selectedNode?.actionDescription, selectedNode?.stateDescription]);
 
+  useEffect(() => {
+    setRenameProjectNameDraft(selectedProject?.name ?? '');
+  }, [selectedProject?.id, selectedProject?.name]);
+
   const refreshSelectedProject = async (projectId: string) => {
     const refreshed = await getNodeGeneratorProject(projectId);
     setProjects((prev) => prev.map((project) => (project.id === refreshed.id ? refreshed : project)));
@@ -112,6 +119,16 @@ export function NodeGeneratorPage() {
 
   const updateProject = (updated: NodeGeneratorProject) => {
     setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
+  };
+
+  const upsertProject = (updated: NodeGeneratorProject) => {
+    setProjects((prev) => {
+      const index = prev.findIndex((project) => project.id === updated.id);
+      if (index < 0) return [updated, ...prev];
+      const next = [...prev];
+      next[index] = updated;
+      return next;
+    });
   };
 
   const runAndRefresh = async (action: () => Promise<NodeGeneratorProject>, fallback: string): Promise<NodeGeneratorProject | null> => {
@@ -202,7 +219,6 @@ export function NodeGeneratorPage() {
   };
 
   const handleImportJsonFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (!selectedProjectId) return;
     const file = event.target.files?.[0] ?? null;
     event.currentTarget.value = '';
     if (!file) return;
@@ -211,11 +227,49 @@ export function NodeGeneratorPage() {
       clearUiError();
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
-      const updated = await importProjectJson(selectedProjectId, parsed);
-      updateProject(updated);
+      const updated = await importNodeGeneratorProjectJson(parsed);
+      upsertProject(updated);
+      setSelectedProjectId(updated.id);
     } catch (e) {
       applyUiError(e, 'Не удалось импортировать JSON');
-      await refreshSelectedProject(selectedProjectId);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleRenameProject = async () => {
+    if (!selectedProject) return;
+    const name = renameProjectNameDraft.trim();
+    if (!name) return;
+    try {
+      setBusyAction('rename-project');
+      clearUiError();
+      const updated = await renameNodeGeneratorProject(selectedProject.id, name);
+      updateProject(updated);
+    } catch (e) {
+      applyUiError(e, 'Не удалось переименовать проект');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!selectedProject) return;
+    const isConfirmed = window.confirm(`Удалить проект "${selectedProject.name}"?`);
+    if (!isConfirmed) return;
+    try {
+      setBusyAction('delete-project');
+      clearUiError();
+      await deleteNodeGeneratorProject(selectedProject.id);
+      const removedProjectId = selectedProject.id;
+      setProjects((prev) => {
+        const next = prev.filter((project) => project.id !== removedProjectId);
+        setSelectedProjectId(next[0]?.id ?? null);
+        return next;
+      });
+      setSelectedNodeId(null);
+    } catch (e) {
+      applyUiError(e, 'Не удалось удалить проект');
     } finally {
       setBusyAction(null);
     }
@@ -246,6 +300,23 @@ export function NodeGeneratorPage() {
             Проектов: {projects.length}
           </Typography>
         </Stack>
+        {selectedProject ? (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mt: 1.5 }}>
+            <TextField
+              size="small"
+              label="Имя проекта"
+              value={renameProjectNameDraft}
+              onChange={(event) => setRenameProjectNameDraft(event.target.value)}
+              sx={{ minWidth: { md: 320 } }}
+            />
+            <Button variant="outlined" onClick={() => void handleRenameProject()} disabled={!renameProjectNameDraft.trim()}>
+              Переименовать
+            </Button>
+            <Button variant="outlined" color="error" onClick={() => void handleDeleteProject()}>
+              Удалить проект
+            </Button>
+          </Stack>
+        ) : null}
       </SectionCard>
 
       <SectionCard title="Шаг 1. Выберите проект">
