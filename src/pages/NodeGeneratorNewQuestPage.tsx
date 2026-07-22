@@ -1,4 +1,4 @@
-import { Alert, Box, Button, FormControlLabel, Radio, RadioGroup, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,23 +11,16 @@ import {
 } from '../api/nodeGeneratorApi';
 import { SectionCard } from '../components/ui';
 
-type SelectionMode = 'ai' | 'custom';
-
 export function NodeGeneratorNewQuestPage() {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [ideas, setIdeas] = useState<FirstSceneIdea[]>([]);
-  const [selectedIdeaIndex, setSelectedIdeaIndex] = useState<number>(0);
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>('ai');
-  const [customScenario, setCustomScenario] = useState('');
+  const [firstSceneText, setFirstSceneText] = useState('');
   const [loadingIdeas, setLoadingIdeas] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasIdeas = ideas.length > 0;
-  const canCreate = selectionMode === 'custom'
-    ? customScenario.trim().length > 0
-    : hasIdeas || prompt.trim().length > 0;
+  const canCreate = firstSceneText.trim().length > 0;
 
   const handleGenerateIdeas = async () => {
     try {
@@ -35,27 +28,11 @@ export function NodeGeneratorNewQuestPage() {
       setLoadingIdeas(true);
       const result = await generateFirstSceneIdeas(prompt.trim());
       setIdeas(result);
-      setSelectedIdeaIndex(0);
-      setSelectionMode('ai');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось сгенерировать варианты');
     } finally {
       setLoadingIdeas(false);
     }
-  };
-
-  const resolveBaseText = () => {
-    if (selectionMode === 'custom') {
-      return customScenario.trim();
-    }
-    const idea = ideas[selectedIdeaIndex];
-    if (idea?.scenarioText?.trim()) {
-      return idea.scenarioText.trim();
-    }
-    if (prompt.trim()) {
-      return prompt.trim();
-    }
-    return 'Герой оказывается в неизвестной ситуации и должен понять, что происходит.';
   };
 
   const handleCreateQuest = async () => {
@@ -69,7 +46,7 @@ export function NodeGeneratorNewQuestPage() {
       const newNodeId = findNewNodeId(created.workspace?.nodes ?? [], withNode.workspace?.nodes ?? []);
       const targetNodeId = newNodeId ?? withNode.workspace?.nodes?.[0]?.id ?? 'N1';
 
-      const baseText = resolveBaseText();
+      const baseText = firstSceneText.trim();
       await updateWorkspaceNodeDescription(created.id, targetNodeId, baseText, baseText);
 
       const generated = await generateWorkspaceNodeDescription(created.id, targetNodeId);
@@ -95,7 +72,7 @@ export function NodeGeneratorNewQuestPage() {
       <SectionCard title="Шаг 1. Тема и варианты">
         <Stack spacing={1}>
           <Typography variant="body2">
-            Опишите тему квеста и ситуацию персонажа, затем выберите один вариант для первой сцены.
+            Опишите тему квеста и ситуацию персонажа, затем выберите вариант ИИ или введите свою первую сцену вручную.
           </Typography>
           <TextField
             label="Тема и ситуация"
@@ -111,63 +88,38 @@ export function NodeGeneratorNewQuestPage() {
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Шаг 2. Выбор первой сцены">
-        <RadioGroup
-          value={selectionMode}
-          onChange={(e) => setSelectionMode(e.target.value as SelectionMode)}
-        >
-          <FormControlLabel value="ai" control={<Radio />} label="Выбрать вариант ИИ" disabled={!hasIdeas} />
-          <Box sx={{ ml: 4, mb: 1 }}>
-            {!hasIdeas ? (
-              <Typography variant="body2" color="text.secondary">Сначала сгенерируйте варианты.</Typography>
-            ) : (
-              <Stack spacing={1}>
-                {ideas.map((idea, index) => (
-                  <Box
-                    key={`${index}-${idea.title}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setSelectionMode('ai');
-                      setSelectedIdeaIndex(index);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        setSelectionMode('ai');
-                        setSelectedIdeaIndex(index);
-                      }
-                    }}
-                    sx={{
-                      border: 1,
-                      borderColor: selectionMode === 'ai' && selectedIdeaIndex === index ? 'primary.main' : 'divider',
-                      borderRadius: 1,
-                      p: 1.25,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Typography variant="subtitle2">{idea.title}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      {idea.scenarioText}
-                    </Typography>
-                  </Box>
-                ))}
-              </Stack>
-            )}
-          </Box>
+      <SectionCard title="Варианты первой сцены (ИИ)">
+        <Stack spacing={1}>
+          {!ideas.length ? <Typography variant="body2" color="text.secondary">Пока нет вариантов.</Typography> : null}
+          {ideas.map((idea, index) => (
+            <Box
+              key={`${index}-${idea.title}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => setFirstSceneText(idea.scenarioText)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') setFirstSceneText(idea.scenarioText);
+              }}
+              sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.25, cursor: 'pointer' }}
+            >
+              <Typography variant="subtitle2">{idea.title}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {idea.scenarioText}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+      </SectionCard>
 
-          <FormControlLabel value="custom" control={<Radio />} label="Свой вариант" />
-          <Box sx={{ ml: 4 }}>
-            <TextField
-              label="Моя первая сцена"
-              value={customScenario}
-              onChange={(e) => setCustomScenario(e.target.value)}
-              multiline
-              minRows={3}
-              fullWidth
-              disabled={selectionMode !== 'custom'}
-            />
-          </Box>
-        </RadioGroup>
+      <SectionCard title="Первая сцена">
+        <TextField
+          label="Текст первой сцены"
+          value={firstSceneText}
+          onChange={(e) => setFirstSceneText(e.target.value)}
+          multiline
+          minRows={5}
+          fullWidth
+        />
       </SectionCard>
 
       <Button variant="contained" onClick={() => void handleCreateQuest()} disabled={!canCreate || creating}>
