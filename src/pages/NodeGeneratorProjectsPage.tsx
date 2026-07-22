@@ -8,7 +8,6 @@ import {
   exportProjectJson,
   getNodeGeneratorProjects,
   importNodeGeneratorProjectJson,
-  renameNodeGeneratorProject,
 } from '../api/nodeGeneratorApi';
 import { EmptyState, LoadingState, SectionCard } from '../components/ui';
 import type { NodeGeneratorProject } from '../types/nodeGenerator';
@@ -73,18 +72,6 @@ export function NodeGeneratorProjectsPage() {
       navigate(`/node-generator/projects/${imported.id}`);
     } catch (e) {
       applyUiError(e, 'Не удалось импортировать JSON');
-    }
-  };
-
-  const handleRenameProject = async (project: NodeGeneratorProject) => {
-    const nextName = window.prompt('Новое имя квеста', project.name)?.trim() ?? '';
-    if (!nextName) return;
-    try {
-      clearUiError();
-      await renameNodeGeneratorProject(project.id, nextName);
-      await loadProjects();
-    } catch (e) {
-      applyUiError(e, 'Не удалось переименовать квест');
     }
   };
 
@@ -169,22 +156,27 @@ export function NodeGeneratorProjectsPage() {
               }}
             >
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: { md: 'center' }, width: '100%' }}>
-                <Typography variant="subtitle1" sx={{ flex: 1 }}>📖 {project.name}</Typography>
+                <Box
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    navigate(`/node-generator/projects/${project.id}`);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.stopPropagation();
+                      navigate(`/node-generator/projects/${project.id}`);
+                    }
+                  }}
+                  sx={{ flex: 1, cursor: 'pointer', py: 0.25 }}
+                >
+                  <Typography variant="subtitle1">📖 {project.name}</Typography>
+                </Box>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.5}>
                   <Button
                     size="small"
-                    variant="text"
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleRenameProject(project);
-                    }}
-                  >
-                    Переименовать
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="text"
+                    variant="outlined"
                     onPointerDown={(event) => event.stopPropagation()}
                     onClick={(event) => {
                       event.stopPropagation();
@@ -196,7 +188,7 @@ export function NodeGeneratorProjectsPage() {
                   <Button
                     size="small"
                     color="error"
-                    variant="text"
+                    variant="outlined"
                     onPointerDown={(event) => event.stopPropagation()}
                     onClick={(event) => {
                       event.stopPropagation();
