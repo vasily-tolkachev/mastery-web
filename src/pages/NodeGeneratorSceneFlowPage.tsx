@@ -6,7 +6,6 @@ import {
   extractWorkspaceNodeKnowledge,
   generateWorkspaceNodeActions,
   generateWorkspaceNodeDescription,
-  getNodeGeneratorProject,
   previewWorkspaceNodeActionsPrompt,
   previewWorkspaceNodeDescriptionPrompt,
   previewWorkspaceNodeKnowledgePrompt,
@@ -14,15 +13,15 @@ import {
 } from '../api/nodeGeneratorApi';
 import type { PromptOverride } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
-import type { NodeGeneratorProject, StagePromptPreview } from '../types/nodeGenerator';
+import { useNodeGeneratorProject, useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
+import type { StagePromptPreview } from '../types/nodeGenerator';
 
 const STEPS = ['Описание', 'Знания', 'Действия', 'Готово'];
 
 export function NodeGeneratorSceneFlowPage() {
   const { projectId = '', sceneId = '' } = useParams();
-  const [project, setProject] = useState<NodeGeneratorProject | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: project, isLoading, isError, error } = useNodeGeneratorProject(projectId);
+  const setProjectCache = useSetNodeGeneratorProjectCache();
   const [activeStep, setActiveStep] = useState(0);
   const [previews, setPreviews] = useState<Record<string, StagePromptPreview>>({});
   const [overrides, setOverrides] = useState<Record<string, PromptOverride>>({});
@@ -34,22 +33,6 @@ export function NodeGeneratorSceneFlowPage() {
     () => project?.workspace?.nodes.find((node) => node.id.toUpperCase() === sceneId.toUpperCase()) ?? null,
     [project, sceneId],
   );
-
-  const load = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      setProject(await getNodeGeneratorProject(projectId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить данные');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void load();
-  }, [projectId]);
 
   useEffect(() => {
     setActionDescriptionDraft(scene?.actionDescription ?? '');
@@ -82,8 +65,8 @@ export function NodeGeneratorSceneFlowPage() {
     setOverrides((prev) => ({ ...prev, [key]: { ...(prev[key] ?? {}), [field]: value } }));
   };
 
-  if (loading) return <LoadingState message="Загрузка шага генерации..." />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (isLoading) return <LoadingState message="Загрузка шага генерации..." />;
+  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить данные'}</Alert>;
   if (!project || !scene) return <Alert severity="error">Сцена не найдена</Alert>;
 
   const descKey = `DESC:${scene.id}`;
@@ -126,7 +109,7 @@ export function NodeGeneratorSceneFlowPage() {
                 variant="contained"
                 onClick={async () => {
                   const updated = await generateWorkspaceNodeDescription(project.id, scene.id, getOverride(descKey));
-                  setProject(updated);
+                  setProjectCache(updated);
                   setActiveStep(1);
                 }}
               >
@@ -136,7 +119,7 @@ export function NodeGeneratorSceneFlowPage() {
                 variant="contained"
                 onClick={async () => {
                   const updated = await updateWorkspaceNodeDescription(project.id, scene.id, actionDescriptionDraft, stateDescriptionDraft);
-                  setProject(updated);
+                  setProjectCache(updated);
                   setActiveStep(1);
                 }}
               >
@@ -167,7 +150,7 @@ export function NodeGeneratorSceneFlowPage() {
                 variant="contained"
                 onClick={async () => {
                   const updated = await extractWorkspaceNodeKnowledge(project.id, scene.id, getOverride(knowKey));
-                  setProject(updated);
+                  setProjectCache(updated);
                   setActiveStep(2);
                 }}
               >
@@ -201,7 +184,7 @@ export function NodeGeneratorSceneFlowPage() {
                 variant="contained"
                 onClick={async () => {
                   const updated = await generateWorkspaceNodeActions(project.id, scene.id, getOverride(actKey));
-                  setProject(updated);
+                  setProjectCache(updated);
                   setActiveStep(3);
                 }}
               >
@@ -223,7 +206,7 @@ export function NodeGeneratorSceneFlowPage() {
                 onClick={async () => {
                   const updated = await addWorkspaceNodeAction(project.id, scene.id, newActionDraft);
                   setNewActionDraft('');
-                  setProject(updated);
+                  setProjectCache(updated);
                 }}
               >
                 Добавить

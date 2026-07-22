@@ -6,18 +6,17 @@ import {
   createNextWorkspaceNode,
   createWorkspaceNode,
   deleteWorkspaceNode,
-  getNodeGeneratorProject,
   updateWorkspaceNodeDescription,
 } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
-import type { NodeGeneratorProject, WorkspaceNode } from '../types/nodeGenerator';
+import { useNodeGeneratorProject, useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
+import type { WorkspaceNode } from '../types/nodeGenerator';
 
 export function NodeGeneratorScenePage() {
   const navigate = useNavigate();
   const { projectId = '', sceneId = '' } = useParams();
-  const [project, setProject] = useState<NodeGeneratorProject | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: project, isLoading, isError, error } = useNodeGeneratorProject(projectId);
+  const setProjectCache = useSetNodeGeneratorProjectCache();
   const [actionDescriptionDraft, setActionDescriptionDraft] = useState('');
   const [stateDescriptionDraft, setStateDescriptionDraft] = useState('');
   const [actionDraft, setActionDraft] = useState('');
@@ -27,29 +26,14 @@ export function NodeGeneratorScenePage() {
     [project, sceneId],
   );
 
-  const load = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const loaded = await getNodeGeneratorProject(projectId);
-      setProject(loaded);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить сцену');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void load();
-  }, [projectId]);
-
   useEffect(() => {
     setActionDescriptionDraft(currentScene?.actionDescription ?? '');
     setStateDescriptionDraft(currentScene?.stateDescription ?? '');
   }, [currentScene?.id, currentScene?.actionDescription, currentScene?.stateDescription]);
 
-  const setUpdatedProject = (updated: NodeGeneratorProject) => setProject(updated);
+  const setUpdatedProject = (updated: Awaited<ReturnType<typeof createWorkspaceNode>>) => {
+    setProjectCache(updated);
+  };
 
   const handleCreateScene = async () => {
     if (!project) return;
@@ -78,8 +62,8 @@ export function NodeGeneratorScenePage() {
     setUpdatedProject(await createNextWorkspaceNode(project.id, currentScene.id, actionId));
   };
 
-  if (loading) return <LoadingState message="Загрузка сцены..." />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (isLoading) return <LoadingState message="Загрузка сцены..." />;
+  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить сцену'}</Alert>;
   if (!project) return <Alert severity="error">Проект не найден</Alert>;
 
   const nodes = project.workspace?.nodes ?? [];

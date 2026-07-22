@@ -1,39 +1,20 @@
 import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   acceptWorkspaceExpansionSuggestion,
   dismissWorkspaceExpansionSuggestion,
-  getNodeGeneratorProject,
   runWorkspaceExpansion,
 } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
-import type { NodeGeneratorProject } from '../types/nodeGenerator';
+import { useNodeGeneratorProject, useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
 
 export function NodeGeneratorExpansionReviewPage() {
   const { projectId = '' } = useParams();
-  const [project, setProject] = useState<NodeGeneratorProject | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: project, isLoading, isError, error } = useNodeGeneratorProject(projectId);
+  const setProjectCache = useSetNodeGeneratorProjectCache();
 
-  const load = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      setProject(await getNodeGeneratorProject(projectId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить ревью');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void load();
-  }, [projectId]);
-
-  if (loading) return <LoadingState message="Загрузка ревью..." />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (isLoading) return <LoadingState message="Загрузка ревью..." />;
+  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить ревью'}</Alert>;
   if (!project) return <Alert severity="error">Проект не найден</Alert>;
 
   const suggestions = (project.workspace?.expansionSuggestions ?? []).filter((item) => item.status.toUpperCase() === 'PENDING');
@@ -58,7 +39,7 @@ export function NodeGeneratorExpansionReviewPage() {
             variant="contained"
             onClick={async () => {
               const updated = await runWorkspaceExpansion(project.id, project.workspace?.globalKnowledge ?? []);
-              setProject(updated);
+              setProjectCache(updated);
             }}
             sx={{ alignSelf: 'flex-start' }}
           >
@@ -80,7 +61,7 @@ export function NodeGeneratorExpansionReviewPage() {
                   variant="contained"
                   onClick={async () => {
                     const updated = await acceptWorkspaceExpansionSuggestion(project.id, item.id);
-                    setProject(updated);
+                    setProjectCache(updated);
                   }}
                 >
                   Принять
@@ -90,7 +71,7 @@ export function NodeGeneratorExpansionReviewPage() {
                   variant="outlined"
                   onClick={async () => {
                     const updated = await dismissWorkspaceExpansionSuggestion(project.id, item.id);
-                    setProject(updated);
+                    setProjectCache(updated);
                   }}
                 >
                   Отклонить

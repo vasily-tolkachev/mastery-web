@@ -1,21 +1,21 @@
 import { Alert, Box, Breadcrumbs, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {
-  ApiRequestError,
-  getNodeGeneratorProject,
-  renameNodeGeneratorProject,
-} from '../api/nodeGeneratorApi';
+import { ApiRequestError, renameNodeGeneratorProject } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
-import type { NodeGeneratorProject } from '../types/nodeGenerator';
+import { useNodeGeneratorProject, useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
 
 export function NodeGeneratorProjectHomePage() {
   const { projectId = '' } = useParams();
-  const [project, setProject] = useState<NodeGeneratorProject | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: project, isLoading, isError, error: projectError } = useNodeGeneratorProject(projectId);
+  const setProjectCache = useSetNodeGeneratorProjectCache();
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [renameDraft, setRenameDraft] = useState('');
+
+  useEffect(() => {
+    setRenameDraft(project?.name ?? '');
+  }, [project?.id, project?.name]);
 
   const sceneCount = useMemo(() => project?.workspace?.nodes?.length ?? 0, [project]);
   const knowledgeCount = useMemo(() => project?.workspace?.globalKnowledge?.length ?? 0, [project]);
@@ -35,24 +35,6 @@ export function NodeGeneratorProjectHomePage() {
     setValidationErrors([]);
   };
 
-  const loadProject = async () => {
-    try {
-      setLoading(true);
-      clearUiError();
-      const loaded = await getNodeGeneratorProject(projectId);
-      setProject(loaded);
-      setRenameDraft(loaded.name);
-    } catch (e) {
-      applyUiError(e, 'Не удалось загрузить проект');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadProject();
-  }, [projectId]);
-
   const handleRenameOnBlur = async () => {
     if (!project) return;
     const nextName = renameDraft.trim();
@@ -60,7 +42,7 @@ export function NodeGeneratorProjectHomePage() {
     try {
       clearUiError();
       const updated = await renameNodeGeneratorProject(project.id, nextName);
-      setProject(updated);
+      setProjectCache(updated);
       setRenameDraft(updated.name);
     } catch (e) {
       applyUiError(e, 'Не удалось сохранить название');
@@ -68,7 +50,8 @@ export function NodeGeneratorProjectHomePage() {
     }
   };
 
-  if (loading) return <LoadingState message="Загрузка квеста..." />;
+  if (isLoading) return <LoadingState message="Загрузка квеста..." />;
+  if (isError) return <Alert severity="error">{projectError instanceof Error ? projectError.message : 'Не удалось загрузить проект'}</Alert>;
   if (!project) return <Alert severity="error">Проект не найден</Alert>;
 
   return (
@@ -110,11 +93,11 @@ export function NodeGeneratorProjectHomePage() {
       <SectionCard title="Разделы квеста">
         <Stack spacing={1}>
           <NavCard
-            title="🕸️ Граф сцен"
+            title="Продолжить работу"
             to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(project.workspace?.nodes?.[0]?.id ?? 'N1')}`}
           />
-          <NavCard title="🌍 Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
-          <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} />
+          <NavCard title="Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
+          <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} disabled />
         </Stack>
       </SectionCard>
     </Stack>
@@ -124,9 +107,30 @@ export function NodeGeneratorProjectHomePage() {
 type NavCardProps = {
   title: string;
   to: string;
+  disabled?: boolean;
 };
 
-function NavCard({ title, to }: NavCardProps) {
+function NavCard({ title, to, disabled = false }: NavCardProps) {
+  if (disabled) {
+    return (
+      <Box
+        sx={{
+          display: 'block',
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1,
+          p: 1.25,
+          color: 'text.disabled',
+          bgcolor: 'action.hover',
+          cursor: 'not-allowed',
+          opacity: 0.7,
+        }}
+      >
+        <Typography variant="body1">{title}</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box
       component={Link}

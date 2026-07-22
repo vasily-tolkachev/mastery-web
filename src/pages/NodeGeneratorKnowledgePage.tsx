@@ -1,35 +1,18 @@
 import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { addWorkspaceGlobalKnowledge, getNodeGeneratorProject, removeWorkspaceGlobalKnowledge } from '../api/nodeGeneratorApi';
+import { addWorkspaceGlobalKnowledge, removeWorkspaceGlobalKnowledge } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
-import type { NodeGeneratorProject } from '../types/nodeGenerator';
+import { useNodeGeneratorProject, useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
 
 export function NodeGeneratorKnowledgePage() {
   const { projectId = '' } = useParams();
-  const [project, setProject] = useState<NodeGeneratorProject | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: project, isLoading, isError, error } = useNodeGeneratorProject(projectId);
+  const setProjectCache = useSetNodeGeneratorProjectCache();
   const [knowledgeDraft, setKnowledgeDraft] = useState('');
 
-  const load = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      setProject(await getNodeGeneratorProject(projectId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить знания');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void load();
-  }, [projectId]);
-
-  if (loading) return <LoadingState message="Загрузка знаний..." />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (isLoading) return <LoadingState message="Загрузка знаний..." />;
+  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить знания'}</Alert>;
   if (!project) return <Alert severity="error">Проект не найден</Alert>;
 
   const items = project.workspace?.globalKnowledge ?? [];
@@ -55,7 +38,7 @@ export function NodeGeneratorKnowledgePage() {
               disabled={!knowledgeDraft.trim()}
               onClick={async () => {
                 const updated = await addWorkspaceGlobalKnowledge(project.id, knowledgeDraft);
-                setProject(updated);
+                setProjectCache(updated);
                 setKnowledgeDraft('');
               }}
             >
@@ -70,7 +53,7 @@ export function NodeGeneratorKnowledgePage() {
                 color="error"
                 onClick={async () => {
                   const updated = await removeWorkspaceGlobalKnowledge(project.id, item);
-                  setProject(updated);
+                  setProjectCache(updated);
                 }}
               >
                 Удалить
