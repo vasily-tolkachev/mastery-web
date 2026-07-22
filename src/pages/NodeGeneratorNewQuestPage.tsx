@@ -1,5 +1,5 @@
 import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   createNodeGeneratorProject,
@@ -13,7 +13,6 @@ import { SectionCard } from '../components/ui';
 
 export function NodeGeneratorNewQuestPage() {
   const navigate = useNavigate();
-  const [prompt, setPrompt] = useState('');
   const [ideas, setIdeas] = useState<FirstSceneIdea[]>([]);
   const [firstSceneText, setFirstSceneText] = useState('');
   const [loadingIdeas, setLoadingIdeas] = useState(false);
@@ -22,11 +21,11 @@ export function NodeGeneratorNewQuestPage() {
 
   const canCreate = firstSceneText.trim().length > 0;
 
-  const handleGenerateIdeas = async () => {
+  const loadIdeas = async () => {
     try {
       setError(null);
       setLoadingIdeas(true);
-      const result = await generateFirstSceneIdeas(prompt.trim());
+      const result = await generateFirstSceneIdeas('');
       setIdeas(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось сгенерировать варианты');
@@ -34,6 +33,10 @@ export function NodeGeneratorNewQuestPage() {
       setLoadingIdeas(false);
     }
   };
+
+  useEffect(() => {
+    void loadIdeas();
+  }, []);
 
   const handleCreateQuest = async () => {
     if (!canCreate) return;
@@ -69,28 +72,10 @@ export function NodeGeneratorNewQuestPage() {
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
 
-      <SectionCard title="Шаг 1. Тема и варианты">
-        <Stack spacing={1}>
-          <Typography variant="body2">
-            Опишите тему квеста и ситуацию персонажа, затем выберите вариант ИИ или введите свою первую сцену вручную.
-          </Typography>
-          <TextField
-            label="Тема и ситуация"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            multiline
-            minRows={4}
-            fullWidth
-          />
-          <Button variant="outlined" onClick={() => void handleGenerateIdeas()} disabled={loadingIdeas}>
-            Сгенерировать варианты
-          </Button>
-        </Stack>
-      </SectionCard>
-
       <SectionCard title="Варианты первой сцены (ИИ)">
         <Stack spacing={1}>
-          {!ideas.length ? <Typography variant="body2" color="text.secondary">Пока нет вариантов.</Typography> : null}
+          {loadingIdeas ? <Typography variant="body2" color="text.secondary">Генерация вариантов...</Typography> : null}
+          {!loadingIdeas && !ideas.length ? <Typography variant="body2" color="text.secondary">Пока нет вариантов.</Typography> : null}
           {ideas.map((idea, index) => (
             <Box
               key={`${index}-${idea.title}`}
