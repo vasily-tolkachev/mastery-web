@@ -20,6 +20,10 @@ export function NodeGeneratorProjectHomePage() {
   }, [project?.id, project?.name]);
 
   const sceneCount = useMemo(() => project?.workspace?.nodes?.length ?? 0, [project]);
+  const actionsCount = useMemo(
+    () => (project?.workspace?.nodes ?? []).reduce((sum, node) => sum + (node.actions?.length ?? 0), 0),
+    [project],
+  );
   const knowledgeCount = useMemo(() => project?.workspace?.globalKnowledge?.length ?? 0, [project]);
 
   const clearUiError = () => {
@@ -102,6 +106,7 @@ export function NodeGeneratorProjectHomePage() {
             fullWidth
           />
           <Typography variant="body2">Сцен: {sceneCount}</Typography>
+          <Typography variant="body2">Действий: {actionsCount}</Typography>
           <Typography variant="body2">Знаний: {knowledgeCount}</Typography>
         </Stack>
       </SectionCard>

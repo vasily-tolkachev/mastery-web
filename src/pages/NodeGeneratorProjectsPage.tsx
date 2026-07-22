@@ -57,7 +57,7 @@ export function NodeGeneratorProjectsPage() {
     try {
       clearUiError();
       const created = await createNodeGeneratorProject(generateProjectName(), 'classic-adventure');
-      navigate(`/node-generator/projects/${created.id}`);
+      navigate(toProjectScenesPath(created));
     } catch (e) {
       applyUiError(e, 'Не удалось создать проект');
     }
@@ -71,14 +71,10 @@ export function NodeGeneratorProjectsPage() {
       clearUiError();
       const parsed = JSON.parse(await file.text()) as unknown;
       const imported = await importNodeGeneratorProjectJson(parsed);
-      navigate(`/node-generator/projects/${imported.id}`);
+      navigate(toProjectScenesPath(imported));
     } catch (e) {
       applyUiError(e, 'Не удалось импортировать JSON');
     }
-  };
-
-  const handleDeleteProject = async (project: NodeGeneratorProject) => {
-    setProjectToDelete(project);
   };
 
   const handleConfirmDeleteProject = async () => {
@@ -146,7 +142,7 @@ export function NodeGeneratorProjectsPage() {
               <Box sx={{ flex: 1, minWidth: 0, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                 <Button
                   fullWidth
-                  onClick={() => navigate(`/node-generator/projects/${project.id}`)}
+                  onClick={() => navigate(toProjectScenesPath(project))}
                   sx={{
                     justifyContent: 'flex-start',
                     textTransform: 'none',
@@ -176,7 +172,7 @@ export function NodeGeneratorProjectsPage() {
                     size="small"
                     color="error"
                     aria-label="Удалить"
-                    onClick={() => void handleDeleteProject(project)}
+                    onClick={() => setProjectToDelete(project)}
                     sx={{ width: 34, height: 34, p: 0 }}
                   >
                     <DeleteOutlineRoundedIcon fontSize="small" />
@@ -188,12 +184,7 @@ export function NodeGeneratorProjectsPage() {
         </Stack>
       </SectionCard>
 
-      <Dialog
-        open={Boolean(projectToDelete)}
-        onClose={() => setProjectToDelete(null)}
-        fullWidth
-        maxWidth="xs"
-      >
+      <Dialog open={Boolean(projectToDelete)} onClose={() => setProjectToDelete(null)} fullWidth maxWidth="xs">
         <DialogTitle>Удалить квест?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
@@ -209,6 +200,11 @@ export function NodeGeneratorProjectsPage() {
       </Dialog>
     </Stack>
   );
+}
+
+function toProjectScenesPath(project: NodeGeneratorProject): string {
+  const firstSceneId = project.workspace?.nodes?.[0]?.id ?? 'N1';
+  return `/node-generator/projects/${project.id}/scenes/${encodeURIComponent(firstSceneId)}`;
 }
 
 function generateProjectName(): string {
