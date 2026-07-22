@@ -8,6 +8,7 @@ import { HomePage } from './pages/HomePage';
 import { LearningPage } from './pages/LearningPage';
 import { LoginPage } from './pages/LoginPage';
 import { NodeGeneratorProjectsPage } from './pages/NodeGeneratorProjectsPage';
+import { NodeGeneratorNewQuestPage } from './pages/NodeGeneratorNewQuestPage';
 import { NodeGeneratorProjectHomePage } from './pages/NodeGeneratorProjectHomePage';
 import { NodeGeneratorScenePage } from './pages/NodeGeneratorScenePage';
 import { NodeGeneratorSceneFlowPage } from './pages/NodeGeneratorSceneFlowPage';
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/generator" element={<GeneratorPage />} />
         <Route path="/node-generator" element={<NodeGeneratorProjectsPage />} />
+        <Route path="/node-generator/new" element={<NodeGeneratorNewQuestPage />} />
         <Route path="/node-generator/projects/:projectId" element={<NodeGeneratorProjectHomePage />} />
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId" element={<NodeGeneratorScenePage />} />
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId/generate" element={<NodeGeneratorSceneFlowPage />} />

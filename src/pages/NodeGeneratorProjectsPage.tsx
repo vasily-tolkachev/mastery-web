@@ -5,7 +5,6 @@ import { type ChangeEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ApiRequestError,
-  createNodeGeneratorProject,
   deleteNodeGeneratorProject,
   exportProjectJson,
   getNodeGeneratorProjects,
@@ -52,16 +51,6 @@ export function NodeGeneratorProjectsPage() {
   useEffect(() => {
     void loadProjects();
   }, []);
-
-  const handleCreateProject = async () => {
-    try {
-      clearUiError();
-      const created = await createNodeGeneratorProject(generateProjectName(), 'classic-adventure');
-      navigate(toProjectScenesPath(created));
-    } catch (e) {
-      applyUiError(e, 'Не удалось создать проект');
-    }
-  };
 
   const handleImportJsonFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -125,7 +114,7 @@ export function NodeGeneratorProjectsPage() {
 
       <SectionCard title="Конструктор квестов">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-          <Button variant="contained" onClick={() => void handleCreateProject()}>+ Создать квест</Button>
+          <Button variant="contained" onClick={() => navigate('/node-generator/new')}>+ Создать квест</Button>
           <Button variant="outlined" component="label">
             Импортировать квест
             <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
@@ -205,11 +194,4 @@ export function NodeGeneratorProjectsPage() {
 function toProjectScenesPath(project: NodeGeneratorProject): string {
   const firstSceneId = project.workspace?.nodes?.[0]?.id ?? 'N1';
   return `/node-generator/projects/${project.id}/scenes/${encodeURIComponent(firstSceneId)}`;
-}
-
-function generateProjectName(): string {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const time = now.toISOString().slice(11, 19).replace(/:/g, '-');
-  return `Квест ${date} ${time}`;
 }
