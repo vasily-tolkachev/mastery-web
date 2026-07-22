@@ -1,3 +1,5 @@
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -135,8 +137,8 @@ export function NodeGeneratorProjectsPage() {
         {!projects.length ? <EmptyState message="Пока нет квестов." /> : null}
         <Stack spacing={1}>
           {projects.map((project) => (
-            <Stack key={project.id} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <Box sx={{ flex: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+            <Stack key={project.id} direction="row" spacing={1} sx={{ alignItems: 'stretch' }}>
+              <Box sx={{ flex: 1, minWidth: 0, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                 <Button
                   fullWidth
                   onClick={() => navigate(`/node-generator/projects/${project.id}`)}
@@ -144,45 +146,49 @@ export function NodeGeneratorProjectsPage() {
                     justifyContent: 'flex-start',
                     textTransform: 'none',
                     px: 1.25,
-                    py: 1.25,
+                    py: 0.5,
+                    minHeight: 34,
                     borderRadius: 1,
                   }}
                 >
-                  <Typography variant="subtitle1">📖 {project.name}</Typography>
+                  <Typography variant="subtitle1" noWrap>📖 {project.name}</Typography>
                 </Button>
               </Box>
-              <Stack direction={{ xs: 'row', sm: 'column' }} spacing={0.5} sx={{ minWidth: { sm: 120 } }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onPointerDown={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                  }}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    void handleExportProject(project);
-                  }}
-                >
-                  Экспорт
-                </Button>
-                <Button
-                  size="small"
-                  color="error"
-                  variant="outlined"
-                  onPointerDown={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                  }}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    void handleDeleteProject(project);
-                  }}
-                >
-                  Удалить
-                </Button>
+
+              <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    aria-label="Экспорт"
+                    onTouchStart={(event) => event.stopPropagation()}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleExportProject(project);
+                    }}
+                    sx={{ minWidth: 34, width: 34, height: 34, p: 0 }}
+                  >
+                    <FileDownloadOutlinedIcon fontSize="small" />
+                  </Button>
+                </Box>
+                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <Button
+                    size="small"
+                    color="error"
+                    variant="text"
+                    aria-label="Удалить"
+                    onTouchStart={(event) => event.stopPropagation()}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleDeleteProject(project);
+                    }}
+                    sx={{ minWidth: 34, width: 34, height: 34, p: 0 }}
+                  >
+                    <DeleteOutlineRoundedIcon fontSize="small" />
+                  </Button>
+                </Box>
               </Stack>
             </Stack>
           ))}
