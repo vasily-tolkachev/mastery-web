@@ -136,29 +136,51 @@ export function NodeGeneratorProjectsPage() {
         <Stack spacing={1}>
           {projects.map((project) => (
             <Stack key={project.id} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <Box
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/node-generator/projects/${project.id}`)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') navigate(`/node-generator/projects/${project.id}`);
-                }}
-                sx={{
-                  flex: 1,
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  p: 1.25,
-                  cursor: 'pointer',
-                }}
-              >
-                <Typography variant="subtitle1">📖 {project.name}</Typography>
+              <Box sx={{ flex: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                <Button
+                  fullWidth
+                  onClick={() => navigate(`/node-generator/projects/${project.id}`)}
+                  sx={{
+                    justifyContent: 'flex-start',
+                    textTransform: 'none',
+                    px: 1.25,
+                    py: 1.25,
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1">📖 {project.name}</Typography>
+                </Button>
               </Box>
               <Stack direction={{ xs: 'row', sm: 'column' }} spacing={0.5} sx={{ minWidth: { sm: 120 } }}>
-                <Button size="small" variant="outlined" onClick={() => void handleExportProject(project)}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    void handleExportProject(project);
+                  }}
+                >
                   Экспорт
                 </Button>
-                <Button size="small" color="error" variant="outlined" onClick={() => void handleDeleteProject(project)}>
+                <Button
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    void handleDeleteProject(project);
+                  }}
+                >
                   Удалить
                 </Button>
               </Stack>
