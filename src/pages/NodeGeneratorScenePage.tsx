@@ -6,6 +6,7 @@ import {
   createNextWorkspaceNode,
   createWorkspaceNode,
   deleteWorkspaceNode,
+  generateWorkspaceNodeDescription,
   updateWorkspaceNodeDescription,
 } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
@@ -37,7 +38,15 @@ export function NodeGeneratorScenePage() {
 
   const handleCreateScene = async () => {
     if (!project) return;
-    setUpdatedProject(await createWorkspaceNode(project.id));
+    const created = await createWorkspaceNode(project.id);
+    const newNodeId = findNewNodeId(project.workspace?.nodes ?? [], created.workspace?.nodes ?? []);
+    if (!newNodeId) {
+      setUpdatedProject(created);
+      return;
+    }
+    const generated = await generateWorkspaceNodeDescription(project.id, newNodeId);
+    setUpdatedProject(generated);
+    navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
   };
 
   const handleSaveDescription = async () => {
@@ -59,7 +68,15 @@ export function NodeGeneratorScenePage() {
 
   const handleCreateNext = async (actionId: string) => {
     if (!project || !currentScene) return;
-    setUpdatedProject(await createNextWorkspaceNode(project.id, currentScene.id, actionId));
+    const created = await createNextWorkspaceNode(project.id, currentScene.id, actionId);
+    const newNodeId = findNewNodeId(project.workspace?.nodes ?? [], created.workspace?.nodes ?? []);
+    if (!newNodeId) {
+      setUpdatedProject(created);
+      return;
+    }
+    const generated = await generateWorkspaceNodeDescription(project.id, newNodeId);
+    setUpdatedProject(generated);
+    navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
   };
 
   if (isLoading) return <LoadingState message="Загрузка сцены..." />;
@@ -250,4 +267,10 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
   };
 
   return <Stack spacing={0.75} sx={{ minWidth: { md: 260 } }}>{roots.map((root) => renderNode(root, 0))}</Stack>;
+}
+
+function findNewNodeId(previousNodes: WorkspaceNode[], nextNodes: WorkspaceNode[]): string | null {
+  const previousIds = new Set(previousNodes.map((node) => node.id.toUpperCase()));
+  const created = nextNodes.find((node) => !previousIds.has(node.id.toUpperCase()));
+  return created?.id ?? null;
 }
