@@ -45,7 +45,16 @@ export function NodeGeneratorScenePage() {
       return;
     }
     const generated = await generateWorkspaceNodeDescription(project.id, newNodeId);
-    setUpdatedProject(generated);
+    const generatedNode = findNodeById(generated.workspace?.nodes ?? [], newNodeId);
+    if (!generatedNode) {
+      setUpdatedProject(generated);
+      navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
+      return;
+    }
+    const actionText = generatedNode.generatedActionDescriptionDraft?.trim() || generatedNode.actionDescription || '';
+    const stateText = generatedNode.generatedStateDescriptionDraft?.trim() || generatedNode.stateDescription || '';
+    const accepted = await updateWorkspaceNodeDescription(project.id, newNodeId, actionText, stateText);
+    setUpdatedProject(accepted);
     navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
   };
 
@@ -75,7 +84,16 @@ export function NodeGeneratorScenePage() {
       return;
     }
     const generated = await generateWorkspaceNodeDescription(project.id, newNodeId);
-    setUpdatedProject(generated);
+    const generatedNode = findNodeById(generated.workspace?.nodes ?? [], newNodeId);
+    if (!generatedNode) {
+      setUpdatedProject(generated);
+      navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
+      return;
+    }
+    const actionText = generatedNode.generatedActionDescriptionDraft?.trim() || generatedNode.actionDescription || '';
+    const stateText = generatedNode.generatedStateDescriptionDraft?.trim() || generatedNode.stateDescription || '';
+    const accepted = await updateWorkspaceNodeDescription(project.id, newNodeId, actionText, stateText);
+    setUpdatedProject(accepted);
     navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
   };
 
@@ -273,4 +291,8 @@ function findNewNodeId(previousNodes: WorkspaceNode[], nextNodes: WorkspaceNode[
   const previousIds = new Set(previousNodes.map((node) => node.id.toUpperCase()));
   const created = nextNodes.find((node) => !previousIds.has(node.id.toUpperCase()));
   return created?.id ?? null;
+}
+
+function findNodeById(nodes: WorkspaceNode[], nodeId: string): WorkspaceNode | null {
+  return nodes.find((node) => node.id.toUpperCase() === nodeId.toUpperCase()) ?? null;
 }
