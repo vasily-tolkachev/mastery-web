@@ -1,4 +1,4 @@
-import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -132,6 +132,9 @@ export function NodeGeneratorProjectHomePage() {
         </SectionCard>
       ) : null}
 
+      <Typography variant="body2" color="text.secondary">
+        Все квесты / {project.name}
+      </Typography>
       <Button component={Link} to="/node-generator" variant="text" sx={{ alignSelf: 'flex-start' }}>
         ← Все квесты
       </Button>
@@ -148,24 +151,52 @@ export function NodeGeneratorProjectHomePage() {
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Действия">
+      <SectionCard title="Разделы квеста">
         <Stack spacing={1}>
-          <Button
-            variant="contained"
-            component={Link}
+          <NavCard
+            title="▶ Продолжить создание"
             to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(project.workspace?.nodes?.[0]?.id ?? 'N1')}`}
-          >
-            ▶ Продолжить создание
-          </Button>
-          <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/knowledge`}>🌍 Глобальные знания</Button>
-          <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/expansion`}>Проверка изменений</Button>
-          <Button variant="outlined" onClick={() => void handleExport()}>📦 Экспорт</Button>
-          <Button variant="outlined" component="label">
-            Импорт JSON
-            <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImport(event)} />
-          </Button>
+          />
+          <NavCard
+            title="🌳 Дерево сцен"
+            to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(project.workspace?.nodes?.[0]?.id ?? 'N1')}`}
+          />
+          <NavCard title="🌍 Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
+          <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} />
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button variant="outlined" onClick={() => void handleExport()}>📦 Экспорт</Button>
+            <Button variant="outlined" component="label">
+              Импорт JSON
+              <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImport(event)} />
+            </Button>
+          </Box>
         </Stack>
       </SectionCard>
     </Stack>
+  );
+}
+
+type NavCardProps = {
+  title: string;
+  to: string;
+};
+
+function NavCard({ title, to }: NavCardProps) {
+  return (
+    <Box
+      component={Link}
+      to={to}
+      sx={{
+        display: 'block',
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 1,
+        p: 1.25,
+        textDecoration: 'none',
+        color: 'text.primary',
+      }}
+    >
+      <Typography variant="body1">{title}</Typography>
+    </Box>
   );
 }

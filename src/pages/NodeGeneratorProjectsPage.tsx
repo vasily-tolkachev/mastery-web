@@ -125,7 +125,7 @@ export function NodeGeneratorProjectsPage() {
               }}
             >
               <Typography variant="subtitle1">📖 {project.name}</Typography>
-              <Typography variant="body2" color="text.secondary">›</Typography>
+              <Typography variant="body2" color="text.secondary">></Typography>
             </Box>
           ))}
         </Stack>

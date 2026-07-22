@@ -40,6 +40,9 @@ export function NodeGeneratorExpansionReviewPage() {
 
   return (
     <Stack spacing={2}>
+      <Typography variant="body2" color="text.secondary">
+        Все квесты / {project.name} / Проверка изменений
+      </Typography>
       <Button component={Link} to={`/node-generator/projects/${project.id}`} sx={{ alignSelf: 'flex-start' }}>
         ← {project.name}
       </Button>

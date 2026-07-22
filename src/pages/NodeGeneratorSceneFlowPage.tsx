@@ -92,6 +92,9 @@ export function NodeGeneratorSceneFlowPage() {
 
   return (
     <Stack spacing={2}>
+      <Typography variant="body2" color="text.secondary">
+        Все квесты / {project.name} / Сцена {scene.id} / Генерация
+      </Typography>
       <Button component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}`} sx={{ alignSelf: 'flex-start' }}>
         ← Сцена {scene.id}
       </Button>
@@ -118,6 +121,7 @@ export function NodeGeneratorSceneFlowPage() {
                 onClick={async () => {
                   const updated = await generateWorkspaceNodeDescription(project.id, scene.id, getOverride(descKey));
                   setProject(updated);
+                  setActiveStep(1);
                 }}
               >
                 Сгенерировать
@@ -158,11 +162,11 @@ export function NodeGeneratorSceneFlowPage() {
                 onClick={async () => {
                   const updated = await extractWorkspaceNodeKnowledge(project.id, scene.id, getOverride(knowKey));
                   setProject(updated);
+                  setActiveStep(2);
                 }}
               >
                 Сгенерировать
               </Button>
-              <Button variant="contained" onClick={() => setActiveStep(2)}>Далее</Button>
             </Stack>
             <PromptEditor
               preview={previews[knowKey]}
@@ -192,11 +196,11 @@ export function NodeGeneratorSceneFlowPage() {
                 onClick={async () => {
                   const updated = await generateWorkspaceNodeActions(project.id, scene.id, getOverride(actKey));
                   setProject(updated);
+                  setActiveStep(3);
                 }}
               >
                 Сгенерировать
               </Button>
-              <Button variant="contained" onClick={() => setActiveStep(3)}>Завершить</Button>
             </Stack>
             <PromptEditor
               preview={previews[actKey]}
