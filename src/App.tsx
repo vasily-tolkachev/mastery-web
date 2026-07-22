@@ -7,7 +7,12 @@ import { GeneratorPage } from './pages/GeneratorPage';
 import { HomePage } from './pages/HomePage';
 import { LearningPage } from './pages/LearningPage';
 import { LoginPage } from './pages/LoginPage';
-import { NodeGeneratorPage } from './pages/NodeGeneratorPage';
+import { NodeGeneratorProjectsPage } from './pages/NodeGeneratorProjectsPage';
+import { NodeGeneratorProjectHomePage } from './pages/NodeGeneratorProjectHomePage';
+import { NodeGeneratorScenePage } from './pages/NodeGeneratorScenePage';
+import { NodeGeneratorSceneFlowPage } from './pages/NodeGeneratorSceneFlowPage';
+import { NodeGeneratorKnowledgePage } from './pages/NodeGeneratorKnowledgePage';
+import { NodeGeneratorExpansionReviewPage } from './pages/NodeGeneratorExpansionReviewPage';
 import { ProgramsPage } from './pages/ProgramsPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { QuestsPage } from './pages/QuestsPage';
@@ -37,7 +42,12 @@ export default function App() {
         <Route path="/quests" element={<QuestsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/generator" element={<GeneratorPage />} />
-        <Route path="/node-generator" element={<NodeGeneratorPage />} />
+        <Route path="/node-generator" element={<NodeGeneratorProjectsPage />} />
+        <Route path="/node-generator/projects/:projectId" element={<NodeGeneratorProjectHomePage />} />
+        <Route path="/node-generator/projects/:projectId/scenes/:sceneId" element={<NodeGeneratorScenePage />} />
+        <Route path="/node-generator/projects/:projectId/scenes/:sceneId/generate" element={<NodeGeneratorSceneFlowPage />} />
+        <Route path="/node-generator/projects/:projectId/knowledge" element={<NodeGeneratorKnowledgePage />} />
+        <Route path="/node-generator/projects/:projectId/expansion" element={<NodeGeneratorExpansionReviewPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/node-generator" replace />} />
       </Routes>
