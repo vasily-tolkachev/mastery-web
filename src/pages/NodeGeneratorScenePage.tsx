@@ -13,6 +13,7 @@ import {
   useNodesState,
   type Edge,
   type Node,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
@@ -380,6 +381,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [flowInstance, setFlowInstance] = useState<ReactFlowInstance<Node, Edge> | null>(null);
 
   useEffect(() => {
     setFlowNodes(initialNodes);
@@ -410,13 +412,35 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
         if (cancelled) return;
         const layoutNode = layout as { children?: Array<{ id?: string; x?: number; y?: number }> };
         const byId = new Map((layoutNode.children ?? []).map((item) => [item.id ?? '', item]));
-        setFlowNodes((prev) => prev.map((node) => {
+        const hasInvalid = Array.from(byId.values()).some((item) => {
+          if (item == null) return true;
+          const x = item.x;
+          const y = item.y;
+          return !(Number.isFinite(x) && Number.isFinite(y));
+        });
+        if (hasInvalid) {
+          setFlowNodes((prev) => prev.map((node, index) => ({
+            ...node,
+            position: { x: (index % 6) * 180, y: Math.floor(index / 6) * 110 },
+          })));
+          return;
+        }
+        setFlowNodes((prev) => prev.map((node, index) => {
           const p = byId.get(node.id);
-          if (!p) return node;
-          return { ...node, position: { x: p.x ?? node.position.x, y: p.y ?? node.position.y } };
+          if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) {
+            return {
+              ...node,
+              position: { x: (index % 6) * 180, y: Math.floor(index / 6) * 110 },
+            };
+          }
+          return { ...node, position: { x: p.x, y: p.y } };
         }));
       } catch {
         if (cancelled) return;
+        setFlowNodes((prev) => prev.map((node, index) => ({
+          ...node,
+          position: { x: (index % 6) * 180, y: Math.floor(index / 6) * 110 },
+        })));
       }
     };
     void runLayout();
@@ -424,6 +448,14 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
       cancelled = true;
     };
   }, [elk, initialEdges, initialNodes, setFlowNodes]);
+
+  useEffect(() => {
+    if (!flowInstance) return;
+    const timer = window.setTimeout(() => {
+      flowInstance.fitView({ padding: 0.2, duration: 250 });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [flowInstance, flowNodes, edges]);
 
   return (
     <Stack spacing={1}>
@@ -489,6 +521,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
         <ReactFlow
           nodes={flowNodes}
           edges={edges}
+          onInit={setFlowInstance}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           fitView
