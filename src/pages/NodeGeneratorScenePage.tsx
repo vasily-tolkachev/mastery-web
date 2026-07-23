@@ -293,7 +293,8 @@ type LocalSceneGraphProps = {
 function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSceneGraphProps) {
   const elk = useMemo(() => {
     try {
-      const ctor = (ELK as unknown as { default?: new () => ELK }).default ?? (ELK as unknown as new () => ELK);
+      const ctor = (ELK as unknown as { default?: new () => { layout: (graph: unknown) => Promise<unknown> } }).default
+        ?? (ELK as unknown as new () => { layout: (graph: unknown) => Promise<unknown> });
       return new ctor();
     } catch {
       return null;
@@ -393,7 +394,8 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
         };
         const layout = await elk.layout(graph as never);
         if (cancelled) return;
-        const byId = new Map(((layout.children ?? []) as Array<{ id?: string; x?: number; y?: number }>).map((item) => [item.id ?? '', item]));
+        const layoutNode = layout as { children?: Array<{ id?: string; x?: number; y?: number }> };
+        const byId = new Map((layoutNode.children ?? []).map((item) => [item.id ?? '', item]));
         setNodes((prev) => prev.map((node) => {
           const p = byId.get(node.id);
           if (!p) return node;
