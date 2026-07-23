@@ -1,6 +1,7 @@
 import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import ELK from 'elkjs/lib/elk.bundled.js';
 import {
   Background,
   Controls,
@@ -203,6 +204,7 @@ type SceneTreeListProps = {
 };
 
 function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
+  const elk = useMemo(() => new ELK(), []);
   const [lastDraggedNodeId, setLastDraggedNodeId] = useState<string | null>(null);
   const [lastDragAtMs, setLastDragAtMs] = useState(0);
   const { initialFlowNodes, initialFlowEdges } = useMemo(() => {
@@ -216,6 +218,11 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
       seenNodeIds.add(key);
       uniqueNodes.push({ ...node, id });
     }
+    const flowIdByNodeKey = new Map<string, string>();
+    uniqueNodes.forEach((node, index) => {
+      flowIdByNodeKey.set(node.id.toUpperCase(), `n_${index + 1}`);
+    });
+
     const existingNodeIds = new Set(uniqueNodes.map((node) => node.id.toUpperCase()));
     const childrenByParent = new Map<string, WorkspaceNode[]>();
     const roots: WorkspaceNode[] = [];
@@ -272,12 +279,13 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
       const level = levels.get(node.id.toUpperCase()) ?? 0;
       const index = orderInLevel.get(`${level}:${node.id.toUpperCase()}`) ?? 0;
       const isSelected = selectedSceneId.toUpperCase() === node.id.toUpperCase();
+      const flowId = flowIdByNodeKey.get(node.id.toUpperCase()) ?? `n_fallback_${index + 1}`;
       return {
-        id: node.id,
+        id: flowId,
         position: { x: level * 320, y: index * 140 },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
-        data: { label: `${node.id} • действий: ${normalizeActions(node).length}` },
+        data: { label: `${node.id} • действий: ${normalizeActions(node).length}`, originalNodeId: node.id },
         style: {
           border: isSelected ? '2px solid #1976d2' : '1px solid #c4c4c4',
           borderRadius: '8px',
@@ -300,13 +308,16 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         if (!existingNodeIds.has(sourceNodeId.toUpperCase()) || !existingNodeIds.has(node.id.toUpperCase())) {
           return;
         }
+        const sourceFlowId = flowIdByNodeKey.get(sourceNodeId.toUpperCase());
+        const targetFlowId = flowIdByNodeKey.get(node.id.toUpperCase());
+        if (!sourceFlowId || !targetFlowId) return;
         const sourceActionId = (node.sourceActionId ?? '').toUpperCase();
         const sourceNode = uniqueNodes.find((item) => item.id.toUpperCase() === sourceNodeId.toUpperCase());
         const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? '';
         flowEdgesLocal.push({
-          id: `${sourceNodeId}->${node.id}:${sourceActionId || 'DIRECT'}`,
-          source: sourceNodeId,
-          target: node.id,
+          id: `${sourceFlowId}->${targetFlowId}:${sourceActionId || 'DIRECT'}`,
+          source: sourceFlowId,
+          target: targetFlowId,
           label: actionText || 'Переход',
           markerEnd: { type: MarkerType.ArrowClosed, color: '#7a7a7a' },
           style: { stroke: '#7a7a7a', strokeWidth: 1.4 },
@@ -328,6 +339,56 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
     setFlowEdges(initialFlowEdges);
   }, [initialFlowEdges, setFlowEdges]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const runLayout = async () => {
+      if (!initialFlowNodes.length) {
+        setFlowNodes([]);
+        return;
+      }
+      try {
+        const graph = {
+          id: 'scene-graph',
+          layoutOptions: {
+            'elk.algorithm': 'layered',
+            'elk.direction': 'RIGHT',
+            'elk.spacing.nodeNode': '60',
+            'elk.layered.spacing.nodeNodeBetweenLayers': '120',
+            'elk.edgeRouting': 'ORTHOGONAL',
+          },
+          children: initialFlowNodes.map((node) => ({
+            id: node.id,
+            width: 240,
+            height: 64,
+          })),
+          edges: initialFlowEdges.map((edge) => ({
+            id: edge.id,
+            sources: [edge.source],
+            targets: [edge.target],
+          })),
+        };
+        const layout = await elk.layout(graph as never);
+        if (cancelled) return;
+        const byId = new Map((layout.children ?? []).map((item) => [item.id, item]));
+        setFlowNodes((prev) => prev.map((node) => {
+          const positioned = byId.get(node.id);
+          if (!positioned) return node;
+          return {
+            ...node,
+            position: { x: positioned.x ?? node.position.x, y: positioned.y ?? node.position.y },
+          };
+        }));
+      } catch {
+        if (cancelled) return;
+        setFlowNodes(initialFlowNodes);
+      }
+    };
+    void runLayout();
+    return () => {
+      cancelled = true;
+    };
+  }, [elk, initialFlowEdges, initialFlowNodes, setFlowNodes]);
+
   return (
     <Box sx={{ height: 520, width: '100%', minWidth: { md: 420 }, border: 1, borderColor: 'divider', borderRadius: 1 }}>
       <ReactFlow
@@ -346,7 +407,9 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         onNodeClick={(_, node) => {
           const dragGuardMs = 220;
           if (lastDraggedNodeId === node.id && Date.now() - lastDragAtMs < dragGuardMs) return;
-          onSelectScene(node.id);
+          const originalNodeId = typeof node.data?.originalNodeId === 'string' ? node.data.originalNodeId : '';
+          if (!originalNodeId.trim()) return;
+          onSelectScene(originalNodeId);
         }}
         proOptions={{ hideAttribution: true }}
       >
