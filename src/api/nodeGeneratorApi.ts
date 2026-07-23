@@ -385,7 +385,29 @@ function normalizeWorkspaceNode(rawValue: unknown): WorkspaceNode {
     generatedDescriptionDraft: generatedLegacyDescription,
     generatedActionDescriptionDraft: generatedActionDescriptionDraft || (generatedStateDescriptionDraft ? '' : generatedLegacyDescription),
     generatedStateDescriptionDraft: generatedStateDescriptionDraft || (generatedActionDescriptionDraft ? '' : generatedLegacyDescription),
-    extractedKnowledgeDraft: Array.isArray(raw.extractedKnowledgeDraft) ? raw.extractedKnowledgeDraft.map((item) => String(item ?? '')) : [],
-    generatedActionsDraft: Array.isArray(raw.generatedActionsDraft) ? raw.generatedActionsDraft.map((item) => String(item ?? '')) : [],
+    extractedKnowledgeDraft: normalizeStringArray(raw.extractedKnowledgeDraft),
+    generatedActionsDraft: normalizeGeneratedActionsDraft(raw.generatedActionsDraft),
   };
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item ?? '').trim())
+    .filter((item) => item.length > 0);
+}
+
+function normalizeGeneratedActionsDraft(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (item && typeof item === 'object') {
+        const node = item as Record<string, unknown>;
+        const fromText = String(node.text ?? '').trim();
+        if (fromText) return fromText;
+      }
+      return '';
+    })
+    .filter((item) => item.length > 0);
 }

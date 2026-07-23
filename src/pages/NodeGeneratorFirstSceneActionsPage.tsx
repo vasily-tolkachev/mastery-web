@@ -61,7 +61,10 @@ export function NodeGeneratorFirstSceneActionsPage() {
   if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить сцену'}</Alert>;
   if (!project || !scene) return <Alert severity="error">Сцена не найдена</Alert>;
 
-  const generatedActions = scene.generatedActionsDraft ?? [];
+  const generatedActions = (scene.generatedActionsDraft?.length
+    ? scene.generatedActionsDraft
+    : (scene.actions ?? []).map((action) => action.text).filter((text) => text.trim().length > 0)
+  );
   const savedActions = scene.actions ?? [];
 
   return (
