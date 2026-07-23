@@ -77,19 +77,13 @@ export function NodeGeneratorScenePage() {
     return (
       <Stack spacing={2}>
         <Breadcrumbs aria-label="breadcrumb">
-          <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
-            Все квесты
-          </MuiLink>
-          <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
-            {project.name}
-          </MuiLink>
+          <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">Все квесты</MuiLink>
+          <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">{project.name}</MuiLink>
           <Typography color="text.primary">Сцены</Typography>
         </Breadcrumbs>
         <SectionCard title="Сцены">
           <Typography variant="body2" color="text.secondary">Сцен пока нет.</Typography>
-          <Button variant="contained" onClick={() => void handleCreateScene()} sx={{ mt: 1 }}>
-            Создать первую сцену
-          </Button>
+          <Button variant="contained" onClick={() => void handleCreateScene()} sx={{ mt: 1 }}>Создать первую сцену</Button>
         </SectionCard>
       </Stack>
     );
@@ -101,196 +95,74 @@ export function NodeGeneratorScenePage() {
   return (
     <Stack spacing={2}>
       <Breadcrumbs aria-label="breadcrumb">
-        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
-          Все квесты
-        </MuiLink>
-        <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
-          {project.name}
-        </MuiLink>
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">Все квесты</MuiLink>
+        <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">{project.name}</MuiLink>
         <Typography color="text.primary">Сцена {scene.id}</Typography>
       </Breadcrumbs>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <SectionCard title="Граф сцен" sx={{ order: { xs: 3, md: 1 } }}>
-          <SceneTreeList
-            nodes={nodes}
-            selectedSceneId={scene.id}
-            onSelectScene={(nodeId) => navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(nodeId)}`)}
-          />
-        </SectionCard>
-
-        <Stack spacing={2} sx={{ flex: 1, order: { xs: 1, md: 2 } }}>
+      <Stack spacing={2}>
           <SectionCard title="Локальный граф">
             <LocalSceneGraph
+              projectNodes={nodes}
               sceneId={scene.id}
               incoming={incoming}
               outgoing={outgoing}
               onSelectScene={(nodeId) => navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(nodeId)}`)}
             />
-          </SectionCard>
+        </SectionCard>
 
-          <SectionCard title={`Сцена ${scene.id}`}>
-            <Stack spacing={1.25}>
-              <Typography variant="subtitle2">В эту сцену можно попасть из</Typography>
-              <Stack spacing={0.5}>
-                {incoming.length === 0 ? <Typography variant="body2" color="text.secondary">Нет входящих переходов.</Typography> : null}
-                {incoming.map((item, index) => (
-                  <Typography key={`${item.nodeId}-${index}`} variant="body2">
-                    • <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}
-                  </Typography>
-                ))}
-              </Stack>
-
-              <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
-              <Typography variant="subtitle2">Описание</Typography>
-              <Typography variant="body2">{(scene.stateDescription || scene.actionDescription || '...').trim() || '...'}</Typography>
-
-              <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
-              <Typography variant="subtitle2">Из этой сцены можно перейти в</Typography>
-              <Stack spacing={0.5}>
-                {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">Нет исходящих переходов.</Typography> : null}
-                {outgoing.map((item, index) => (
-                  <Typography key={`${item.actionText}-${index}`} variant="body2">
-                    • {item.nodeId ? (
-                      <><MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}</>
-                    ) : (
-                      <>Конец — {item.actionText}</>
-                    )}
-                  </Typography>
-                ))}
-              </Stack>
-
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/edit`}>
-                  Редактирование
-                </Button>
-                <Button variant="outlined" onClick={() => void handleDeleteScene()}>
-                  Удалить сцену
-                </Button>
-              </Stack>
+        <SectionCard title={`Сцена ${scene.id}`}>
+          <Stack spacing={1.25}>
+            <Typography variant="subtitle2">В эту сцену можно попасть из</Typography>
+            <Stack spacing={0.5}>
+              {incoming.length === 0 ? <Typography variant="body2" color="text.secondary">Нет входящих переходов.</Typography> : null}
+              {incoming.map((item, index) => (
+                <Typography key={`${item.nodeId}-${index}`} variant="body2">
+                  • <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}
+                </Typography>
+              ))}
             </Stack>
-          </SectionCard>
-        </Stack>
+
+            <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
+            <Typography variant="subtitle2">Описание</Typography>
+            <Typography variant="body2">{(scene.stateDescription || scene.actionDescription || '...').trim() || '...'}</Typography>
+
+            <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
+            <Typography variant="subtitle2">Из этой сцены можно перейти в</Typography>
+            <Stack spacing={0.5}>
+              {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">Нет исходящих переходов.</Typography> : null}
+              {outgoing.map((item, index) => (
+                <Typography key={`${item.actionText}-${index}`} variant="body2">
+                  • {item.nodeId ? (
+                    <><MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}</>
+                  ) : (
+                    <>Конец — {item.actionText}</>
+                  )}
+                </Typography>
+              ))}
+            </Stack>
+
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+              <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/edit`}>Редактирование</Button>
+              <Button variant="outlined" onClick={() => void handleDeleteScene()}>Удалить сцену</Button>
+            </Stack>
+          </Stack>
+        </SectionCard>
       </Stack>
     </Stack>
   );
 }
 
-type SceneTreeListProps = {
-  nodes: WorkspaceNode[];
-  selectedSceneId: string;
-  onSelectScene: (nodeId: string) => void;
-};
-
-function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
-  const byParent = new Map<string, WorkspaceNode[]>();
-  const roots: WorkspaceNode[] = [];
-  const [expandedNodeIds, setExpandedNodeIds] = useState<Record<string, boolean>>({});
-
-  nodes.forEach((node) => {
-    const parentId = (node.sourceNodeId ?? '').trim();
-    if (!parentId) {
-      roots.push(node);
-      return;
-    }
-    const key = parentId.toUpperCase();
-    const list = byParent.get(key) ?? [];
-    list.push(node);
-    byParent.set(key, list);
-  });
-
-  roots.sort((a, b) => a.id.localeCompare(b.id));
-  byParent.forEach((list) => list.sort((a, b) => a.id.localeCompare(b.id)));
-
-  useEffect(() => {
-    const parentByNode = new Map<string, string>();
-    nodes.forEach((node) => {
-      if (node.sourceNodeId) parentByNode.set(node.id.toUpperCase(), node.sourceNodeId.toUpperCase());
-    });
-    const nextExpanded: Record<string, boolean> = {};
-    let cursor = selectedSceneId.toUpperCase();
-    while (parentByNode.has(cursor)) {
-      const parentId = parentByNode.get(cursor);
-      if (!parentId) break;
-      nextExpanded[parentId] = true;
-      cursor = parentId;
-    }
-    setExpandedNodeIds((prev) => ({ ...prev, ...nextExpanded }));
-  }, [nodes, selectedSceneId]);
-
-  const toggleExpanded = (nodeId: string) => {
-    const key = nodeId.toUpperCase();
-    setExpandedNodeIds((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const renderNode = (node: WorkspaceNode, level: number): React.ReactNode => {
-    const children = byParent.get(node.id.toUpperCase()) ?? [];
-    const groupedByAction = new Map<string, WorkspaceNode[]>();
-    children.forEach((child) => {
-      const actionKey = (child.sourceActionId ?? 'NO_ACTION').toUpperCase();
-      const list = groupedByAction.get(actionKey) ?? [];
-      list.push(child);
-      groupedByAction.set(actionKey, list);
-    });
-    const actionOrder = Array.from(groupedByAction.keys()).sort();
-
-    return (
-      <Box key={node.id} sx={{ ml: level * 1.25 }}>
-        <Stack direction="row" spacing={0.5}>
-          {children.length > 0 ? (
-            <Button size="small" variant="text" onClick={() => toggleExpanded(node.id)} sx={{ minWidth: 28, px: 0.5, alignSelf: 'flex-start' }}>
-              {expandedNodeIds[node.id.toUpperCase()] ? '−' : '+'}
-            </Button>
-          ) : (
-            <Box sx={{ width: 28 }} />
-          )}
-          <Box
-            role="button"
-            tabIndex={0}
-            onClick={() => onSelectScene(node.id)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') onSelectScene(node.id);
-            }}
-            sx={{
-              border: 1,
-              borderColor: selectedSceneId === node.id ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              p: 1,
-              cursor: 'pointer',
-              flex: 1,
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
-            <Typography variant="caption" color="text.secondary">действий: {normalizeActions(node).length}</Typography>
-          </Box>
-        </Stack>
-        {expandedNodeIds[node.id.toUpperCase()] ? actionOrder.map((actionId) => {
-          const actionText = normalizeActions(node).find((action) => action.id.toUpperCase() === actionId)?.text ?? actionId;
-          const groupedChildren = groupedByAction.get(actionId) ?? [];
-          return (
-            <Box key={`${node.id}-${actionId}`} sx={{ mt: 0.5, ml: 1 }}>
-              <Typography variant="caption" color="text.secondary">из действия: {actionText}</Typography>
-              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                {groupedChildren.map((child) => renderNode(child, level + 1))}
-              </Stack>
-            </Box>
-          );
-        }) : null}
-      </Box>
-    );
-  };
-
-  return <Stack spacing={0.75} sx={{ minWidth: { md: 260 } }}>{roots.map((root) => renderNode(root, 0))}</Stack>;
-}
-
 type LocalSceneGraphProps = {
+  projectNodes: WorkspaceNode[];
   sceneId: string;
   incoming: Array<{ nodeId: string; actionText: string }>;
   outgoing: Array<{ nodeId: string | null; actionText: string }>;
   onSelectScene: (nodeId: string) => void;
 };
 
-function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSceneGraphProps) {
+function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectScene }: LocalSceneGraphProps) {
+  const [depth, setDepth] = useState(1);
   const elk = useMemo(() => {
     try {
       const ctor = (ELK as unknown as { default?: new () => { layout: (graph: unknown) => Promise<unknown> } }).default
@@ -303,81 +175,136 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
 
   const { initialNodes, initialEdges } = useMemo(() => {
     const centerId = `scene:${sceneId}`;
-    const nodes: Node[] = [
-      {
-        id: centerId,
-        data: { label: `Сцена ${sceneId}`, targetSceneId: sceneId },
-        position: { x: 0, y: 0 },
-        sourcePosition: Position.Bottom,
-        targetPosition: Position.Top,
-        style: {
-          border: '2px solid #1976d2',
-          borderRadius: 8,
-          padding: '8px 10px',
-          minWidth: 140,
-          textAlign: 'center',
-          background: '#fff',
-          color: '#0f172a',
-          boxShadow: '0 6px 18px rgba(2, 6, 23, 0.12)',
-          fontWeight: 600,
-        },
-      },
-    ];
-    const edges: Edge[] = [];
+    const byId = new Map<string, WorkspaceNode>();
+    projectNodes.forEach((node) => {
+      const id = (node.id ?? '').trim();
+      if (!id) return;
+      if (!byId.has(id.toUpperCase())) byId.set(id.toUpperCase(), node);
+    });
 
-    incoming.forEach((item, index) => {
-      const nodeId = `in:${item.nodeId}:${index}`;
-      nodes.push({
-        id: nodeId,
-        data: { label: item.nodeId, targetSceneId: item.nodeId },
-        position: { x: 0, y: 0 },
-        sourcePosition: Position.Bottom,
-        targetPosition: Position.Bottom,
-        style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff' },
+    const rawEdges: Array<{ sourceId: string; targetId: string; actionText: string }> = [];
+    projectNodes.forEach((node) => {
+      const targetId = (node.id ?? '').trim();
+      const sourceId = (node.sourceNodeId ?? '').trim();
+      const sourceActionId = (node.sourceActionId ?? '').trim().toUpperCase();
+      if (!targetId || !sourceId) return;
+      const sourceNode = byId.get(sourceId.toUpperCase());
+      const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? 'Переход';
+      rawEdges.push({ sourceId, targetId, actionText });
+    });
+
+    const centerKey = sceneId.trim().toUpperCase();
+    const included = new Set<string>([centerKey]);
+    const frontier = new Set<string>([centerKey]);
+    for (let level = 0; level < depth; level += 1) {
+      const next = new Set<string>();
+      rawEdges.forEach((edge) => {
+        const s = edge.sourceId.toUpperCase();
+        const t = edge.targetId.toUpperCase();
+        if (frontier.has(s) && !included.has(t)) next.add(t);
+        if (frontier.has(t) && !included.has(s)) next.add(s);
       });
-      edges.push({
-        id: `e:${nodeId}->${centerId}`,
-        source: nodeId,
-        target: centerId,
-        label: item.actionText,
+      next.forEach((id) => included.add(id));
+      frontier.clear();
+      next.forEach((id) => frontier.add(id));
+      if (frontier.size === 0) break;
+    }
+
+    const flowNodes: Node[] = Array.from(included)
+      .map((key) => {
+        const original = byId.get(key);
+        if (!original) return null;
+        const originalId = (original.id ?? '').trim();
+        if (!originalId) return null;
+        const isCenter = key === centerKey;
+        return {
+          id: `scene:${originalId}`,
+          data: { label: `Сцена ${originalId}`, targetSceneId: originalId },
+          position: { x: 0, y: 0 },
+          sourcePosition: Position.Bottom,
+          targetPosition: Position.Top,
+          style: {
+            border: isCenter ? '2px solid #1976d2' : '1px solid #c4c4c4',
+            borderRadius: 8,
+            padding: '8px 10px',
+            minWidth: 140,
+            textAlign: 'center',
+            background: '#fff',
+            color: '#0f172a',
+            boxShadow: isCenter ? '0 6px 18px rgba(2, 6, 23, 0.12)' : 'none',
+            fontWeight: isCenter ? 600 : 500,
+          },
+        } as Node;
+      })
+      .filter((item): item is Node => item != null);
+
+    const flowEdges: Edge[] = rawEdges
+      .filter((edge) => included.has(edge.sourceId.toUpperCase()) && included.has(edge.targetId.toUpperCase()))
+      .map((edge, index) => ({
+        id: `e:${edge.sourceId}->${edge.targetId}:${index}`,
+        source: `scene:${edge.sourceId}`,
+        target: `scene:${edge.targetId}`,
+        label: edge.actionText,
         markerEnd: { type: MarkerType.ArrowClosed },
         style: { stroke: '#64748b', strokeWidth: 1.4 },
         labelStyle: { fill: '#334155', fontSize: 11 },
         labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
-      });
-    });
+      }));
 
-    outgoing.forEach((item, index) => {
-      const nodeId = `out:${item.nodeId ?? 'end'}:${index}`;
-      nodes.push({
-        id: nodeId,
-        data: { label: item.nodeId ?? 'Конец', targetSceneId: item.nodeId ?? null },
-        position: { x: 0, y: 0 },
-        sourcePosition: Position.Top,
-        targetPosition: Position.Top,
-        style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff' },
+    if (flowNodes.length === 1) {
+      incoming.forEach((item, index) => {
+        const nodeId = `in:${item.nodeId}:${index}`;
+        flowNodes.push({
+          id: nodeId,
+          data: { label: item.nodeId, targetSceneId: item.nodeId },
+          position: { x: 0, y: 0 },
+          sourcePosition: Position.Bottom,
+          targetPosition: Position.Bottom,
+          style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff', color: '#0f172a' },
+        });
+        flowEdges.push({
+          id: `e:${nodeId}->${centerId}`,
+          source: nodeId,
+          target: centerId,
+          label: item.actionText,
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: '#64748b', strokeWidth: 1.4 },
+          labelStyle: { fill: '#334155', fontSize: 11 },
+          labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
+        });
       });
-      edges.push({
-        id: `e:${centerId}->${nodeId}`,
-        source: centerId,
-        target: nodeId,
-        label: item.actionText,
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: '#64748b', strokeWidth: 1.4 },
-        labelStyle: { fill: '#334155', fontSize: 11 },
-        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
+      outgoing.forEach((item, index) => {
+        const nodeId = `out:${item.nodeId ?? 'end'}:${index}`;
+        flowNodes.push({
+          id: nodeId,
+          data: { label: item.nodeId ?? 'Конец', targetSceneId: item.nodeId ?? null },
+          position: { x: 0, y: 0 },
+          sourcePosition: Position.Top,
+          targetPosition: Position.Top,
+          style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff', color: '#0f172a' },
+        });
+        flowEdges.push({
+          id: `e:${centerId}->${nodeId}`,
+          source: centerId,
+          target: nodeId,
+          label: item.actionText,
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: '#64748b', strokeWidth: 1.4 },
+          labelStyle: { fill: '#334155', fontSize: 11 },
+          labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
+        });
       });
-    });
+    }
 
-    return { initialNodes: nodes, initialEdges: edges };
-  }, [incoming, outgoing, sceneId]);
+    return { initialNodes: flowNodes, initialEdges: flowEdges };
+  }, [depth, incoming, projectNodes, outgoing, sceneId]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   useEffect(() => {
-    setNodes(initialNodes);
-  }, [initialNodes, setNodes]);
+    setFlowNodes(initialNodes);
+  }, [initialNodes, setFlowNodes]);
 
   useEffect(() => {
     setEdges(initialEdges);
@@ -404,7 +331,7 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
         if (cancelled) return;
         const layoutNode = layout as { children?: Array<{ id?: string; x?: number; y?: number }> };
         const byId = new Map((layoutNode.children ?? []).map((item) => [item.id ?? '', item]));
-        setNodes((prev) => prev.map((node) => {
+        setFlowNodes((prev) => prev.map((node) => {
           const p = byId.get(node.id);
           if (!p) return node;
           return { ...node, position: { x: p.x ?? node.position.x, y: p.y ?? node.position.y } };
@@ -417,56 +344,72 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
     return () => {
       cancelled = true;
     };
-  }, [elk, initialEdges, initialNodes, setNodes]);
+  }, [elk, initialEdges, initialNodes, setFlowNodes]);
 
   return (
-    <Box
-      sx={{
-        height: 320,
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 1,
-        overflow: 'hidden',
-        bgcolor: '#f8fafc',
-        '& .react-flow': { background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)' },
-        '& .react-flow__node': { color: '#0f172a' },
-        '& .react-flow__controls': {
-          boxShadow: '0 4px 14px rgba(15, 23, 42, 0.18)',
-          borderRadius: '10px',
+    <Stack spacing={1}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Typography variant="body2" color="text.secondary">Глубина</Typography>
+        {[1, 2, 3, 4].map((value) => (
+          <Button
+            key={value}
+            size="small"
+            variant={depth === value ? 'contained' : 'outlined'}
+            onClick={() => setDepth(value)}
+          >
+            {value}
+          </Button>
+        ))}
+      </Stack>
+
+      <Box
+        sx={{
+          height: 320,
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1,
           overflow: 'hidden',
-          border: '1px solid #cbd5e1',
-        },
-        '& .react-flow__controls-button': {
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          color: '#0f172a',
-        },
-        '& .react-flow__controls-button svg': { fill: '#0f172a' },
-        '& .react-flow__controls-button:hover': { backgroundColor: '#f1f5f9' },
-      }}
-    >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable
-        colorMode="light"
-        onNodeClick={(_, node) => {
-          const target = node.data?.targetSceneId as string | null | undefined;
-          if (!target) return;
-          onSelectScene(target);
+          bgcolor: '#f8fafc',
+          '& .react-flow': { background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)' },
+          '& .react-flow__node': { color: '#0f172a' },
+          '& .react-flow__controls': {
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.18)',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            border: '1px solid #cbd5e1',
+          },
+          '& .react-flow__controls-button': {
+            backgroundColor: '#ffffff',
+            borderBottom: '1px solid #e2e8f0',
+            color: '#0f172a',
+          },
+          '& .react-flow__controls-button svg': { fill: '#0f172a' },
+          '& .react-flow__controls-button:hover': { backgroundColor: '#f1f5f9' },
         }}
-        proOptions={{ hideAttribution: true }}
       >
-        <Background gap={18} size={1} />
-        <Controls showInteractive={false} />
-      </ReactFlow>
-    </Box>
+        <ReactFlow
+          nodes={flowNodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable
+          colorMode="light"
+          onNodeClick={(_, node) => {
+            const target = node.data?.targetSceneId as string | null | undefined;
+            if (!target) return;
+            onSelectScene(target);
+          }}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={18} size={1} />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      </Box>
+    </Stack>
   );
 }
 

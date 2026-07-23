@@ -111,6 +111,15 @@ export async function addWorkspaceNodeAction(projectId: string, nodeId: string, 
   return normalizeProject(await response.json());
 }
 
+export async function deleteWorkspaceNodeAction(projectId: string, nodeId: string, actionId: string): Promise<NodeGeneratorProject> {
+  const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/actions/${encodeURIComponent(actionId)}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw await toError(response, 'Не удалось удалить действие');
+  return normalizeProject(await response.json());
+}
+
 export async function createNextWorkspaceNode(projectId: string, nodeId: string, actionId: string): Promise<NodeGeneratorProject> {
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/actions/${encodeURIComponent(actionId)}/create-next-node`, {
     method: 'POST',

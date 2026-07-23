@@ -6,6 +6,7 @@ import {
   createNextWorkspaceNode,
   createNodeGeneratorProject,
   createWorkspaceNode,
+  deleteWorkspaceNodeAction,
   generateFirstSceneIdeas,
   generateNextSceneIdeas,
   generateWorkspaceNodeActions,
@@ -15,6 +16,7 @@ import type { FirstSceneIdea } from '../api/nodeGeneratorApi';
 import { SectionCard } from '../components/ui';
 import { useNodeGeneratorProject } from '../hooks/useNodeGeneratorProject';
 import { useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
+import type { WorkspaceAction } from '../types/nodeGenerator';
 
 type Mode = 'first' | 'next' | 'edit';
 
@@ -44,7 +46,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
   const [actionsLoading, setActionsLoading] = useState(false);
   const [actionsGeneratedOnce, setActionsGeneratedOnce] = useState(false);
   const [generatedActions, setGeneratedActions] = useState<string[]>([]);
-  const [savedActions, setSavedActions] = useState<string[]>([]);
+  const [savedActions, setSavedActions] = useState<WorkspaceAction[]>([]);
   const [actionDraft, setActionDraft] = useState('');
   const [addingAction, setAddingAction] = useState(false);
 
@@ -97,7 +99,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     setCurrentProjectId(projectId ?? '');
     setCurrentNodeId(editableScene.id);
     setSceneText(editableScene.stateDescription || editableScene.actionDescription || '');
-    setSavedActions((editableScene.actions ?? []).map((item) => item.text).filter((item) => item.trim().length > 0));
+    setSavedActions((editableScene.actions ?? []).filter((item) => (item.text ?? '').trim().length > 0));
     setGeneratedActions(editableScene.generatedActionsDraft ?? []);
     setActionsGeneratedOnce(true);
     setMaxUnlockedStep(2);
@@ -171,7 +173,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
         setProjectCache(updated);
         const node = updated.workspace?.nodes.find((item) => item.id.toUpperCase() === currentNodeId.toUpperCase());
         const actions = node?.generatedActionsDraft ?? [];
-        const added = node?.actions.map((item) => item.text).filter((item) => item.trim().length > 0) ?? [];
+        const added = node?.actions.filter((item) => (item.text ?? '').trim().length > 0) ?? [];
         setGeneratedActions(actions);
         setSavedActions(added);
         setActionsGeneratedOnce(true);
@@ -198,7 +200,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       const updated = await addWorkspaceNodeAction(currentProjectId, currentNodeId, text);
       setProjectCache(updated);
       const node = updated.workspace?.nodes.find((item) => item.id.toUpperCase() === currentNodeId.toUpperCase());
-      const added = node?.actions.map((item) => item.text).filter((item) => item.trim().length > 0) ?? [];
+      const added = node?.actions.filter((item) => (item.text ?? '').trim().length > 0) ?? [];
       setSavedActions(added);
       if (fromGenerated) {
         setGeneratedActions((prev) => prev.filter((item) => item !== text));
@@ -217,9 +219,23 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
   };
 
   const availableGeneratedActions = useMemo(() => {
-    const savedSet = new Set(savedActions.map((item) => item.trim().toLowerCase()).filter((item) => item.length > 0));
+    const savedSet = new Set(savedActions.map((item) => item.text.trim().toLowerCase()).filter((item) => item.length > 0));
     return generatedActions.filter((item) => !savedSet.has(item.trim().toLowerCase()));
   }, [generatedActions, savedActions]);
+
+  const handleDeleteAction = async (actionId: string) => {
+    if (!currentProjectId || !currentNodeId || !actionId) return;
+    try {
+      setError(null);
+      const updated = await deleteWorkspaceNodeAction(currentProjectId, currentNodeId, actionId);
+      setProjectCache(updated);
+      const node = updated.workspace?.nodes.find((item) => item.id.toUpperCase() === currentNodeId.toUpperCase());
+      const added = node?.actions.filter((item) => (item.text ?? '').trim().length > 0) ?? [];
+      setSavedActions(added);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось удалить действие');
+    }
+  };
 
   return (
     <Stack spacing={2}>
@@ -376,8 +392,13 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
             <Stack spacing={0.5}>
               <Typography variant="body2" color="text.secondary">Добавленные действия</Typography>
               {savedActions.length === 0 ? <Typography variant="body2" color="text.secondary">Пока нет добавленных действий.</Typography> : null}
-              {savedActions.map((item, index) => (
-                <Typography key={`${index}-${item}`} variant="body2">• {item}</Typography>
+              {savedActions.map((item) => (
+                <Stack key={item.id} direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">• {item.text}</Typography>
+                  <Button size="small" color="error" variant="text" onClick={() => void handleDeleteAction(item.id)}>
+                    Удалить
+                  </Button>
+                </Stack>
               ))}
             </Stack>
 
