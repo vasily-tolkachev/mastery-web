@@ -111,7 +111,7 @@ export function NodeGeneratorScenePage() {
       </Breadcrumbs>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <SectionCard title="Граф сцен">
+        <SectionCard title="Граф сцен" sx={{ order: { xs: 3, md: 1 } }}>
           <SceneTreeList
             nodes={nodes}
             selectedSceneId={scene.id}
@@ -119,7 +119,7 @@ export function NodeGeneratorScenePage() {
           />
         </SectionCard>
 
-        <Stack spacing={2} sx={{ flex: 1 }}>
+        <Stack spacing={2} sx={{ flex: 1, order: { xs: 1, md: 2 } }}>
           <SectionCard title="Локальный граф">
             <LocalSceneGraph
               sceneId={scene.id}
@@ -317,6 +317,8 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
           minWidth: 140,
           textAlign: 'center',
           background: '#fff',
+          color: '#0f172a',
+          boxShadow: '0 6px 18px rgba(2, 6, 23, 0.12)',
           fontWeight: 600,
         },
       },
@@ -339,6 +341,9 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
         target: centerId,
         label: item.actionText,
         markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: '#64748b', strokeWidth: 1.4 },
+        labelStyle: { fill: '#334155', fontSize: 11 },
+        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
       });
     });
 
@@ -358,6 +363,9 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
         target: nodeId,
         label: item.actionText,
         markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: '#64748b', strokeWidth: 1.4 },
+        labelStyle: { fill: '#334155', fontSize: 11 },
+        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
       });
     });
 
@@ -412,7 +420,31 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
   }, [elk, initialEdges, initialNodes, setNodes]);
 
   return (
-    <Box sx={{ height: 320, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+    <Box
+      sx={{
+        height: 320,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 1,
+        overflow: 'hidden',
+        bgcolor: '#f8fafc',
+        '& .react-flow': { background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)' },
+        '& .react-flow__node': { color: '#0f172a' },
+        '& .react-flow__controls': {
+          boxShadow: '0 4px 14px rgba(15, 23, 42, 0.18)',
+          borderRadius: '10px',
+          overflow: 'hidden',
+          border: '1px solid #cbd5e1',
+        },
+        '& .react-flow__controls-button': {
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e2e8f0',
+          color: '#0f172a',
+        },
+        '& .react-flow__controls-button svg': { fill: '#0f172a' },
+        '& .react-flow__controls-button:hover': { backgroundColor: '#f1f5f9' },
+      }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -423,6 +455,7 @@ function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSc
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable
+        colorMode="light"
         onNodeClick={(_, node) => {
           const target = node.data?.targetSceneId as string | null | undefined;
           if (!target) return;
