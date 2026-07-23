@@ -277,17 +277,18 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
       };
     });
 
-    const flowEdgesLocal: Edge[] = uniqueNodes
+    const flowEdgesLocal: Edge[] = [];
+    uniqueNodes
       .filter((node) => (node.sourceNodeId ?? '').trim().length > 0)
-      .map((node) => {
+      .forEach((node) => {
         const sourceNodeId = node.sourceNodeId ?? '';
         if (!existingNodeIds.has(sourceNodeId.toUpperCase()) || !existingNodeIds.has(node.id.toUpperCase())) {
-          return null;
+          return;
         }
         const sourceActionId = (node.sourceActionId ?? '').toUpperCase();
         const sourceNode = uniqueNodes.find((item) => item.id.toUpperCase() === sourceNodeId.toUpperCase());
         const actionText = sourceNode?.actions.find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? '';
-        return {
+        flowEdgesLocal.push({
           id: `${sourceNodeId}->${node.id}:${sourceActionId || 'DIRECT'}`,
           source: sourceNodeId,
           target: node.id,
@@ -296,9 +297,8 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
           style: { stroke: '#7a7a7a', strokeWidth: 1.4 },
           labelStyle: { fontSize: 11, fill: '#4b4b4b' },
           labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
-        };
-      })
-      .filter((edge): edge is Edge => edge != null);
+        });
+      });
 
     return { flowNodes: flowNodesLocal, flowEdges: flowEdgesLocal };
   }, [nodes, selectedSceneId]);
