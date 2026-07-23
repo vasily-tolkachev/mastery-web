@@ -13,7 +13,6 @@ import {
   useNodesState,
   type Edge,
   type Node,
-  type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
@@ -372,7 +371,6 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [flowInstance, setFlowInstance] = useState<ReactFlowInstance<Node, Edge> | null>(null);
 
   useEffect(() => {
     setFlowNodes(initialNodes);
@@ -440,14 +438,6 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
     };
   }, [elk, initialEdges, initialNodes, setFlowNodes]);
 
-  useEffect(() => {
-    if (!flowInstance) return;
-    const timer = window.setTimeout(() => {
-      flowInstance.fitView({ padding: 0.2, duration: 250 });
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [flowInstance, flowNodes, edges]);
-
   return (
     <Stack spacing={1}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
@@ -512,11 +502,8 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
         <ReactFlow
           nodes={flowNodes}
           edges={edges}
-          onInit={setFlowInstance}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable
@@ -529,7 +516,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={18} size={1} />
-          <Controls showInteractive={false} />
+          <Controls showInteractive={false} showFitView={false} />
         </ReactFlow>
       </Box>
     </Stack>
