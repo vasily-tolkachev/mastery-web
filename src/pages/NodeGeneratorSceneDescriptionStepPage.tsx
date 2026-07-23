@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Step, StepButton, Stepper, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +13,7 @@ import {
 } from '../api/nodeGeneratorApi';
 import type { FirstSceneIdea } from '../api/nodeGeneratorApi';
 import { SectionCard } from '../components/ui';
+import { useNodeGeneratorProject } from '../hooks/useNodeGeneratorProject';
 import { useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
 
 type Mode = 'first' | 'next';
@@ -29,21 +30,33 @@ const STEPS = ['Описание', 'Действия', 'Готово'];
 export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId, actionId }: Props) {
   const navigate = useNavigate();
   const setProjectCache = useSetNodeGeneratorProjectCache();
+  const { data: contextProject } = useNodeGeneratorProject(mode === 'next' ? (projectId ?? '') : '');
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [maxUnlockedStep, setMaxUnlockedStep] = useState<1 | 2 | 3>(1);
   const [ideas, setIdeas] = useState<FirstSceneIdea[]>([]);
   const [selectedIdeaIndex, setSelectedIdeaIndex] = useState<number | null>(null);
   const [sceneText, setSceneText] = useState('');
-  const [projectName, setProjectName] = useState('');
   const [loadingIdeas, setLoadingIdeas] = useState(true);
   const [savingScene, setSavingScene] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentProjectId, setCurrentProjectId] = useState(mode === 'next' ? (projectId ?? '') : '');
   const [currentNodeId, setCurrentNodeId] = useState('');
   const [actionsLoading, setActionsLoading] = useState(false);
+  const [actionsGeneratedOnce, setActionsGeneratedOnce] = useState(false);
   const [generatedActions, setGeneratedActions] = useState<string[]>([]);
   const [savedActions, setSavedActions] = useState<string[]>([]);
   const [actionDraft, setActionDraft] = useState('');
   const [addingAction, setAddingAction] = useState(false);
+
+  const previousScene = useMemo(() => {
+    if (mode !== 'next' || !contextProject?.workspace || !sceneId) return null;
+    return contextProject.workspace.nodes.find((node) => node.id.toUpperCase() === sceneId.toUpperCase()) ?? null;
+  }, [contextProject, mode, sceneId]);
+
+  const previousActionText = useMemo(() => {
+    if (!previousScene || !actionId) return '';
+    return previousScene.actions.find((action) => action.id === actionId)?.text ?? '';
+  }, [actionId, previousScene]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,13 +85,12 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
 
   const canContinueFromStep1 = useMemo(() => {
     if (!sceneText.trim()) return false;
-    if (mode === 'first' && !projectName.trim()) return false;
     return true;
-  }, [mode, projectName, sceneText]);
+  }, [sceneText]);
 
   const ensureScene = async () => {
     if (mode === 'first') {
-      const project = await createNodeGeneratorProject(projectName.trim(), 'classic-adventure');
+      const project = await createNodeGeneratorProject(buildProjectName(sceneText, selectedIdeaIndex, ideas), 'classic-adventure');
       const withNode = await createWorkspaceNode(project.id);
       setProjectCache(withNode);
       const node = withNode.workspace?.nodes[withNode.workspace.nodes.length - 1];
@@ -111,6 +123,8 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       setCurrentNodeId(created.nodeId);
       setSavedActions([]);
       setGeneratedActions([]);
+      setActionsGeneratedOnce(false);
+      setMaxUnlockedStep(2);
       setStep(2);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось сохранить описание сцены');
@@ -120,7 +134,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
   };
 
   useEffect(() => {
-    if (step !== 2 || !currentProjectId || !currentNodeId) return;
+    if (step !== 2 || actionsGeneratedOnce || !currentProjectId || !currentNodeId) return;
     let cancelled = false;
     const run = async () => {
       try {
@@ -134,6 +148,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
         const added = node?.actions.map((item) => item.text).filter((item) => item.trim().length > 0) ?? [];
         setGeneratedActions(actions);
         setSavedActions(added);
+        setActionsGeneratedOnce(true);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Не удалось сгенерировать действия');
@@ -146,7 +161,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     return () => {
       cancelled = true;
     };
-  }, [currentNodeId, currentProjectId, setProjectCache, step]);
+  }, [actionsGeneratedOnce, currentNodeId, currentProjectId, setProjectCache, step]);
 
   const handleAddAction = async (value: string, fromGenerated = false) => {
     const text = value.trim();
@@ -170,6 +185,11 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     }
   };
 
+  const handleStepClick = (targetStep: 1 | 2 | 3) => {
+    if (targetStep > maxUnlockedStep) return;
+    setStep(targetStep);
+  };
+
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
@@ -183,9 +203,11 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
 
       <SectionCard title={`Создание сцены ${currentNodeId || 'N1'}`}>
         <Stepper activeStep={step - 1} alternativeLabel>
-          {STEPS.map((label) => (
+          {STEPS.map((label, index) => (
             <Step key={label}>
-              <StepLabel>{label}</StepLabel>
+              <StepButton onClick={() => handleStepClick((index + 1) as 1 | 2 | 3)}>
+                {label}
+              </StepButton>
             </Step>
           ))}
         </Stepper>
@@ -194,14 +216,18 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       {step === 1 ? (
         <SectionCard title="Шаг 1. Описание сцены">
           <Stack spacing={1.5}>
-            {mode === 'first' ? (
-              <TextField
-                label="Название квеста"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                fullWidth
-                size="small"
-              />
+            {mode === 'next' ? (
+              <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+                <Stack spacing={0.75}>
+                  <Typography variant="subtitle2">Контекст предыдущего шага</Typography>
+                  <Typography variant="body2" color="text.secondary">Предыдущая сцена</Typography>
+                  <Typography variant="body2">
+                    {previousScene?.stateDescription || previousScene?.actionDescription || 'Описание предыдущей сцены недоступно.'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">Выбранное действие</Typography>
+                  <Typography variant="body2">{previousActionText || 'Действие недоступно.'}</Typography>
+                </Stack>
+              </Box>
             ) : null}
 
             <TextField
@@ -311,7 +337,14 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
               ))}
             </Stack>
 
-            <Button variant="contained" onClick={() => setStep(3)} disabled={!currentProjectId || !currentNodeId}>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setMaxUnlockedStep(3);
+                setStep(3);
+              }}
+              disabled={!currentProjectId || !currentNodeId}
+            >
               Готово
             </Button>
           </Stack>
@@ -334,4 +367,12 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       ) : null}
     </Stack>
   );
+}
+
+function buildProjectName(sceneText: string, selectedIdeaIndex: number | null, ideas: FirstSceneIdea[]): string {
+  const ideaTitle = selectedIdeaIndex != null ? (ideas[selectedIdeaIndex]?.title ?? '').trim() : '';
+  if (ideaTitle) return ideaTitle;
+  const firstLine = sceneText.split('\n').map((line) => line.trim()).find((line) => line.length > 0) ?? '';
+  if (!firstLine) return 'Новый квест';
+  return firstLine.length > 48 ? `${firstLine.slice(0, 48).trim()}...` : firstLine;
 }
