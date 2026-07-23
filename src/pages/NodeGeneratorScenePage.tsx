@@ -87,6 +87,11 @@ export function NodeGeneratorScenePage() {
 
   const nodes = project.workspace?.nodes ?? [];
   const scene: WorkspaceNode | null = currentScene ?? nodes[0] ?? null;
+  const availableSuggestedActions = useMemo(() => {
+    if (!scene) return [];
+    const existing = new Set((scene.actions ?? []).map((action) => action.text.trim().toLowerCase()).filter((item) => item.length > 0));
+    return (scene.generatedActionsDraft ?? []).filter((item) => !existing.has(item.trim().toLowerCase()));
+  }, [scene]);
 
   if (!scene) {
     return (
@@ -151,10 +156,10 @@ export function NodeGeneratorScenePage() {
                 <Button variant="contained" onClick={() => void handleAddAction()} disabled={!actionDraft.trim()}>Добавить</Button>
               </Stack>
               <Typography variant="body2" color="text.secondary">Сгенерированные варианты</Typography>
-              {(scene.generatedActionsDraft ?? []).length === 0 ? (
+              {availableSuggestedActions.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">Сохранённых вариантов пока нет.</Typography>
               ) : null}
-              {(scene.generatedActionsDraft ?? []).map((suggestedAction, index) => (
+              {availableSuggestedActions.map((suggestedAction, index) => (
                 <Box key={`${index}-${suggestedAction}`} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: { md: 'center' } }}>
                     <Typography variant="body2" sx={{ flex: 1 }}>{suggestedAction}</Typography>

@@ -98,6 +98,8 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     setCurrentNodeId(editableScene.id);
     setSceneText(editableScene.stateDescription || editableScene.actionDescription || '');
     setSavedActions((editableScene.actions ?? []).map((item) => item.text).filter((item) => item.trim().length > 0));
+    setGeneratedActions(editableScene.generatedActionsDraft ?? []);
+    setActionsGeneratedOnce(true);
     setMaxUnlockedStep(2);
   }, [editableScene, mode, projectId]);
 
@@ -214,6 +216,11 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     setStep(targetStep);
   };
 
+  const availableGeneratedActions = useMemo(() => {
+    const savedSet = new Set(savedActions.map((item) => item.trim().toLowerCase()).filter((item) => item.length > 0));
+    return generatedActions.filter((item) => !savedSet.has(item.trim().toLowerCase()));
+  }, [generatedActions, savedActions]);
+
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
@@ -327,11 +334,11 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
             </Box>
 
             {actionsLoading ? <Typography variant="body2">Генерация действий...</Typography> : null}
-            {!actionsLoading && generatedActions.length === 0 ? (
+            {!actionsLoading && availableGeneratedActions.length === 0 ? (
               <Typography variant="body2" color="text.secondary">Список действий пуст.</Typography>
             ) : null}
             <Stack spacing={1}>
-              {generatedActions.map((item, index) => (
+              {availableGeneratedActions.map((item, index) => (
                 <Box
                   key={`${index}-${item}`}
                   role="button"
