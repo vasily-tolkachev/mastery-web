@@ -175,7 +175,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
     }
   }, []);
 
-  const { initialNodes, initialEdges } = useMemo(() => {
+  const { initialNodes, initialEdges, maxReachableDepth } = useMemo(() => {
     const centerId = `scene:${sceneId}`;
     const byId = new Map<string, WorkspaceNode>();
     projectNodes.forEach((node) => {
@@ -196,9 +196,30 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
     });
 
     const centerKey = sceneId.trim().toUpperCase();
+    const depthByNode = new Map<string, number>([[centerKey, 0]]);
+    const queue: string[] = [centerKey];
+    let maxDepth = 0;
+    while (queue.length > 0) {
+      const current = queue.shift() as string;
+      const currentDepth = depthByNode.get(current) ?? 0;
+      rawEdges.forEach((edge) => {
+        const s = edge.sourceId.toUpperCase();
+        const t = edge.targetId.toUpperCase();
+        let nextId: string | null = null;
+        if (s === current && !depthByNode.has(t)) nextId = t;
+        if (t === current && !depthByNode.has(s)) nextId = s;
+        if (!nextId) return;
+        const nextDepth = currentDepth + 1;
+        depthByNode.set(nextId, nextDepth);
+        if (nextDepth > maxDepth) maxDepth = nextDepth;
+        queue.push(nextId);
+      });
+    }
+
+    const effectiveDepth = Math.max(1, Math.min(depth, maxDepth === 0 ? 1 : maxDepth));
     const included = new Set<string>([centerKey]);
     const frontier = new Set<string>([centerKey]);
-    for (let level = 0; level < depth; level += 1) {
+    for (let level = 0; level < effectiveDepth; level += 1) {
       const next = new Set<string>();
       rawEdges.forEach((edge) => {
         const s = edge.sourceId.toUpperCase();
@@ -312,7 +333,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
       });
     }
 
-    return { initialNodes: flowNodes, initialEdges: flowEdges };
+    return { initialNodes: flowNodes, initialEdges: flowEdges, maxReachableDepth: maxDepth === 0 ? 1 : maxDepth };
   }, [
     depth,
     incoming,
@@ -326,6 +347,15 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
     theme.palette.text.secondary,
     theme.shadows,
   ]);
+
+  useEffect(() => {
+    setDepth((prev) => {
+      const safeMax = Math.max(1, maxReachableDepth);
+      if (prev > safeMax) return safeMax;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [maxReachableDepth]);
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
