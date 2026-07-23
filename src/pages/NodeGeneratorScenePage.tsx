@@ -1,7 +1,17 @@
 import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Background, Controls, MarkerType, Position, ReactFlow, type Edge, type Node } from '@xyflow/react';
+import {
+  Background,
+  Controls,
+  MarkerType,
+  Position,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
+  type Edge,
+  type Node,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   addWorkspaceNodeAction,
@@ -91,7 +101,7 @@ export function NodeGeneratorScenePage() {
   const scene: WorkspaceNode | null = currentScene ?? nodes[0] ?? null;
   const availableSuggestedActions = useMemo(() => {
     if (!scene) return [];
-    const existing = new Set((scene.actions ?? []).map((action) => action.text.trim().toLowerCase()).filter((item) => item.length > 0));
+    const existing = new Set(normalizeActions(scene).map((action) => action.text.trim().toLowerCase()).filter((item) => item.length > 0));
     return (scene.generatedActionsDraft ?? []).filter((item) => !existing.has(item.trim().toLowerCase()));
   }, [scene]);
 
@@ -172,7 +182,7 @@ export function NodeGeneratorScenePage() {
                 </Box>
               ))}
               <Typography variant="body2" color="text.secondary">Добавленные действия</Typography>
-              {(scene.actions ?? []).map((action) => (
+              {normalizeActions(scene).map((action) => (
                 <Box key={action.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
                   <Typography variant="body2">{action.text}</Typography>
                   <Button size="small" sx={{ mt: 0.5 }} onClick={() => void handleCreateNext(action.id)}>Создать следующую сцену</Button>
@@ -195,7 +205,7 @@ type SceneTreeListProps = {
 function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
   const [lastDraggedNodeId, setLastDraggedNodeId] = useState<string | null>(null);
   const [lastDragAtMs, setLastDragAtMs] = useState(0);
-  const { flowNodes, flowEdges } = useMemo(() => {
+  const { initialFlowNodes, initialFlowEdges } = useMemo(() => {
     const uniqueNodes: WorkspaceNode[] = [];
     const seenNodeIds = new Set<string>();
     for (const node of nodes) {
@@ -267,7 +277,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         position: { x: level * 320, y: index * 140 },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
-        data: { label: `${node.id} • действий: ${node.actions.length}` },
+        data: { label: `${node.id} • действий: ${normalizeActions(node).length}` },
         style: {
           border: isSelected ? '2px solid #1976d2' : '1px solid #c4c4c4',
           borderRadius: '8px',
@@ -292,7 +302,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         }
         const sourceActionId = (node.sourceActionId ?? '').toUpperCase();
         const sourceNode = uniqueNodes.find((item) => item.id.toUpperCase() === sourceNodeId.toUpperCase());
-        const actionText = sourceNode?.actions.find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? '';
+        const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? '';
         flowEdgesLocal.push({
           id: `${sourceNodeId}->${node.id}:${sourceActionId || 'DIRECT'}`,
           source: sourceNodeId,
@@ -305,14 +315,26 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         });
       });
 
-    return { flowNodes: flowNodesLocal, flowEdges: flowEdgesLocal };
+    return { initialFlowNodes: flowNodesLocal, initialFlowEdges: flowEdgesLocal };
   }, [nodes, selectedSceneId]);
+  const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialFlowNodes);
+  const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState(initialFlowEdges);
+
+  useEffect(() => {
+    setFlowNodes(initialFlowNodes);
+  }, [initialFlowNodes, setFlowNodes]);
+
+  useEffect(() => {
+    setFlowEdges(initialFlowEdges);
+  }, [initialFlowEdges, setFlowEdges]);
 
   return (
     <Box sx={{ height: 520, width: '100%', minWidth: { md: 420 }, border: 1, borderColor: 'divider', borderRadius: 1 }}>
       <ReactFlow
         nodes={flowNodes}
         edges={flowEdges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         fitView
         nodesDraggable
         nodesConnectable={false}
@@ -352,4 +374,11 @@ function findNodeById(nodes: WorkspaceNode[], nodeId: string): WorkspaceNode | n
 
 function normalizeNodeId(id: string | null | undefined): string {
   return (id ?? '').trim().toUpperCase();
+}
+
+function normalizeActions(node: WorkspaceNode | null | undefined): Array<{ id: string; text: string }> {
+  if (!node || !Array.isArray((node as WorkspaceNode).actions)) return [];
+  return node.actions
+    .map((action) => ({ id: String(action?.id ?? '').trim(), text: String(action?.text ?? '').trim() }))
+    .filter((action) => action.id.length > 0);
 }
