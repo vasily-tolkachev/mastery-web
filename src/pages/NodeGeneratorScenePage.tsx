@@ -516,7 +516,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={18} size={1} />
-          <Controls showInteractive={false} showFitView={false} />
+          <Controls showInteractive={false} />
         </ReactFlow>
       </Box>
     </Stack>
