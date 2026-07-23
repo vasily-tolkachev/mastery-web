@@ -8,6 +8,7 @@ import {
   createWorkspaceNode,
   deleteWorkspaceNodeAction,
   generateFirstSceneIdeas,
+  getNodeGeneratorProject,
   generateNextSceneIdeas,
   generateWorkspaceNodeActions,
   updateWorkspaceNodeDescription,
@@ -193,13 +194,14 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
 
   const handleAddAction = async (value: string, fromGenerated = false) => {
     const text = value.trim();
-    if (!text || !currentProjectId || !currentNodeId || addingAction) return;
+    if (!text || !currentProjectId || !currentNodeId || addingAction || actionsLoading) return;
     try {
       setError(null);
       setAddingAction(true);
-      const updated = await addWorkspaceNodeAction(currentProjectId, currentNodeId, text);
-      setProjectCache(updated);
-      const node = updated.workspace?.nodes.find((item) => item.id.toUpperCase() === currentNodeId.toUpperCase());
+      await addWorkspaceNodeAction(currentProjectId, currentNodeId, text);
+      const refreshed = await getNodeGeneratorProject(currentProjectId);
+      setProjectCache(refreshed);
+      const node = refreshed.workspace?.nodes.find((item) => item.id.toUpperCase() === currentNodeId.toUpperCase());
       const added = node?.actions.filter((item) => (item.text ?? '').trim().length > 0) ?? [];
       setSavedActions(added);
       if (fromGenerated) {
@@ -392,11 +394,12 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
                 onChange={(e) => setActionDraft(e.target.value)}
                 fullWidth
                 size="small"
+                disabled={actionsLoading}
               />
               <Button
                 variant="outlined"
                 onClick={() => void handleAddAction(actionDraft)}
-                disabled={!actionDraft.trim() || addingAction}
+                disabled={!actionDraft.trim() || addingAction || actionsLoading}
               >
                 Добавить
               </Button>
