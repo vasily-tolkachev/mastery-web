@@ -12,6 +12,7 @@ import { NodeGeneratorNewQuestPage } from './pages/NodeGeneratorNewQuestPage';
 import { NodeGeneratorFirstSceneActionsPage } from './pages/NodeGeneratorFirstSceneActionsPage';
 import { NodeGeneratorProjectHomePage } from './pages/NodeGeneratorProjectHomePage';
 import { NodeGeneratorScenePage } from './pages/NodeGeneratorScenePage';
+import { NodeGeneratorNextSceneDescriptionPage } from './pages/NodeGeneratorNextSceneDescriptionPage';
 import { NodeGeneratorSceneFlowPage } from './pages/NodeGeneratorSceneFlowPage';
 import { NodeGeneratorKnowledgePage } from './pages/NodeGeneratorKnowledgePage';
 import { NodeGeneratorExpansionReviewPage } from './pages/NodeGeneratorExpansionReviewPage';
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId/first-actions" element={<NodeGeneratorFirstSceneActionsPage />} />
         <Route path="/node-generator/projects/:projectId" element={<NodeGeneratorProjectHomePage />} />
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId" element={<NodeGeneratorScenePage />} />
+        <Route path="/node-generator/projects/:projectId/scenes/:sceneId/actions/:actionId/new-scene-description" element={<NodeGeneratorNextSceneDescriptionPage />} />
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId/generate" element={<NodeGeneratorSceneFlowPage />} />
         <Route path="/node-generator/projects/:projectId/knowledge" element={<NodeGeneratorKnowledgePage />} />
         <Route path="/node-generator/projects/:projectId/expansion" element={<NodeGeneratorExpansionReviewPage />} />

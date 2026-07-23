@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   addWorkspaceNodeAction,
-  createNextWorkspaceNode,
   createWorkspaceNode,
   deleteWorkspaceNode,
   generateWorkspaceNodeDescription,
@@ -77,24 +76,7 @@ export function NodeGeneratorScenePage() {
 
   const handleCreateNext = async (actionId: string) => {
     if (!project || !currentScene) return;
-    const created = await createNextWorkspaceNode(project.id, currentScene.id, actionId);
-    const newNodeId = findNewNodeId(project.workspace?.nodes ?? [], created.workspace?.nodes ?? []);
-    if (!newNodeId) {
-      setUpdatedProject(created);
-      return;
-    }
-    const generated = await generateWorkspaceNodeDescription(project.id, newNodeId);
-    const generatedNode = findNodeById(generated.workspace?.nodes ?? [], newNodeId);
-    if (!generatedNode) {
-      setUpdatedProject(generated);
-      navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
-      return;
-    }
-    const actionText = generatedNode.generatedActionDescriptionDraft?.trim() || generatedNode.actionDescription || '';
-    const stateText = generatedNode.generatedStateDescriptionDraft?.trim() || generatedNode.stateDescription || '';
-    const accepted = await updateWorkspaceNodeDescription(project.id, newNodeId, actionText, stateText);
-    setUpdatedProject(accepted);
-    navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}`);
+    navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(currentScene.id)}/actions/${encodeURIComponent(actionId)}/new-scene-description`);
   };
 
   if (isLoading) return <LoadingState message="Загрузка сцены..." />;

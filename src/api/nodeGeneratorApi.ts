@@ -297,6 +297,28 @@ export async function generateFirstSceneIdeas(prompt: string): Promise<FirstScen
     .filter((item) => item.title && item.scenarioText);
 }
 
+export async function generateNextSceneIdeas(projectId: string, nodeId: string, actionId: string): Promise<FirstSceneIdea[]> {
+  const response = await authFetch(
+    `/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/actions/${encodeURIComponent(actionId)}/next-scene-ideas`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  if (!response.ok) throw await toError(response, 'Не удалось сгенерировать варианты следующей сцены');
+  const raw = (await response.json()) as Record<string, unknown>;
+  const ideasRaw = Array.isArray(raw.ideas) ? raw.ideas : [];
+  return ideasRaw
+    .map((item) => {
+      const node = (item ?? {}) as Record<string, unknown>;
+      return {
+        title: String(node.title ?? '').trim(),
+        scenarioText: String(node.scenarioText ?? '').trim(),
+      };
+    })
+    .filter((item) => item.title && item.scenarioText);
+}
+
 async function toError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = (await response.json()) as Record<string, unknown>;
