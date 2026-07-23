@@ -193,6 +193,8 @@ type SceneTreeListProps = {
 };
 
 function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
+  const [lastDraggedNodeId, setLastDraggedNodeId] = useState<string | null>(null);
+  const [lastDragAtMs, setLastDragAtMs] = useState(0);
   const { flowNodes, flowEdges } = useMemo(() => {
     const uniqueNodes: WorkspaceNode[] = [];
     const seenNodeIds = new Set<string>();
@@ -315,7 +317,15 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         nodesDraggable
         nodesConnectable={false}
         elementsSelectable
-        onNodeClick={(_, node) => onSelectScene(node.id)}
+        onNodeDragStop={(_, node) => {
+          setLastDraggedNodeId(node.id);
+          setLastDragAtMs(Date.now());
+        }}
+        onNodeClick={(_, node) => {
+          const dragGuardMs = 220;
+          if (lastDraggedNodeId === node.id && Date.now() - lastDragAtMs < dragGuardMs) return;
+          onSelectScene(node.id);
+        }}
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={20} size={1} />
