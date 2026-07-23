@@ -156,7 +156,7 @@ export function NodeGeneratorScenePage() {
               ) : null}
               {(scene.generatedActionsDraft ?? []).map((suggestedAction, index) => (
                 <Box key={`${index}-${suggestedAction}`} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems={{ md: 'center' }}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: { md: 'center' } }}>
                     <Typography variant="body2" sx={{ flex: 1 }}>{suggestedAction}</Typography>
                     <Button size="small" variant="outlined" onClick={() => void handleAddAction(suggestedAction)}>
                       Добавить
