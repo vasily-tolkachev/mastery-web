@@ -261,18 +261,30 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
       })
       .filter((item): item is Node => item != null);
 
+    const renderedNodeIds = new Set(flowNodes.map((node) => node.id));
     const flowEdges: Edge[] = rawEdges
       .filter((edge) => included.has(edge.sourceId.toUpperCase()) && included.has(edge.targetId.toUpperCase()))
-      .map((edge, index) => ({
-        id: `e:${edge.sourceId}->${edge.targetId}:${index}`,
-        source: `scene:${edge.sourceId}`,
-        target: `scene:${edge.targetId}`,
-        label: edge.actionText,
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: theme.palette.text.secondary, strokeWidth: 1.4 },
-        labelStyle: { fill: theme.palette.text.secondary, fontSize: 11 },
-        labelBgStyle: { fill: theme.palette.background.paper, fillOpacity: 0.95 },
-      }));
+      .map((edge, index) => {
+        const sourceNode = byId.get(edge.sourceId.toUpperCase());
+        const targetNode = byId.get(edge.targetId.toUpperCase());
+        const sourceId = (sourceNode?.id ?? '').trim();
+        const targetId = (targetNode?.id ?? '').trim();
+        if (!sourceId || !targetId) return null;
+        const sourceRef = `scene:${sourceId}`;
+        const targetRef = `scene:${targetId}`;
+        if (!renderedNodeIds.has(sourceRef) || !renderedNodeIds.has(targetRef)) return null;
+        return {
+          id: `e:${sourceId}->${targetId}:${index}`,
+          source: sourceRef,
+          target: targetRef,
+          label: edge.actionText,
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: theme.palette.text.secondary, strokeWidth: 1.4 },
+          labelStyle: { fill: theme.palette.text.secondary, fontSize: 11 },
+          labelBgStyle: { fill: theme.palette.background.paper, fillOpacity: 0.95 },
+        } as Edge;
+      })
+      .filter((edge): edge is Edge => edge != null);
 
     if (flowNodes.length === 1) {
       incoming.forEach((item, index) => {
