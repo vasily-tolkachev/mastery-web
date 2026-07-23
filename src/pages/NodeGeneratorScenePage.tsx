@@ -1,6 +1,8 @@
 import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Background, Controls, MarkerType, Position, ReactFlow, type Edge, type Node } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import {
   addWorkspaceNodeAction,
   createWorkspaceNode,
@@ -191,104 +193,118 @@ type SceneTreeListProps = {
 };
 
 function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
-  const byParent = new Map<string, WorkspaceNode[]>();
-  const roots: WorkspaceNode[] = [];
-  const [expandedNodeIds, setExpandedNodeIds] = useState<Record<string, boolean>>({});
-
-  nodes.forEach((node) => {
-    const parentId = (node.sourceNodeId ?? '').trim();
-    if (!parentId) {
-      roots.push(node);
-      return;
+  const { flowNodes, flowEdges } = useMemo(() => {
+    const childrenByParent = new Map<string, WorkspaceNode[]>();
+    const roots: WorkspaceNode[] = [];
+    for (const node of nodes) {
+      const parentId = (node.sourceNodeId ?? '').trim();
+      if (!parentId) {
+        roots.push(node);
+        continue;
+      }
+      const key = parentId.toUpperCase();
+      const list = childrenByParent.get(key) ?? [];
+      list.push(node);
+      childrenByParent.set(key, list);
     }
-    const key = parentId.toUpperCase();
-    const list = byParent.get(key) ?? [];
-    list.push(node);
-    byParent.set(key, list);
-  });
+    roots.sort((a, b) => a.id.localeCompare(b.id));
+    childrenByParent.forEach((list) => list.sort((a, b) => a.id.localeCompare(b.id)));
 
-  roots.sort((a, b) => a.id.localeCompare(b.id));
-  byParent.forEach((list) => list.sort((a, b) => a.id.localeCompare(b.id)));
+    const levels = new Map<string, number>();
+    const orderInLevel = new Map<string, number>();
+    const visited = new Set<string>();
+    const queue: WorkspaceNode[] = [...roots];
+    for (const root of roots) {
+      levels.set(root.id.toUpperCase(), 0);
+    }
+    while (queue.length > 0) {
+      const node = queue.shift();
+      if (!node) continue;
+      const key = node.id.toUpperCase();
+      if (visited.has(key)) continue;
+      visited.add(key);
+      const nextLevel = (levels.get(key) ?? 0) + 1;
+      for (const child of childrenByParent.get(key) ?? []) {
+        const childKey = child.id.toUpperCase();
+        if (!levels.has(childKey)) levels.set(childKey, nextLevel);
+        queue.push(child);
+      }
+    }
 
-  useEffect(() => {
-    const parentByNode = new Map<string, string>();
-    nodes.forEach((node) => {
-      if (node.sourceNodeId) parentByNode.set(node.id.toUpperCase(), node.sourceNodeId.toUpperCase());
+    const levelBuckets = new Map<number, WorkspaceNode[]>();
+    for (const node of nodes) {
+      const level = levels.get(node.id.toUpperCase()) ?? 0;
+      const bucket = levelBuckets.get(level) ?? [];
+      bucket.push(node);
+      levelBuckets.set(level, bucket);
+    }
+    for (const [level, bucket] of levelBuckets.entries()) {
+      bucket.sort((a, b) => a.id.localeCompare(b.id));
+      bucket.forEach((node, index) => {
+        orderInLevel.set(`${level}:${node.id.toUpperCase()}`, index);
+      });
+    }
+
+    const flowNodesLocal: Node[] = nodes.map((node) => {
+      const level = levels.get(node.id.toUpperCase()) ?? 0;
+      const index = orderInLevel.get(`${level}:${node.id.toUpperCase()}`) ?? 0;
+      const isSelected = selectedSceneId.toUpperCase() === node.id.toUpperCase();
+      return {
+        id: node.id,
+        position: { x: level * 320, y: index * 140 },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+        data: { label: `${node.id} • действий: ${node.actions.length}` },
+        style: {
+          border: isSelected ? '2px solid #1976d2' : '1px solid #c4c4c4',
+          borderRadius: '8px',
+          padding: '10px 12px',
+          backgroundColor: '#fff',
+          minWidth: 220,
+          fontSize: 13,
+        },
+      };
     });
-    const nextExpanded: Record<string, boolean> = {};
-    let cursor = selectedSceneId.toUpperCase();
-    while (parentByNode.has(cursor)) {
-      const parentId = parentByNode.get(cursor);
-      if (!parentId) break;
-      nextExpanded[parentId] = true;
-      cursor = parentId;
-    }
-    setExpandedNodeIds((prev) => ({ ...prev, ...nextExpanded }));
+
+    const flowEdgesLocal: Edge[] = nodes
+      .filter((node) => (node.sourceNodeId ?? '').trim().length > 0)
+      .map((node) => {
+        const sourceNodeId = node.sourceNodeId ?? '';
+        const sourceActionId = (node.sourceActionId ?? '').toUpperCase();
+        const sourceNode = nodes.find((item) => item.id.toUpperCase() === sourceNodeId.toUpperCase());
+        const actionText = sourceNode?.actions.find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? '';
+        return {
+          id: `${sourceNodeId}->${node.id}:${sourceActionId || 'DIRECT'}`,
+          source: sourceNodeId,
+          target: node.id,
+          label: actionText || 'Переход',
+          markerEnd: { type: MarkerType.ArrowClosed, color: '#7a7a7a' },
+          style: { stroke: '#7a7a7a', strokeWidth: 1.4 },
+          labelStyle: { fontSize: 11, fill: '#4b4b4b' },
+          labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
+        };
+      });
+
+    return { flowNodes: flowNodesLocal, flowEdges: flowEdgesLocal };
   }, [nodes, selectedSceneId]);
 
-  const toggleExpanded = (nodeId: string) => {
-    const key = nodeId.toUpperCase();
-    setExpandedNodeIds((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const renderNode = (node: WorkspaceNode, level: number) => {
-    const children = byParent.get(node.id.toUpperCase()) ?? [];
-    const groupedByAction = new Map<string, WorkspaceNode[]>();
-    children.forEach((child) => {
-      const actionKey = (child.sourceActionId ?? 'NO_ACTION').toUpperCase();
-      const list = groupedByAction.get(actionKey) ?? [];
-      list.push(child);
-      groupedByAction.set(actionKey, list);
-    });
-    const actionOrder = Array.from(groupedByAction.keys()).sort();
-
-    return (
-      <Box key={node.id} sx={{ ml: level * 1.25 }}>
-        <Stack direction="row" spacing={0.5}>
-          {children.length > 0 ? (
-            <Button size="small" variant="text" onClick={() => toggleExpanded(node.id)} sx={{ minWidth: 28, px: 0.5, alignSelf: 'flex-start' }}>
-              {expandedNodeIds[node.id.toUpperCase()] ? '−' : '+'}
-            </Button>
-          ) : (
-            <Box sx={{ width: 28 }} />
-          )}
-          <Box
-            role="button"
-            tabIndex={0}
-            onClick={() => onSelectScene(node.id)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') onSelectScene(node.id);
-            }}
-            sx={{
-              border: 1,
-              borderColor: selectedSceneId === node.id ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              p: 1,
-              cursor: 'pointer',
-              flex: 1,
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
-            <Typography variant="caption" color="text.secondary">действий: {node.actions.length}</Typography>
-          </Box>
-        </Stack>
-        {expandedNodeIds[node.id.toUpperCase()] ? actionOrder.map((actionId) => {
-          const actionText = node.actions.find((action) => action.id.toUpperCase() === actionId)?.text ?? actionId;
-          const groupedChildren = groupedByAction.get(actionId) ?? [];
-          return (
-            <Box key={`${node.id}-${actionId}`} sx={{ mt: 0.5, ml: 1 }}>
-              <Typography variant="caption" color="text.secondary">из действия: {actionText}</Typography>
-              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                {groupedChildren.map((child) => renderNode(child, level + 1))}
-              </Stack>
-            </Box>
-          );
-        }) : null}
-      </Box>
-    );
-  };
-
-  return <Stack spacing={0.75} sx={{ minWidth: { md: 260 } }}>{roots.map((root) => renderNode(root, 0))}</Stack>;
+  return (
+    <Box sx={{ height: 520, width: '100%', minWidth: { md: 420 }, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+      <ReactFlow
+        nodes={flowNodes}
+        edges={flowEdges}
+        fitView
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable
+        onNodeClick={(_, node) => onSelectScene(node.id)}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background gap={20} size={1} />
+        <Controls showInteractive={false} />
+      </ReactFlow>
+    </Box>
+  );
 }
 
 function findNewNodeId(previousNodes: WorkspaceNode[], nextNodes: WorkspaceNode[]): string | null {
