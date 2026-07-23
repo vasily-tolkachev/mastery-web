@@ -222,6 +222,15 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     }
   };
 
+  const handleFinishStep2 = async () => {
+    if (!currentProjectId || !currentNodeId) return;
+    if (actionDraft.trim()) {
+      await handleAddAction(actionDraft);
+    }
+    setMaxUnlockedStep(3);
+    setStep(3);
+  };
+
   const availableGeneratedActions = useMemo(() => {
     const saved = new Set(savedActions.map((item) => item.text.trim().toLowerCase()).filter(Boolean));
     return generatedActions.filter((item) => !saved.has(item.trim().toLowerCase()));
@@ -297,8 +306,19 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
               ))}
             </Stack>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <TextField label="Добавить действие вручную" value={actionDraft} onChange={(e) => setActionDraft(e.target.value)} fullWidth size="small" disabled={actionsLoading} />
-              <Button variant="outlined" onClick={() => void handleAddAction(actionDraft)} disabled={!actionDraft.trim() || addingAction || actionsLoading}>Добавить</Button>
+              <TextField
+                label="Добавить действие вручную"
+                value={actionDraft}
+                onChange={(e) => setActionDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  void handleAddAction(actionDraft);
+                }}
+                fullWidth
+                size="small"
+                disabled={actionsLoading}
+              />
             </Stack>
             <Stack spacing={0.5}>
               <Typography variant="body2" color="text.secondary">Добавленные действия</Typography>
@@ -309,7 +329,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
                 </Stack>
               ))}
             </Stack>
-            <Button variant="contained" onClick={() => { setMaxUnlockedStep(3); setStep(3); }} disabled={!currentProjectId || !currentNodeId}>Готово</Button>
+            <Button variant="contained" onClick={() => void handleFinishStep2()} disabled={!currentProjectId || !currentNodeId || addingAction}>Готово</Button>
           </Stack>
         </SectionCard>
       ) : null}
