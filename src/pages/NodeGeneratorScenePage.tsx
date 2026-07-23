@@ -164,7 +164,7 @@ type LocalSceneGraphProps = {
 
 function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectScene }: LocalSceneGraphProps) {
   const theme = useTheme();
-  const [depth, setDepth] = useState(1);
+  const [depth, setDepth] = useState(() => readSavedGraphDepth());
   const elk = useMemo(() => {
     try {
       const ctor = (ELK as unknown as { default?: new () => { layout: (graph: unknown) => Promise<unknown> } }).default
@@ -369,6 +369,15 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
     });
   }, [maxReachableDepth]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem('nodeGenerator.localGraphDepth', String(depth));
+    } catch {
+      // ignore
+    }
+  }, [depth]);
+
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -555,4 +564,16 @@ function normalizeActions(node: WorkspaceNode | null | undefined): Array<{ id: s
   return node.actions
     .map((action) => ({ id: String(action?.id ?? '').trim(), text: String(action?.text ?? '').trim() }))
     .filter((action) => action.id.length > 0);
+}
+
+function readSavedGraphDepth(): number {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const raw = window.localStorage.getItem('nodeGenerator.localGraphDepth');
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return 1;
+    return Math.max(1, Math.floor(value));
+  } catch {
+    return 1;
+  }
 }
