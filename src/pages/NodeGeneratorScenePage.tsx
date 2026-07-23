@@ -176,7 +176,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
     }
   }, []);
 
-  const { initialNodes, initialEdges, maxReachableDepth } = useMemo(() => {
+  const { initialNodes, initialEdges } = useMemo(() => {
     const centerId = `scene:${sceneId}`;
     const byId = new Map<string, WorkspaceNode>();
     projectNodes.forEach((node) => {
@@ -346,7 +346,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
       });
     }
 
-    return { initialNodes: flowNodes, initialEdges: flowEdges, maxReachableDepth: maxDepth === 0 ? 1 : maxDepth };
+    return { initialNodes: flowNodes, initialEdges: flowEdges };
   }, [
     depth,
     incoming,
@@ -360,15 +360,6 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
     theme.palette.text.secondary,
     theme.shadows,
   ]);
-
-  useEffect(() => {
-    setDepth((prev) => {
-      const safeMax = Math.max(1, maxReachableDepth);
-      if (prev > safeMax) return safeMax;
-      if (prev < 1) return 1;
-      return prev;
-    });
-  }, [maxReachableDepth]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
