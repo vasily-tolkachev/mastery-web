@@ -1,6 +1,19 @@
 import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import ELK from 'elkjs/lib/elk.bundled.js';
+import {
+  Background,
+  Controls,
+  MarkerType,
+  Position,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
+  type Edge,
+  type Node,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import {
   createWorkspaceNode,
   deleteWorkspaceNode,
@@ -98,16 +111,24 @@ export function NodeGeneratorScenePage() {
       </Breadcrumbs>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <SectionCard title="Локальный граф">
-          <LocalSceneGraph
-            sceneId={scene.id}
-            incoming={incoming}
-            outgoing={outgoing}
+        <SectionCard title="Граф сцен">
+          <SceneTreeList
+            nodes={nodes}
+            selectedSceneId={scene.id}
             onSelectScene={(nodeId) => navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(nodeId)}`)}
           />
         </SectionCard>
 
         <Stack spacing={2} sx={{ flex: 1 }}>
+          <SectionCard title="Локальный граф">
+            <LocalSceneGraph
+              sceneId={scene.id}
+              incoming={incoming}
+              outgoing={outgoing}
+              onSelectScene={(nodeId) => navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(nodeId)}`)}
+            />
+          </SectionCard>
+
           <SectionCard title={`Сцена ${scene.id}`}>
             <Stack spacing={1.25}>
               <Typography variant="subtitle2">В эту сцену можно попасть из</Typography>
@@ -143,7 +164,7 @@ export function NodeGeneratorScenePage() {
                 <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/edit`}>
                   Редактирование
                 </Button>
-                <Button variant="outlined" color="error" onClick={() => void handleDeleteScene()}>
+                <Button variant="outlined" onClick={() => void handleDeleteScene()}>
                   Удалить сцену
                 </Button>
               </Stack>
@@ -155,6 +176,113 @@ export function NodeGeneratorScenePage() {
   );
 }
 
+type SceneTreeListProps = {
+  nodes: WorkspaceNode[];
+  selectedSceneId: string;
+  onSelectScene: (nodeId: string) => void;
+};
+
+function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
+  const byParent = new Map<string, WorkspaceNode[]>();
+  const roots: WorkspaceNode[] = [];
+  const [expandedNodeIds, setExpandedNodeIds] = useState<Record<string, boolean>>({});
+
+  nodes.forEach((node) => {
+    const parentId = (node.sourceNodeId ?? '').trim();
+    if (!parentId) {
+      roots.push(node);
+      return;
+    }
+    const key = parentId.toUpperCase();
+    const list = byParent.get(key) ?? [];
+    list.push(node);
+    byParent.set(key, list);
+  });
+
+  roots.sort((a, b) => a.id.localeCompare(b.id));
+  byParent.forEach((list) => list.sort((a, b) => a.id.localeCompare(b.id)));
+
+  useEffect(() => {
+    const parentByNode = new Map<string, string>();
+    nodes.forEach((node) => {
+      if (node.sourceNodeId) parentByNode.set(node.id.toUpperCase(), node.sourceNodeId.toUpperCase());
+    });
+    const nextExpanded: Record<string, boolean> = {};
+    let cursor = selectedSceneId.toUpperCase();
+    while (parentByNode.has(cursor)) {
+      const parentId = parentByNode.get(cursor);
+      if (!parentId) break;
+      nextExpanded[parentId] = true;
+      cursor = parentId;
+    }
+    setExpandedNodeIds((prev) => ({ ...prev, ...nextExpanded }));
+  }, [nodes, selectedSceneId]);
+
+  const toggleExpanded = (nodeId: string) => {
+    const key = nodeId.toUpperCase();
+    setExpandedNodeIds((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const renderNode = (node: WorkspaceNode, level: number): React.ReactNode => {
+    const children = byParent.get(node.id.toUpperCase()) ?? [];
+    const groupedByAction = new Map<string, WorkspaceNode[]>();
+    children.forEach((child) => {
+      const actionKey = (child.sourceActionId ?? 'NO_ACTION').toUpperCase();
+      const list = groupedByAction.get(actionKey) ?? [];
+      list.push(child);
+      groupedByAction.set(actionKey, list);
+    });
+    const actionOrder = Array.from(groupedByAction.keys()).sort();
+
+    return (
+      <Box key={node.id} sx={{ ml: level * 1.25 }}>
+        <Stack direction="row" spacing={0.5}>
+          {children.length > 0 ? (
+            <Button size="small" variant="text" onClick={() => toggleExpanded(node.id)} sx={{ minWidth: 28, px: 0.5, alignSelf: 'flex-start' }}>
+              {expandedNodeIds[node.id.toUpperCase()] ? '−' : '+'}
+            </Button>
+          ) : (
+            <Box sx={{ width: 28 }} />
+          )}
+          <Box
+            role="button"
+            tabIndex={0}
+            onClick={() => onSelectScene(node.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') onSelectScene(node.id);
+            }}
+            sx={{
+              border: 1,
+              borderColor: selectedSceneId === node.id ? 'primary.main' : 'divider',
+              borderRadius: 1,
+              p: 1,
+              cursor: 'pointer',
+              flex: 1,
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
+            <Typography variant="caption" color="text.secondary">действий: {normalizeActions(node).length}</Typography>
+          </Box>
+        </Stack>
+        {expandedNodeIds[node.id.toUpperCase()] ? actionOrder.map((actionId) => {
+          const actionText = normalizeActions(node).find((action) => action.id.toUpperCase() === actionId)?.text ?? actionId;
+          const groupedChildren = groupedByAction.get(actionId) ?? [];
+          return (
+            <Box key={`${node.id}-${actionId}`} sx={{ mt: 0.5, ml: 1 }}>
+              <Typography variant="caption" color="text.secondary">из действия: {actionText}</Typography>
+              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                {groupedChildren.map((child) => renderNode(child, level + 1))}
+              </Stack>
+            </Box>
+          );
+        }) : null}
+      </Box>
+    );
+  };
+
+  return <Stack spacing={0.75} sx={{ minWidth: { md: 260 } }}>{roots.map((root) => renderNode(root, 0))}</Stack>;
+}
+
 type LocalSceneGraphProps = {
   sceneId: string;
   incoming: Array<{ nodeId: string; actionText: string }>;
@@ -163,38 +291,147 @@ type LocalSceneGraphProps = {
 };
 
 function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSceneGraphProps) {
+  const elk = useMemo(() => {
+    try {
+      const ctor = (ELK as unknown as { default?: new () => ELK }).default ?? (ELK as unknown as new () => ELK);
+      return new ctor();
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const { initialNodes, initialEdges } = useMemo(() => {
+    const centerId = `scene:${sceneId}`;
+    const nodes: Node[] = [
+      {
+        id: centerId,
+        data: { label: `Сцена ${sceneId}`, targetSceneId: sceneId },
+        position: { x: 0, y: 0 },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
+        style: {
+          border: '2px solid #1976d2',
+          borderRadius: 8,
+          padding: '8px 10px',
+          minWidth: 140,
+          textAlign: 'center',
+          background: '#fff',
+          fontWeight: 600,
+        },
+      },
+    ];
+    const edges: Edge[] = [];
+
+    incoming.forEach((item, index) => {
+      const nodeId = `in:${item.nodeId}:${index}`;
+      nodes.push({
+        id: nodeId,
+        data: { label: item.nodeId, targetSceneId: item.nodeId },
+        position: { x: 0, y: 0 },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Bottom,
+        style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff' },
+      });
+      edges.push({
+        id: `e:${nodeId}->${centerId}`,
+        source: nodeId,
+        target: centerId,
+        label: item.actionText,
+        markerEnd: { type: MarkerType.ArrowClosed },
+      });
+    });
+
+    outgoing.forEach((item, index) => {
+      const nodeId = `out:${item.nodeId ?? 'end'}:${index}`;
+      nodes.push({
+        id: nodeId,
+        data: { label: item.nodeId ?? 'Конец', targetSceneId: item.nodeId ?? null },
+        position: { x: 0, y: 0 },
+        sourcePosition: Position.Top,
+        targetPosition: Position.Top,
+        style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff' },
+      });
+      edges.push({
+        id: `e:${centerId}->${nodeId}`,
+        source: centerId,
+        target: nodeId,
+        label: item.actionText,
+        markerEnd: { type: MarkerType.ArrowClosed },
+      });
+    });
+
+    return { initialNodes: nodes, initialEdges: edges };
+  }, [incoming, outgoing, sceneId]);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  useEffect(() => {
+    setNodes(initialNodes);
+  }, [initialNodes, setNodes]);
+
+  useEffect(() => {
+    setEdges(initialEdges);
+  }, [initialEdges, setEdges]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const runLayout = async () => {
+      if (!elk) return;
+      try {
+        const graph = {
+          id: 'local-scene-graph',
+          layoutOptions: {
+            'elk.algorithm': 'layered',
+            'elk.direction': 'DOWN',
+            'elk.layered.spacing.nodeNodeBetweenLayers': '80',
+            'elk.spacing.nodeNode': '40',
+            'elk.edgeRouting': 'ORTHOGONAL',
+          },
+          children: initialNodes.map((node) => ({ id: node.id, width: 150, height: 52 })),
+          edges: initialEdges.map((edge) => ({ id: edge.id, sources: [edge.source], targets: [edge.target] })),
+        };
+        const layout = await elk.layout(graph as never);
+        if (cancelled) return;
+        const byId = new Map(((layout.children ?? []) as Array<{ id?: string; x?: number; y?: number }>).map((item) => [item.id ?? '', item]));
+        setNodes((prev) => prev.map((node) => {
+          const p = byId.get(node.id);
+          if (!p) return node;
+          return { ...node, position: { x: p.x ?? node.position.x, y: p.y ?? node.position.y } };
+        }));
+      } catch {
+        if (cancelled) return;
+      }
+    };
+    void runLayout();
+    return () => {
+      cancelled = true;
+    };
+  }, [elk, initialEdges, initialNodes, setNodes]);
+
   return (
-    <Stack spacing={1.25}>
-      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-        {incoming.length === 0 ? <Typography variant="body2" color="text.secondary">Нет входящих переходов</Typography> : null}
-        {incoming.map((item) => (
-          <Button key={`${item.nodeId}-${item.actionText}`} size="small" variant="outlined" onClick={() => onSelectScene(item.nodeId)}>
-            {item.nodeId}
-          </Button>
-        ))}
-      </Stack>
-
-      <Box sx={{ border: 1, borderColor: 'primary.main', borderRadius: 1, p: 1, textAlign: 'center' }}>
-        <Typography variant="subtitle2">Сцена {sceneId}</Typography>
-      </Box>
-
-      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-        {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">Нет исходящих переходов</Typography> : null}
-        {outgoing.map((item, index) => (
-          <Button
-            key={`${index}-${item.actionText}`}
-            size="small"
-            variant="outlined"
-            onClick={() => {
-              if (item.nodeId) onSelectScene(item.nodeId);
-            }}
-            disabled={!item.nodeId}
-          >
-            {item.nodeId ?? 'Конец'}
-          </Button>
-        ))}
-      </Stack>
-    </Stack>
+    <Box sx={{ height: 320, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable
+        onNodeClick={(_, node) => {
+          const target = node.data?.targetSceneId as string | null | undefined;
+          if (!target) return;
+          onSelectScene(target);
+        }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background gap={18} size={1} />
+        <Controls showInteractive={false} />
+      </ReactFlow>
+    </Box>
   );
 }
 
