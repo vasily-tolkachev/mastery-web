@@ -578,13 +578,13 @@ function normalizeActions(node: WorkspaceNode | null | undefined): Array<{ id: s
 }
 
 function readSavedGraphDepth(): number {
-  if (typeof window === 'undefined') return 1;
+  if (typeof window === 'undefined') return 3;
   try {
     const raw = window.localStorage.getItem('nodeGenerator.localGraphDepth');
     const value = Number(raw);
-    if (!Number.isFinite(value)) return 1;
+    if (!Number.isFinite(value)) return 3;
     return Math.max(1, Math.floor(value));
   } catch {
-    return 1;
+    return 3;
   }
 }
