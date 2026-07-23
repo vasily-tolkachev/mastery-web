@@ -60,7 +60,7 @@ export function NodeGeneratorProjectsPage() {
       clearUiError();
       const parsed = JSON.parse(await file.text()) as unknown;
       const imported = await importNodeGeneratorProjectJson(parsed);
-      navigate(toProjectScenesPath(imported));
+      navigate(toProjectHomePath(imported));
     } catch (e) {
       applyUiError(e, 'Не удалось импортировать JSON');
     }
@@ -131,7 +131,7 @@ export function NodeGeneratorProjectsPage() {
               <Box sx={{ flex: 1, minWidth: 0, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                 <Button
                   fullWidth
-                  onClick={() => navigate(toProjectScenesPath(project))}
+                  onClick={() => navigate(toProjectHomePath(project))}
                   sx={{
                     justifyContent: 'flex-start',
                     textTransform: 'none',
@@ -191,7 +191,6 @@ export function NodeGeneratorProjectsPage() {
   );
 }
 
-function toProjectScenesPath(project: NodeGeneratorProject): string {
-  const firstSceneId = project.workspace?.nodes?.[0]?.id ?? 'N1';
-  return `/node-generator/projects/${project.id}/scenes/${encodeURIComponent(firstSceneId)}`;
+function toProjectHomePath(project: NodeGeneratorProject): string {
+  return `/node-generator/projects/${project.id}`;
 }

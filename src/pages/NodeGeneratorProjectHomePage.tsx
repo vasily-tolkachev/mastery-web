@@ -25,6 +25,10 @@ export function NodeGeneratorProjectHomePage() {
     [project],
   );
   const knowledgeCount = useMemo(() => project?.workspace?.globalKnowledge?.length ?? 0, [project]);
+  const firstSceneId = useMemo(
+    () => project?.workspace?.nodes?.map((node) => (node.id ?? '').trim()).find((id) => id.length > 0) ?? 'N1',
+    [project],
+  );
 
   const clearUiError = () => {
     setError(null);
@@ -118,7 +122,7 @@ export function NodeGeneratorProjectHomePage() {
           </Button>
           <NavCard
             title="Продолжить работу"
-            to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(project.workspace?.nodes?.[0]?.id ?? 'N1')}`}
+            to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(firstSceneId)}`}
           />
           <NavCard title="Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
           <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} disabled />

@@ -24,7 +24,7 @@ export function NodeGeneratorScenePage() {
   const [actionDraft, setActionDraft] = useState('');
 
   const currentScene = useMemo(
-    () => project?.workspace?.nodes.find((node) => node.id.toUpperCase() === sceneId.toUpperCase()) ?? null,
+    () => project?.workspace?.nodes.find((node) => normalizeNodeId(node.id) === normalizeNodeId(sceneId)) ?? null,
     [project, sceneId],
   );
 
@@ -271,8 +271,11 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
           borderRadius: '8px',
           padding: '10px 12px',
           backgroundColor: '#fff',
+          color: '#1f2937',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
           minWidth: 220,
           fontSize: 13,
+          fontWeight: 500,
         },
       };
     });
@@ -309,7 +312,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         nodes={flowNodes}
         edges={flowEdges}
         fitView
-        nodesDraggable={false}
+        nodesDraggable
         nodesConnectable={false}
         elementsSelectable
         onNodeClick={(_, node) => onSelectScene(node.id)}
@@ -323,11 +326,20 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
 }
 
 function findNewNodeId(previousNodes: WorkspaceNode[], nextNodes: WorkspaceNode[]): string | null {
-  const previousIds = new Set(previousNodes.map((node) => node.id.toUpperCase()));
-  const created = nextNodes.find((node) => !previousIds.has(node.id.toUpperCase()));
+  const previousIds = new Set(previousNodes.map((node) => normalizeNodeId(node.id)).filter((id) => id.length > 0));
+  const created = nextNodes.find((node) => {
+    const id = normalizeNodeId(node.id);
+    return id.length > 0 && !previousIds.has(id);
+  });
   return created?.id ?? null;
 }
 
 function findNodeById(nodes: WorkspaceNode[], nodeId: string): WorkspaceNode | null {
-  return nodes.find((node) => node.id.toUpperCase() === nodeId.toUpperCase()) ?? null;
+  const target = normalizeNodeId(nodeId);
+  if (!target) return null;
+  return nodes.find((node) => normalizeNodeId(node.id) === target) ?? null;
+}
+
+function normalizeNodeId(id: string | null | undefined): string {
+  return (id ?? '').trim().toUpperCase();
 }
