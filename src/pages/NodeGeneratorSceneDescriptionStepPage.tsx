@@ -289,6 +289,15 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       {step === 2 ? (
         <SectionCard title="Шаг 2. Действия">
           <Stack spacing={1.5}>
+            <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+              <Stack spacing={0.5}>
+                <Typography variant="subtitle2">Выбранное описание сцены</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {sceneText.trim() || 'Описание не выбрано.'}
+                </Typography>
+              </Stack>
+            </Box>
+
             {actionsLoading ? <Typography variant="body2">Генерация действий...</Typography> : null}
             {!actionsLoading && generatedActions.length === 0 ? (
               <Typography variant="body2" color="text.secondary">Список действий пуст.</Typography>
