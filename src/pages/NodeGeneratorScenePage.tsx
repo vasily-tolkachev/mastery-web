@@ -433,7 +433,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
               position: { x: (index % 6) * 180, y: Math.floor(index / 6) * 110 },
             };
           }
-          return { ...node, position: { x: p.x, y: p.y } };
+          return { ...node, position: { x: p.x ?? node.position.x, y: p.y ?? node.position.y } };
         }));
       } catch {
         if (cancelled) return;
