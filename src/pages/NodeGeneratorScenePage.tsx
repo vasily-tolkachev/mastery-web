@@ -194,11 +194,22 @@ type SceneTreeListProps = {
 
 function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
   const { flowNodes, flowEdges } = useMemo(() => {
+    const uniqueNodes: WorkspaceNode[] = [];
+    const seenNodeIds = new Set<string>();
+    for (const node of nodes) {
+      const id = (node.id ?? '').trim();
+      if (!id) continue;
+      const key = id.toUpperCase();
+      if (seenNodeIds.has(key)) continue;
+      seenNodeIds.add(key);
+      uniqueNodes.push({ ...node, id });
+    }
+    const existingNodeIds = new Set(uniqueNodes.map((node) => node.id.toUpperCase()));
     const childrenByParent = new Map<string, WorkspaceNode[]>();
     const roots: WorkspaceNode[] = [];
-    for (const node of nodes) {
+    for (const node of uniqueNodes) {
       const parentId = (node.sourceNodeId ?? '').trim();
-      if (!parentId) {
+      if (!parentId || !existingNodeIds.has(parentId.toUpperCase())) {
         roots.push(node);
         continue;
       }
@@ -232,7 +243,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
     }
 
     const levelBuckets = new Map<number, WorkspaceNode[]>();
-    for (const node of nodes) {
+    for (const node of uniqueNodes) {
       const level = levels.get(node.id.toUpperCase()) ?? 0;
       const bucket = levelBuckets.get(level) ?? [];
       bucket.push(node);
@@ -245,7 +256,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
       });
     }
 
-    const flowNodesLocal: Node[] = nodes.map((node) => {
+    const flowNodesLocal: Node[] = uniqueNodes.map((node) => {
       const level = levels.get(node.id.toUpperCase()) ?? 0;
       const index = orderInLevel.get(`${level}:${node.id.toUpperCase()}`) ?? 0;
       const isSelected = selectedSceneId.toUpperCase() === node.id.toUpperCase();
@@ -266,12 +277,15 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
       };
     });
 
-    const flowEdgesLocal: Edge[] = nodes
+    const flowEdgesLocal: Edge[] = uniqueNodes
       .filter((node) => (node.sourceNodeId ?? '').trim().length > 0)
       .map((node) => {
         const sourceNodeId = node.sourceNodeId ?? '';
+        if (!existingNodeIds.has(sourceNodeId.toUpperCase()) || !existingNodeIds.has(node.id.toUpperCase())) {
+          return null;
+        }
         const sourceActionId = (node.sourceActionId ?? '').toUpperCase();
-        const sourceNode = nodes.find((item) => item.id.toUpperCase() === sourceNodeId.toUpperCase());
+        const sourceNode = uniqueNodes.find((item) => item.id.toUpperCase() === sourceNodeId.toUpperCase());
         const actionText = sourceNode?.actions.find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? '';
         return {
           id: `${sourceNodeId}->${node.id}:${sourceActionId || 'DIRECT'}`,
@@ -283,7 +297,8 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
           labelStyle: { fontSize: 11, fill: '#4b4b4b' },
           labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
         };
-      });
+      })
+      .filter((edge): edge is Edge => edge != null);
 
     return { flowNodes: flowNodesLocal, flowEdges: flowEdgesLocal };
   }, [nodes, selectedSceneId]);
