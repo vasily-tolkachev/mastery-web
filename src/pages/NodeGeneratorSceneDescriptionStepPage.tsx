@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -24,10 +24,12 @@ type Props = {
   actionId?: string;
 };
 
+const STEPS = ['Описание', 'Действия', 'Готово'];
+
 export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId, actionId }: Props) {
   const navigate = useNavigate();
   const setProjectCache = useSetNodeGeneratorProjectCache();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [ideas, setIdeas] = useState<FirstSceneIdea[]>([]);
   const [selectedIdeaIndex, setSelectedIdeaIndex] = useState<number | null>(null);
   const [sceneText, setSceneText] = useState('');
@@ -179,6 +181,16 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
         <Typography color="text.primary">{mode === 'first' ? 'Новый квест' : 'Новая сцена'}</Typography>
       </Breadcrumbs>
 
+      <SectionCard title={`Создание сцены ${currentNodeId || 'N1'}`}>
+        <Stepper activeStep={step - 1} alternativeLabel>
+          {STEPS.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+      </SectionCard>
+
       {step === 1 ? (
         <SectionCard title="Шаг 1. Описание сцены">
           <Stack spacing={1.5}>
@@ -299,6 +311,17 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
               ))}
             </Stack>
 
+            <Button variant="contained" onClick={() => setStep(3)} disabled={!currentProjectId || !currentNodeId}>
+              Готово
+            </Button>
+          </Stack>
+        </SectionCard>
+      ) : null}
+
+      {step === 3 ? (
+        <SectionCard title="Шаг 3. Готово">
+          <Stack spacing={1}>
+            <Typography variant="body2">Сцена готова. Можно перейти к редактированию.</Typography>
             <Button
               variant="contained"
               onClick={() => navigate(`/node-generator/projects/${currentProjectId}/scenes/${encodeURIComponent(currentNodeId)}`)}
