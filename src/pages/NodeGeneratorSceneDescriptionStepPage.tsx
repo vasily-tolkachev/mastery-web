@@ -202,7 +202,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       </Breadcrumbs>
 
       <SectionCard title={`Создание сцены ${currentNodeId || 'N1'}`}>
-        <Stepper activeStep={step - 1} alternativeLabel>
+        <Stepper activeStep={step - 1} alternativeLabel nonLinear>
           {STEPS.map((label, index) => (
             <Step key={label}>
               <StepButton onClick={() => handleStepClick((index + 1) as 1 | 2 | 3)}>
