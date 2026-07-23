@@ -62,9 +62,11 @@ export function NodeGeneratorScenePage() {
     setUpdatedProject(await updateWorkspaceNodeDescription(project.id, currentScene.id, actionDescriptionDraft, stateDescriptionDraft));
   };
 
-  const handleAddAction = async () => {
-    if (!project || !currentScene || !actionDraft.trim()) return;
-    const updated = await addWorkspaceNodeAction(project.id, currentScene.id, actionDraft);
+  const handleAddAction = async (text?: string) => {
+    if (!project || !currentScene) return;
+    const value = (text ?? actionDraft).trim();
+    if (!value) return;
+    const updated = await addWorkspaceNodeAction(project.id, currentScene.id, value);
     setActionDraft('');
     setUpdatedProject(updated);
   };
@@ -134,8 +136,8 @@ export function NodeGeneratorScenePage() {
               <TextField label="Описание состояния" value={stateDescriptionDraft} onChange={(e) => setStateDescriptionDraft(e.target.value)} multiline minRows={4} />
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
                 <Button variant="contained" onClick={() => void handleSaveDescription()}>Сохранить описание</Button>
-                <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/generate`}>
-                  Продолжить создание
+                <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/edit`}>
+                  Редактирование
                 </Button>
                 <Button variant="outlined" color="error" onClick={() => void handleDeleteScene()}>Удалить сцену</Button>
               </Stack>
@@ -148,6 +150,21 @@ export function NodeGeneratorScenePage() {
                 <TextField label="Новое действие" size="small" value={actionDraft} onChange={(e) => setActionDraft(e.target.value)} fullWidth />
                 <Button variant="contained" onClick={() => void handleAddAction()} disabled={!actionDraft.trim()}>Добавить</Button>
               </Stack>
+              <Typography variant="body2" color="text.secondary">Сгенерированные варианты</Typography>
+              {(scene.generatedActionsDraft ?? []).length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Сохранённых вариантов пока нет.</Typography>
+              ) : null}
+              {(scene.generatedActionsDraft ?? []).map((suggestedAction, index) => (
+                <Box key={`${index}-${suggestedAction}`} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems={{ md: 'center' }}>
+                    <Typography variant="body2" sx={{ flex: 1 }}>{suggestedAction}</Typography>
+                    <Button size="small" variant="outlined" onClick={() => void handleAddAction(suggestedAction)}>
+                      Добавить
+                    </Button>
+                  </Stack>
+                </Box>
+              ))}
+              <Typography variant="body2" color="text.secondary">Добавленные действия</Typography>
               {(scene.actions ?? []).map((action) => (
                 <Box key={action.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
                   <Typography variant="body2">{action.text}</Typography>

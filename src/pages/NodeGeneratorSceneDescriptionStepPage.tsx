@@ -16,7 +16,7 @@ import { SectionCard } from '../components/ui';
 import { useNodeGeneratorProject } from '../hooks/useNodeGeneratorProject';
 import { useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
 
-type Mode = 'first' | 'next';
+type Mode = 'first' | 'next' | 'edit';
 
 type Props = {
   mode: Mode;
@@ -30,7 +30,7 @@ const STEPS = ['Описание', 'Действия', 'Готово'];
 export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId, actionId }: Props) {
   const navigate = useNavigate();
   const setProjectCache = useSetNodeGeneratorProjectCache();
-  const { data: contextProject } = useNodeGeneratorProject(mode === 'next' ? (projectId ?? '') : '');
+  const { data: contextProject } = useNodeGeneratorProject(mode === 'first' ? '' : (projectId ?? ''));
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [maxUnlockedStep, setMaxUnlockedStep] = useState<1 | 2 | 3>(1);
   const [ideas, setIdeas] = useState<FirstSceneIdea[]>([]);
@@ -58,12 +58,21 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     return previousScene.actions.find((action) => action.id === actionId)?.text ?? '';
   }, [actionId, previousScene]);
 
+  const editableScene = useMemo(() => {
+    if (mode !== 'edit' || !contextProject?.workspace || !sceneId) return null;
+    return contextProject.workspace.nodes.find((node) => node.id.toUpperCase() === sceneId.toUpperCase()) ?? null;
+  }, [contextProject, mode, sceneId]);
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         setError(null);
         setLoadingIdeas(true);
+        if (mode === 'edit') {
+          setIdeas([]);
+          return;
+        }
         const list = mode === 'first'
           ? await generateFirstSceneIdeas('')
           : await generateNextSceneIdeas(projectId ?? '', sceneId ?? '', actionId ?? '');
@@ -83,12 +92,27 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     };
   }, [actionId, mode, projectId, sceneId]);
 
+  useEffect(() => {
+    if (mode !== 'edit' || !editableScene) return;
+    setCurrentProjectId(projectId ?? '');
+    setCurrentNodeId(editableScene.id);
+    setSceneText(editableScene.stateDescription || editableScene.actionDescription || '');
+    setSavedActions((editableScene.actions ?? []).map((item) => item.text).filter((item) => item.trim().length > 0));
+    setMaxUnlockedStep(2);
+  }, [editableScene, mode, projectId]);
+
   const canContinueFromStep1 = useMemo(() => {
     if (!sceneText.trim()) return false;
     return true;
   }, [sceneText]);
 
   const ensureScene = async () => {
+    if (mode === 'edit') {
+      if (!(projectId ?? '').trim() || !(sceneId ?? '').trim()) {
+        throw new Error('Сцена для редактирования не найдена');
+      }
+      return { projectId: projectId ?? '', nodeId: sceneId ?? '' };
+    }
     if (mode === 'first') {
       const project = await createNodeGeneratorProject(buildProjectName(sceneText, selectedIdeaIndex, ideas), 'classic-adventure');
       const withNode = await createWorkspaceNode(project.id);
@@ -198,7 +222,9 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
         <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
           Все квесты
         </MuiLink>
-        <Typography color="text.primary">{mode === 'first' ? 'Новый квест' : 'Новая сцена'}</Typography>
+        <Typography color="text.primary">
+          {mode === 'first' ? 'Новый квест' : mode === 'next' ? 'Новая сцена' : 'Редактирование сцены'}
+        </Typography>
       </Breadcrumbs>
 
       <SectionCard title={`Создание сцены ${currentNodeId || 'N1'}`}>
@@ -239,41 +265,43 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
               minRows={4}
             />
 
-            <Typography variant="body2" color="text.secondary">
-              Варианты от ИИ
-            </Typography>
-            {loadingIdeas ? <Typography variant="body2">Генерация вариантов...</Typography> : null}
-            {!loadingIdeas && ideas.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">Варианты пока не получены.</Typography>
+            {mode !== 'edit' ? (
+              <Stack spacing={1}>
+                <Typography variant="body2" color="text.secondary">
+                  Варианты от ИИ
+                </Typography>
+                {loadingIdeas ? <Typography variant="body2">Генерация вариантов...</Typography> : null}
+                {!loadingIdeas && ideas.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">Варианты пока не получены.</Typography>
+                ) : null}
+                {ideas.map((item, index) => (
+                  <Box
+                    key={`${index}-${item.title}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setSelectedIdeaIndex(index);
+                      setSceneText(item.scenarioText);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      setSelectedIdeaIndex(index);
+                      setSceneText(item.scenarioText);
+                    }}
+                    sx={{
+                      border: 1,
+                      borderColor: selectedIdeaIndex === index ? 'primary.main' : 'divider',
+                      borderRadius: 1,
+                      p: 1,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Typography variant="subtitle2">{item.title}</Typography>
+                    <Typography variant="body2">{item.scenarioText}</Typography>
+                  </Box>
+                ))}
+              </Stack>
             ) : null}
-            <Stack spacing={1}>
-              {ideas.map((item, index) => (
-                <Box
-                  key={`${index}-${item.title}`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    setSelectedIdeaIndex(index);
-                    setSceneText(item.scenarioText);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    setSelectedIdeaIndex(index);
-                    setSceneText(item.scenarioText);
-                  }}
-                  sx={{
-                    border: 1,
-                    borderColor: selectedIdeaIndex === index ? 'primary.main' : 'divider',
-                    borderRadius: 1,
-                    p: 1,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Typography variant="subtitle2">{item.title}</Typography>
-                  <Typography variant="body2">{item.scenarioText}</Typography>
-                </Box>
-              ))}
-            </Stack>
 
             <Button
               variant="contained"
