@@ -1,4 +1,5 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, IconButton, Link as MuiLink, Stack, Tooltip, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ELK from 'elkjs/lib/elk.bundled.js';
@@ -162,6 +163,7 @@ type LocalSceneGraphProps = {
 };
 
 function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectScene }: LocalSceneGraphProps) {
+  const theme = useTheme();
   const [depth, setDepth] = useState(1);
   const elk = useMemo(() => {
     try {
@@ -224,14 +226,14 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           sourcePosition: Position.Bottom,
           targetPosition: Position.Top,
           style: {
-            border: isCenter ? '2px solid #1976d2' : '1px solid #c4c4c4',
+            border: isCenter ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
             borderRadius: 8,
             padding: '8px 10px',
             minWidth: 140,
             textAlign: 'center',
-            background: '#fff',
-            color: '#0f172a',
-            boxShadow: isCenter ? '0 6px 18px rgba(2, 6, 23, 0.12)' : 'none',
+            background: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            boxShadow: isCenter ? theme.shadows[3] : 'none',
             fontWeight: isCenter ? 600 : 500,
           },
         } as Node;
@@ -246,9 +248,9 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
         target: `scene:${edge.targetId}`,
         label: edge.actionText,
         markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: '#64748b', strokeWidth: 1.4 },
-        labelStyle: { fill: '#334155', fontSize: 11 },
-        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
+        style: { stroke: theme.palette.text.secondary, strokeWidth: 1.4 },
+        labelStyle: { fill: theme.palette.text.secondary, fontSize: 11 },
+        labelBgStyle: { fill: theme.palette.background.paper, fillOpacity: 0.95 },
       }));
 
     if (flowNodes.length === 1) {
@@ -260,7 +262,14 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           position: { x: 0, y: 0 },
           sourcePosition: Position.Bottom,
           targetPosition: Position.Bottom,
-          style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff', color: '#0f172a' },
+          style: {
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 8,
+            padding: '6px 8px',
+            minWidth: 100,
+            background: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+          },
         });
         flowEdges.push({
           id: `e:${nodeId}->${centerId}`,
@@ -268,9 +277,9 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           target: centerId,
           label: item.actionText,
           markerEnd: { type: MarkerType.ArrowClosed },
-          style: { stroke: '#64748b', strokeWidth: 1.4 },
-          labelStyle: { fill: '#334155', fontSize: 11 },
-          labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
+          style: { stroke: theme.palette.text.secondary, strokeWidth: 1.4 },
+          labelStyle: { fill: theme.palette.text.secondary, fontSize: 11 },
+          labelBgStyle: { fill: theme.palette.background.paper, fillOpacity: 0.95 },
         });
       });
       outgoing.forEach((item, index) => {
@@ -281,7 +290,14 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           position: { x: 0, y: 0 },
           sourcePosition: Position.Top,
           targetPosition: Position.Top,
-          style: { border: '1px solid #c4c4c4', borderRadius: 8, padding: '6px 8px', minWidth: 100, background: '#fff', color: '#0f172a' },
+          style: {
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 8,
+            padding: '6px 8px',
+            minWidth: 100,
+            background: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+          },
         });
         flowEdges.push({
           id: `e:${centerId}->${nodeId}`,
@@ -289,15 +305,27 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           target: nodeId,
           label: item.actionText,
           markerEnd: { type: MarkerType.ArrowClosed },
-          style: { stroke: '#64748b', strokeWidth: 1.4 },
-          labelStyle: { fill: '#334155', fontSize: 11 },
-          labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
+          style: { stroke: theme.palette.text.secondary, strokeWidth: 1.4 },
+          labelStyle: { fill: theme.palette.text.secondary, fontSize: 11 },
+          labelBgStyle: { fill: theme.palette.background.paper, fillOpacity: 0.95 },
         });
       });
     }
 
     return { initialNodes: flowNodes, initialEdges: flowEdges };
-  }, [depth, incoming, projectNodes, outgoing, sceneId]);
+  }, [
+    depth,
+    incoming,
+    projectNodes,
+    outgoing,
+    sceneId,
+    theme.palette.background.paper,
+    theme.palette.divider,
+    theme.palette.primary.main,
+    theme.palette.text.primary,
+    theme.palette.text.secondary,
+    theme.shadows,
+  ]);
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -348,18 +376,38 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
 
   return (
     <Stack spacing={1}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="body2" color="text.secondary">Глубина</Typography>
-        {[1, 2, 3, 4].map((value) => (
-          <Button
-            key={value}
-            size="small"
-            variant={depth === value ? 'contained' : 'outlined'}
-            onClick={() => setDepth(value)}
-          >
-            {value}
-          </Button>
-        ))}
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+          <Tooltip title="Ближе">
+            <IconButton
+              size="small"
+              onClick={() => setDepth((prev) => Math.max(1, prev - 1))}
+              sx={{ width: 22, height: 22, border: 1, borderColor: 'divider', borderRadius: 1 }}
+            >
+              <Typography variant="caption">−</Typography>
+            </IconButton>
+          </Tooltip>
+          <Typography variant="caption" sx={{ minWidth: 20, textAlign: 'center', color: 'text.secondary' }}>{depth}</Typography>
+          <Tooltip title="Дальше">
+            <IconButton
+              size="small"
+              onClick={() => setDepth((prev) => prev + 1)}
+              sx={{ width: 22, height: 22, border: 1, borderColor: 'divider', borderRadius: 1 }}
+            >
+              <Typography variant="caption">+</Typography>
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Все доступные">
+            <IconButton
+              size="small"
+              onClick={() => setDepth(100)}
+              sx={{ width: 22, height: 22, border: 1, borderColor: 'divider', borderRadius: 1 }}
+            >
+              <Typography variant="caption">∞</Typography>
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
 
       <Box
@@ -369,22 +417,22 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
           borderColor: 'divider',
           borderRadius: 1,
           overflow: 'hidden',
-          bgcolor: '#f8fafc',
-          '& .react-flow': { background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)' },
-          '& .react-flow__node': { color: '#0f172a' },
+          bgcolor: 'background.default',
+          '& .react-flow': { background: theme.palette.background.default },
+          '& .react-flow__node': { color: theme.palette.text.primary },
           '& .react-flow__controls': {
-            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.18)',
+            boxShadow: theme.shadows[3],
             borderRadius: '10px',
             overflow: 'hidden',
-            border: '1px solid #cbd5e1',
+            border: `1px solid ${theme.palette.divider}`,
           },
           '& .react-flow__controls-button': {
-            backgroundColor: '#ffffff',
-            borderBottom: '1px solid #e2e8f0',
-            color: '#0f172a',
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            color: theme.palette.text.primary,
           },
-          '& .react-flow__controls-button svg': { fill: '#0f172a' },
-          '& .react-flow__controls-button:hover': { backgroundColor: '#f1f5f9' },
+          '& .react-flow__controls-button svg': { fill: theme.palette.text.primary },
+          '& .react-flow__controls-button:hover': { backgroundColor: theme.palette.action.hover },
         }}
       >
         <ReactFlow
