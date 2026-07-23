@@ -44,6 +44,11 @@ export function NodeGeneratorScenePage() {
     () => project?.workspace?.nodes.find((node) => normalizeNodeId(node.id) === normalizeNodeId(sceneId)) ?? null,
     [project, sceneId],
   );
+  const availableSuggestedActions = useMemo(() => {
+    if (!currentScene) return [];
+    const existing = new Set(normalizeActions(currentScene).map((action) => action.text.trim().toLowerCase()).filter((item) => item.length > 0));
+    return (currentScene.generatedActionsDraft ?? []).filter((item) => !existing.has(item.trim().toLowerCase()));
+  }, [currentScene]);
 
   useEffect(() => {
     setActionDescriptionDraft(currentScene?.actionDescription ?? '');
@@ -106,11 +111,6 @@ export function NodeGeneratorScenePage() {
 
   const nodes = project.workspace?.nodes ?? [];
   const scene: WorkspaceNode | null = currentScene ?? nodes[0] ?? null;
-  const availableSuggestedActions = useMemo(() => {
-    if (!scene) return [];
-    const existing = new Set(normalizeActions(scene).map((action) => action.text.trim().toLowerCase()).filter((item) => item.length > 0));
-    return (scene.generatedActionsDraft ?? []).filter((item) => !existing.has(item.trim().toLowerCase()));
-  }, [scene]);
 
   if (!scene) {
     return (
@@ -210,7 +210,14 @@ type SceneTreeListProps = {
 };
 
 function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
-  const elk = useMemo(() => new ELK(), []);
+  const elk = useMemo(() => {
+    try {
+      const ctor = (ELK as unknown as { default?: new () => ELK }).default ?? (ELK as unknown as new () => ELK);
+      return new ctor();
+    } catch {
+      return null;
+    }
+  }, []);
   const [lastDraggedNodeId, setLastDraggedNodeId] = useState<string | null>(null);
   const [lastDragAtMs, setLastDragAtMs] = useState(0);
   const { initialFlowNodes, initialFlowEdges } = useMemo(() => {
@@ -284,7 +291,6 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
     const flowNodesLocal: Node[] = uniqueNodes.map((node) => {
       const level = levels.get(node.id.toUpperCase()) ?? 0;
       const index = orderInLevel.get(`${level}:${node.id.toUpperCase()}`) ?? 0;
-      const isSelected = selectedSceneId.toUpperCase() === node.id.toUpperCase();
       const flowId = flowIdByNodeKey.get(node.id.toUpperCase()) ?? `n_fallback_${index + 1}`;
       return {
         id: flowId,
@@ -293,7 +299,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         targetPosition: Position.Left,
         data: { label: `${node.id} • действий: ${normalizeActions(node).length}`, originalNodeId: node.id },
         style: {
-          border: isSelected ? '2px solid #1976d2' : '1px solid #c4c4c4',
+          border: '1px solid #c4c4c4',
           borderRadius: '8px',
           padding: '10px 12px',
           backgroundColor: '#fff',
@@ -333,7 +339,7 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
       });
 
     return { initialFlowNodes: flowNodesLocal, initialFlowEdges: flowEdgesLocal };
-  }, [nodes, selectedSceneId]);
+  }, [nodes]);
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(initialFlowNodes);
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState(initialFlowEdges);
 
@@ -342,12 +348,31 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
   }, [initialFlowNodes, setFlowNodes]);
 
   useEffect(() => {
+    const selected = normalizeNodeId(selectedSceneId);
+    setFlowNodes((prev) => prev.map((node) => {
+      const originalNodeId = typeof node.data?.originalNodeId === 'string' ? node.data.originalNodeId : '';
+      const isSelected = normalizeNodeId(originalNodeId) === selected;
+      return {
+        ...node,
+        style: {
+          ...(node.style ?? {}),
+          border: isSelected ? '2px solid #1976d2' : '1px solid #c4c4c4',
+        },
+      };
+    }));
+  }, [selectedSceneId, setFlowNodes]);
+
+  useEffect(() => {
     setFlowEdges(initialFlowEdges);
   }, [initialFlowEdges, setFlowEdges]);
 
   useEffect(() => {
     let cancelled = false;
     const runLayout = async () => {
+      if (!elk) {
+        setFlowNodes(initialFlowNodes);
+        return;
+      }
       if (!initialFlowNodes.length) {
         setFlowNodes([]);
         return;
@@ -404,6 +429,9 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         fitView
+        fitViewOptions={{ padding: 0.2, minZoom: 0.55, maxZoom: 1.2 }}
+        minZoom={0.4}
+        maxZoom={2}
         nodesDraggable
         nodesConnectable={false}
         elementsSelectable
