@@ -67,6 +67,15 @@ export function NodeGeneratorScenePage() {
     setUpdatedProject(await deleteWorkspaceNode(project.id, currentScene.id));
   };
 
+  const handleCreateSceneFromAction = async (actionId: string) => {
+    if (!project || !scene || !actionId) return;
+    const created = await createWorkspaceNode(project.id, scene.id, actionId);
+    const newNodeId = findNewNodeId(project.workspace?.nodes ?? [], created.workspace?.nodes ?? []);
+    setUpdatedProject(created);
+    if (!newNodeId) return;
+    navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}/edit`);
+  };
+
   if (isLoading) return <LoadingState message="Загрузка сцены..." />;
   if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить сцену'}</Alert>;
   if (!project) return <Alert severity="error">Проект не найден</Alert>;
@@ -133,13 +142,20 @@ export function NodeGeneratorScenePage() {
             <Stack spacing={0.5}>
               {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">Нет исходящих переходов.</Typography> : null}
               {outgoing.map((item, index) => (
-                <Typography key={`${item.actionText}-${index}`} variant="body2">
+                <Stack key={`${item.actionId}-${index}`} direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Typography variant="body2">
                   • {item.nodeId ? (
                     <><MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}</>
                   ) : (
                     <>Конец — {item.actionText}</>
                   )}
-                </Typography>
+                  </Typography>
+                  {!item.nodeId ? (
+                    <Button size="small" variant="outlined" onClick={() => void handleCreateSceneFromAction(item.actionId)}>
+                      Создать сцену
+                    </Button>
+                  ) : null}
+                </Stack>
               ))}
             </Stack>
 
@@ -158,7 +174,7 @@ type LocalSceneGraphProps = {
   projectNodes: WorkspaceNode[];
   sceneId: string;
   incoming: Array<{ nodeId: string; actionText: string }>;
-  outgoing: Array<{ nodeId: string | null; actionText: string }>;
+  outgoing: Array<{ nodeId: string | null; actionText: string; actionId: string }>;
   onSelectScene: (nodeId: string) => void;
 };
 
@@ -537,7 +553,7 @@ function collectIncoming(nodes: WorkspaceNode[], sceneId: string): Array<{ nodeI
     .filter((item) => item.nodeId.length > 0);
 }
 
-function collectOutgoing(nodes: WorkspaceNode[], scene: WorkspaceNode): Array<{ nodeId: string | null; actionText: string }> {
+function collectOutgoing(nodes: WorkspaceNode[], scene: WorkspaceNode): Array<{ nodeId: string | null; actionText: string; actionId: string }> {
   const actionTargets = new Map<string, string>();
   for (const node of nodes) {
     if (normalizeNodeId(node.sourceNodeId) !== normalizeNodeId(scene.id)) continue;
@@ -548,6 +564,7 @@ function collectOutgoing(nodes: WorkspaceNode[], scene: WorkspaceNode): Array<{ 
   return normalizeActions(scene).map((action) => ({
     nodeId: actionTargets.get(action.id.toUpperCase()) ?? null,
     actionText: action.text,
+    actionId: action.id,
   }));
 }
 
