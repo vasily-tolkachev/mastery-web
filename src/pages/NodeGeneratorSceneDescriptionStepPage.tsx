@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Step, StepButton, Stepper, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, CircularProgress, Link as MuiLink, Stack, Step, StepButton, Stepper, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -293,7 +293,12 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
                 <Typography variant="body2" color="text.secondary">
                   Варианты от ИИ
                 </Typography>
-                {loadingIdeas ? <Typography variant="body2">Генерация вариантов...</Typography> : null}
+                {loadingIdeas ? (
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <CircularProgress size={16} />
+                    <Typography variant="body2" color="primary.main">Генерация вариантов...</Typography>
+                  </Stack>
+                ) : null}
                 {!loadingIdeas && ideas.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">Варианты пока не получены.</Typography>
                 ) : null}
@@ -313,10 +318,13 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
                     }}
                     sx={{
                       border: 1,
-                      borderColor: selectedIdeaIndex === index ? 'primary.main' : 'divider',
+                      borderColor: selectedIdeaIndex === index ? 'primary.main' : 'primary.light',
                       borderRadius: 1,
                       p: 1,
                       cursor: 'pointer',
+                      bgcolor: selectedIdeaIndex === index ? 'action.selected' : 'background.paper',
+                      boxShadow: selectedIdeaIndex === index ? 2 : 0,
+                      transition: 'background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
                     }}
                   >
                     <Typography variant="subtitle2">{item.title}</Typography>
@@ -349,7 +357,12 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
               </Stack>
             </Box>
 
-            {actionsLoading ? <Typography variant="body2">Генерация действий...</Typography> : null}
+            {actionsLoading ? (
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <CircularProgress size={16} />
+                <Typography variant="body2" color="primary.main">Генерация действий...</Typography>
+              </Stack>
+            ) : null}
             {!actionsLoading && availableGeneratedActions.length === 0 ? (
               <Typography variant="body2" color="text.secondary">Список действий пуст.</Typography>
             ) : null}
