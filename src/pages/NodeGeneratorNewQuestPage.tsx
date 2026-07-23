@@ -51,7 +51,7 @@ export function NodeGeneratorNewQuestPage() {
       const baseText = firstSceneText.trim();
       await updateWorkspaceNodeDescription(created.id, targetNodeId, baseText, baseText);
 
-      navigate(`/node-generator/projects/${created.id}/scenes/${encodeURIComponent(targetNodeId)}`);
+      navigate(`/node-generator/projects/${created.id}/scenes/${encodeURIComponent(targetNodeId)}/first-actions`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось создать квест');
     } finally {
