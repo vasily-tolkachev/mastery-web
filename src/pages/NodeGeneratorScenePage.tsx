@@ -1,5 +1,5 @@
 import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   createWorkspaceNode,
@@ -21,6 +21,7 @@ export function NodeGeneratorScenePage() {
     () => project?.workspace?.nodes.find((node) => normalizeNodeId(node.id) === normalizeNodeId(sceneId)) ?? null,
     [project, sceneId],
   );
+
   const setUpdatedProject = (updated: Awaited<ReturnType<typeof createWorkspaceNode>>) => {
     setProjectCache(updated);
   };
@@ -58,21 +59,6 @@ export function NodeGeneratorScenePage() {
 
   const nodes = project.workspace?.nodes ?? [];
   const scene: WorkspaceNode | null = currentScene ?? nodes[0] ?? null;
-  const parentScene = useMemo(() => {
-    if (!scene?.sourceNodeId) return null;
-    return nodes.find((node) => normalizeNodeId(node.id) === normalizeNodeId(scene.sourceNodeId ?? '')) ?? null;
-  }, [nodes, scene]);
-  const actionTargets = useMemo(() => {
-    const map = new Map<string, string>();
-    if (!scene) return map;
-    for (const node of nodes) {
-      if (normalizeNodeId(node.sourceNodeId) !== normalizeNodeId(scene.id)) continue;
-      const sourceActionId = (node.sourceActionId ?? '').trim();
-      if (!sourceActionId) continue;
-      map.set(sourceActionId.toUpperCase(), node.id);
-    }
-    return map;
-  }, [nodes, scene]);
 
   if (!scene) {
     return (
@@ -88,11 +74,16 @@ export function NodeGeneratorScenePage() {
         </Breadcrumbs>
         <SectionCard title="Сцены">
           <Typography variant="body2" color="text.secondary">Сцен пока нет.</Typography>
-          <Button variant="contained" onClick={() => void handleCreateScene()} sx={{ mt: 1 }}>Создать первую сцену</Button>
+          <Button variant="contained" onClick={() => void handleCreateScene()} sx={{ mt: 1 }}>
+            Создать первую сцену
+          </Button>
         </SectionCard>
       </Stack>
     );
   }
+
+  const incoming = collectIncoming(nodes, scene.id);
+  const outgoing = collectOutgoing(nodes, scene);
 
   return (
     <Stack spacing={2}>
@@ -107,10 +98,11 @@ export function NodeGeneratorScenePage() {
       </Breadcrumbs>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <SectionCard title="Граф сцен">
-          <SceneTreeList
-            nodes={nodes}
-            selectedSceneId={scene.id}
+        <SectionCard title="Локальный граф">
+          <LocalSceneGraph
+            sceneId={scene.id}
+            incoming={incoming}
+            outgoing={outgoing}
             onSelectScene={(nodeId) => navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(nodeId)}`)}
           />
         </SectionCard>
@@ -118,41 +110,42 @@ export function NodeGeneratorScenePage() {
         <Stack spacing={2} sx={{ flex: 1 }}>
           <SectionCard title={`Сцена ${scene.id}`}>
             <Stack spacing={1.25}>
-              {parentScene ? (
-                <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(parentScene.id)}`} underline="hover">
-                  ← Сцена {parentScene.id}
-                </MuiLink>
-              ) : null}
+              <Typography variant="subtitle2">В эту сцену можно попасть из</Typography>
+              <Stack spacing={0.5}>
+                {incoming.length === 0 ? <Typography variant="body2" color="text.secondary">Нет входящих переходов.</Typography> : null}
+                {incoming.map((item, index) => (
+                  <Typography key={`${item.nodeId}-${index}`} variant="body2">
+                    • <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}
+                  </Typography>
+                ))}
+              </Stack>
+
               <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
               <Typography variant="subtitle2">Описание</Typography>
               <Typography variant="body2">{(scene.stateDescription || scene.actionDescription || '...').trim() || '...'}</Typography>
+
               <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
-              <Typography variant="subtitle2">Действия</Typography>
-              <Stack spacing={0.75}>
-                {normalizeActions(scene).length === 0 ? <Typography variant="body2" color="text.secondary">Нет действий.</Typography> : null}
-                {normalizeActions(scene).map((action) => {
-                  const targetNodeId = actionTargets.get(action.id.toUpperCase());
-                  return (
-                    <Stack key={action.id} direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Button variant="outlined" size="small" disabled sx={{ textTransform: 'none' }}>
-                        {action.text}
-                      </Button>
-                      {targetNodeId ? (
-                        <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(targetNodeId)}`} underline="hover">
-                          → Сцена {targetNodeId}
-                        </MuiLink>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">→ Конец</Typography>
-                      )}
-                    </Stack>
-                  );
-                })}
+              <Typography variant="subtitle2">Из этой сцены можно перейти в</Typography>
+              <Stack spacing={0.5}>
+                {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">Нет исходящих переходов.</Typography> : null}
+                {outgoing.map((item, index) => (
+                  <Typography key={`${item.actionText}-${index}`} variant="body2">
+                    • {item.nodeId ? (
+                      <><MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}</>
+                    ) : (
+                      <>Конец — {item.actionText}</>
+                    )}
+                  </Typography>
+                ))}
               </Stack>
+
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
                 <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/edit`}>
                   Редактирование
                 </Button>
-                <Button variant="outlined" color="error" onClick={() => void handleDeleteScene()}>Удалить сцену</Button>
+                <Button variant="outlined" color="error" onClick={() => void handleDeleteScene()}>
+                  Удалить сцену
+                </Button>
               </Stack>
             </Stack>
           </SectionCard>
@@ -162,111 +155,75 @@ export function NodeGeneratorScenePage() {
   );
 }
 
-type SceneTreeListProps = {
-  nodes: WorkspaceNode[];
-  selectedSceneId: string;
+type LocalSceneGraphProps = {
+  sceneId: string;
+  incoming: Array<{ nodeId: string; actionText: string }>;
+  outgoing: Array<{ nodeId: string | null; actionText: string }>;
   onSelectScene: (nodeId: string) => void;
 };
 
-function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListProps) {
-  const byParent = new Map<string, WorkspaceNode[]>();
-  const roots: WorkspaceNode[] = [];
-  const [expandedNodeIds, setExpandedNodeIds] = useState<Record<string, boolean>>({});
+function LocalSceneGraph({ sceneId, incoming, outgoing, onSelectScene }: LocalSceneGraphProps) {
+  return (
+    <Stack spacing={1.25}>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+        {incoming.length === 0 ? <Typography variant="body2" color="text.secondary">Нет входящих переходов</Typography> : null}
+        {incoming.map((item) => (
+          <Button key={`${item.nodeId}-${item.actionText}`} size="small" variant="outlined" onClick={() => onSelectScene(item.nodeId)}>
+            {item.nodeId}
+          </Button>
+        ))}
+      </Stack>
 
-  nodes.forEach((node) => {
-    const parentId = (node.sourceNodeId ?? '').trim();
-    if (!parentId) {
-      roots.push(node);
-      return;
-    }
-    const key = parentId.toUpperCase();
-    const list = byParent.get(key) ?? [];
-    list.push(node);
-    byParent.set(key, list);
-  });
-
-  roots.sort((a, b) => a.id.localeCompare(b.id));
-  byParent.forEach((list) => list.sort((a, b) => a.id.localeCompare(b.id)));
-
-  useEffect(() => {
-    const parentByNode = new Map<string, string>();
-    nodes.forEach((node) => {
-      if (node.sourceNodeId) parentByNode.set(node.id.toUpperCase(), node.sourceNodeId.toUpperCase());
-    });
-    const nextExpanded: Record<string, boolean> = {};
-    let cursor = selectedSceneId.toUpperCase();
-    while (parentByNode.has(cursor)) {
-      const parentId = parentByNode.get(cursor);
-      if (!parentId) break;
-      nextExpanded[parentId] = true;
-      cursor = parentId;
-    }
-    setExpandedNodeIds((prev) => ({ ...prev, ...nextExpanded }));
-  }, [nodes, selectedSceneId]);
-
-  const toggleExpanded = (nodeId: string) => {
-    const key = nodeId.toUpperCase();
-    setExpandedNodeIds((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const renderNode = (node: WorkspaceNode, level: number) => {
-    const children = byParent.get(node.id.toUpperCase()) ?? [];
-    const groupedByAction = new Map<string, WorkspaceNode[]>();
-    children.forEach((child) => {
-      const actionKey = (child.sourceActionId ?? 'NO_ACTION').toUpperCase();
-      const list = groupedByAction.get(actionKey) ?? [];
-      list.push(child);
-      groupedByAction.set(actionKey, list);
-    });
-    const actionOrder = Array.from(groupedByAction.keys()).sort();
-
-    return (
-      <Box key={node.id} sx={{ ml: level * 1.25 }}>
-        <Stack direction="row" spacing={0.5}>
-          {children.length > 0 ? (
-            <Button size="small" variant="text" onClick={() => toggleExpanded(node.id)} sx={{ minWidth: 28, px: 0.5, alignSelf: 'flex-start' }}>
-              {expandedNodeIds[node.id.toUpperCase()] ? '−' : '+'}
-            </Button>
-          ) : (
-            <Box sx={{ width: 28 }} />
-          )}
-          <Box
-            role="button"
-            tabIndex={0}
-            onClick={() => onSelectScene(node.id)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') onSelectScene(node.id);
-            }}
-            sx={{
-              border: 1,
-              borderColor: selectedSceneId === node.id ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              p: 1,
-              cursor: 'pointer',
-              flex: 1,
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.id}</Typography>
-            <Typography variant="caption" color="text.secondary">действий: {normalizeActions(node).length}</Typography>
-          </Box>
-        </Stack>
-        {expandedNodeIds[node.id.toUpperCase()] ? actionOrder.map((actionId) => {
-          const actionText = normalizeActions(node).find((action) => action.id.toUpperCase() === actionId)?.text ?? actionId;
-          const groupedChildren = groupedByAction.get(actionId) ?? [];
-          return (
-            <Box key={`${node.id}-${actionId}`} sx={{ mt: 0.5, ml: 1 }}>
-              <Typography variant="caption" color="text.secondary">из действия: {actionText}</Typography>
-              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                {groupedChildren.map((child) => renderNode(child, level + 1))}
-              </Stack>
-            </Box>
-          );
-        }) : null}
+      <Box sx={{ border: 1, borderColor: 'primary.main', borderRadius: 1, p: 1, textAlign: 'center' }}>
+        <Typography variant="subtitle2">Сцена {sceneId}</Typography>
       </Box>
-    );
-  };
 
-  return <Stack spacing={0.75} sx={{ minWidth: { md: 260 } }}>{roots.map((root) => renderNode(root, 0))}</Stack>;
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+        {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">Нет исходящих переходов</Typography> : null}
+        {outgoing.map((item, index) => (
+          <Button
+            key={`${index}-${item.actionText}`}
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              if (item.nodeId) onSelectScene(item.nodeId);
+            }}
+            disabled={!item.nodeId}
+          >
+            {item.nodeId ?? 'Конец'}
+          </Button>
+        ))}
+      </Stack>
+    </Stack>
+  );
+}
+
+function collectIncoming(nodes: WorkspaceNode[], sceneId: string): Array<{ nodeId: string; actionText: string }> {
+  const target = normalizeNodeId(sceneId);
+  return nodes
+    .filter((node) => normalizeNodeId(node.id) === target)
+    .map((node) => {
+      const sourceId = (node.sourceNodeId ?? '').trim();
+      const sourceActionId = (node.sourceActionId ?? '').trim().toUpperCase();
+      const sourceNode = nodes.find((candidate) => normalizeNodeId(candidate.id) === normalizeNodeId(sourceId));
+      const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? 'Переход';
+      return { nodeId: sourceId, actionText };
+    })
+    .filter((item) => item.nodeId.length > 0);
+}
+
+function collectOutgoing(nodes: WorkspaceNode[], scene: WorkspaceNode): Array<{ nodeId: string | null; actionText: string }> {
+  const actionTargets = new Map<string, string>();
+  for (const node of nodes) {
+    if (normalizeNodeId(node.sourceNodeId) !== normalizeNodeId(scene.id)) continue;
+    const sourceActionId = (node.sourceActionId ?? '').trim();
+    if (!sourceActionId) continue;
+    actionTargets.set(sourceActionId.toUpperCase(), node.id);
+  }
+  return normalizeActions(scene).map((action) => ({
+    nodeId: actionTargets.get(action.id.toUpperCase()) ?? null,
+    actionText: action.text,
+  }));
 }
 
 function findNewNodeId(previousNodes: WorkspaceNode[], nextNodes: WorkspaceNode[]): string | null {
