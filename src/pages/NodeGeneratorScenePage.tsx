@@ -69,11 +69,9 @@ export function NodeGeneratorScenePage() {
 
   const handleCreateSceneFromAction = async (actionId: string) => {
     if (!project || !scene || !actionId) return;
-    const created = await createWorkspaceNode(project.id, scene.id, actionId);
-    const newNodeId = findNewNodeId(project.workspace?.nodes ?? [], created.workspace?.nodes ?? []);
-    setUpdatedProject(created);
-    if (!newNodeId) return;
-    navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(newNodeId)}/edit`);
+    navigate(
+      `/node-generator/projects/${project.id}/scenes/${encodeURIComponent(scene.id)}/actions/${encodeURIComponent(actionId)}/new-scene-description`,
+    );
   };
 
   if (isLoading) return <LoadingState message="Загрузка сцены..." />;
