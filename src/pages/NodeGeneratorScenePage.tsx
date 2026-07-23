@@ -25,6 +25,12 @@ import { LoadingState, SectionCard } from '../components/ui';
 import { useNodeGeneratorProject, useSetNodeGeneratorProjectCache } from '../hooks/useNodeGeneratorProject';
 import type { WorkspaceNode } from '../types/nodeGenerator';
 
+type ElkChildLayout = {
+  id?: string;
+  x?: number;
+  y?: number;
+};
+
 export function NodeGeneratorScenePage() {
   const navigate = useNavigate();
   const { projectId = '', sceneId = '' } = useParams();
@@ -369,7 +375,8 @@ function SceneTreeList({ nodes, selectedSceneId, onSelectScene }: SceneTreeListP
         };
         const layout = await elk.layout(graph as never);
         if (cancelled) return;
-        const byId = new Map((layout.children ?? []).map((item) => [item.id, item]));
+        const children = (layout.children ?? []) as unknown as ElkChildLayout[];
+        const byId = new Map(children.map((item) => [item.id ?? '', item]));
         setFlowNodes((prev) => prev.map((node) => {
           const positioned = byId.get(node.id);
           if (!positioned) return node;
