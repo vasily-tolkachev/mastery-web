@@ -16,6 +16,7 @@ import { NodeGeneratorEditScenePage } from './pages/NodeGeneratorEditScenePage';
 import { NodeGeneratorNextSceneDescriptionPage } from './pages/NodeGeneratorNextSceneDescriptionPage';
 import { NodeGeneratorKnowledgePage } from './pages/NodeGeneratorKnowledgePage';
 import { NodeGeneratorExpansionReviewPage } from './pages/NodeGeneratorExpansionReviewPage';
+import { NodeGeneratorRuntimePage } from './pages/NodeGeneratorRuntimePage';
 import { ProgramsPage } from './pages/ProgramsPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { QuestsPage } from './pages/QuestsPage';
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId/actions/:actionId/new-scene-description" element={<NodeGeneratorNextSceneDescriptionPage />} />
         <Route path="/node-generator/projects/:projectId/knowledge" element={<NodeGeneratorKnowledgePage />} />
         <Route path="/node-generator/projects/:projectId/expansion" element={<NodeGeneratorExpansionReviewPage />} />
+        <Route path="/node-generator/projects/:projectId/runtime" element={<NodeGeneratorRuntimePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/node-generator" replace />} />
       </Routes>

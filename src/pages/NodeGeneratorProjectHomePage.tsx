@@ -100,7 +100,7 @@ export function NodeGeneratorProjectHomePage() {
         <Typography color="text.primary">{project.name}</Typography>
       </Breadcrumbs>
 
-      <SectionCard title="Главная квеста">
+      <SectionCard title="Профиль квеста">
         <Stack spacing={1.5}>
           <TextField
             label="Название квеста"
@@ -124,6 +124,7 @@ export function NodeGeneratorProjectHomePage() {
             title="Продолжить работу"
             to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(firstSceneId)}`}
           />
+          <NavCard title="Текстовое прохождение" to={`/node-generator/projects/${project.id}/runtime`} />
           <NavCard title="Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
           <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} disabled />
         </Stack>
