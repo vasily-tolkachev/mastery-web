@@ -24,6 +24,7 @@ const sidebarItems = [
   { label: 'Квесты', path: '/quests', icon: <AutoStoriesRoundedIcon fontSize="small" /> },
   { label: 'Генератор', path: '/generator', icon: <AutoFixHighRoundedIcon fontSize="small" /> },
   { label: 'Конструктор квестов', path: '/node-generator', icon: <AutoFixHighRoundedIcon fontSize="small" /> },
+  { label: 'Текстовый режим', path: '/text-runtime', icon: <AutoStoriesRoundedIcon fontSize="small" /> },
   { label: 'Цели', path: '/goals', icon: <TrackChangesRoundedIcon fontSize="small" /> },
   { label: 'Настройки', path: '/settings', icon: <SettingsRoundedIcon fontSize="small" /> },
 ] as const;

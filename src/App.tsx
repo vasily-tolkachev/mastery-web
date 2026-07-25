@@ -47,6 +47,7 @@ export default function App() {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/generator" element={<GeneratorPage />} />
         <Route path="/node-generator" element={<NodeGeneratorProjectsPage />} />
+        <Route path="/text-runtime" element={<NodeGeneratorProjectsPage />} />
         <Route path="/node-generator/new" element={<NodeGeneratorNewQuestPage />} />
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId/first-actions" element={<NodeGeneratorFirstSceneActionsPage />} />
         <Route path="/node-generator/projects/:projectId" element={<NodeGeneratorProjectHomePage />} />
