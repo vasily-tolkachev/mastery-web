@@ -21,14 +21,12 @@ import { SectionCard } from '../components/ui';
 export function TextRuntimeQuestPage() {
   const { questId = '' } = useParams();
   const [snapshot, setSnapshot] = useState<RuntimeSnapshot | null>(null);
+  const [status, setStatus] = useState<RuntimeGenerationStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [targetId, setTargetId] = useState('');
-  const [inspectResult, setInspectResult] = useState<string | null>(null);
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<string>('');
-  const [generatedScenes, setGeneratedScenes] = useState<string[]>([]);
-  const [showGeneratedScenes, setShowGeneratedScenes] = useState(false);
-  const [generationStatus, setGenerationStatus] = useState<RuntimeGenerationStatus | null>(null);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState('');
+  const [resultText, setResultText] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,15 +37,12 @@ export function TextRuntimeQuestPage() {
         const started = await startTextRuntimeQuest(questId);
         if (cancelled) return;
         setSnapshot(started);
-        setSelectedInventoryItem('');
-        setGeneratedScenes(started.currentLocationId ? [started.currentLocationId] : []);
-        setGenerationStatus(await generationStatusTextRuntime(started.sessionId));
+        setStatus(await generationStatusTextRuntime(started.sessionId));
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Не удалось запустить текстовый режим');
+        setError(e instanceof Error ? e.message : 'Не удалось открыть квест');
       } finally {
-        if (cancelled) return;
-        setPending(false);
+        if (!cancelled) setPending(false);
       }
     };
     if (questId) void run();
@@ -56,69 +51,54 @@ export function TextRuntimeQuestPage() {
     };
   }, [questId]);
 
-  useEffect(() => {
-    if (!snapshot?.currentLocationId) return;
-    setGeneratedScenes((prev) => (prev.includes(snapshot.currentLocationId) ? prev : [...prev, snapshot.currentLocationId]));
-  }, [snapshot?.currentLocationId]);
+  const inventory: RuntimeItem[] = useMemo(() => snapshot?.inventory ?? [], [snapshot]);
+
+  const applicableTargets = useMemo(() => {
+    if (!snapshot || !selectedInventoryItem) return [];
+    return snapshot.availableActions
+      .filter((a) => (a.requiredItems ?? []).some((item) => item === selectedInventoryItem))
+      .filter((a) => a.targetId)
+      .map((a) => ({ id: a.id, label: a.description || a.id, targetId: a.targetId as string }));
+  }, [snapshot, selectedInventoryItem]);
 
   const refresh = async () => {
     if (!snapshot?.sessionId) return;
     setPending(true);
     try {
       setSnapshot(await inspectTextRuntime(snapshot.sessionId));
-      setGenerationStatus(await generationStatusTextRuntime(snapshot.sessionId));
+      setStatus(await generationStatusTextRuntime(snapshot.sessionId));
     } finally {
       setPending(false);
     }
   };
 
-  const handleGenerateScene = async () => {
+  const generateScene = async () => {
     if (!snapshot?.sessionId) return;
+    setPending(true);
     try {
-      setPending(true);
-      setError(null);
-      setGenerationStatus(await generateSceneTextRuntime(snapshot.sessionId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать сцену');
+      setStatus(await generateSceneTextRuntime(snapshot.sessionId));
     } finally {
       setPending(false);
     }
   };
 
-  const handleGenerateActions = async () => {
+  const generateActions = async () => {
     if (!snapshot?.sessionId) return;
+    setPending(true);
     try {
-      setPending(true);
-      setError(null);
-      setGenerationStatus(await generateActionsTextRuntime(snapshot.sessionId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать действия');
+      setStatus(await generateActionsTextRuntime(snapshot.sessionId));
     } finally {
       setPending(false);
     }
   };
 
-  const handleRefreshGenerationStatus = async () => {
-    if (!snapshot?.sessionId) return;
-    try {
-      setPending(true);
-      setError(null);
-      setGenerationStatus(await generationStatusTextRuntime(snapshot.sessionId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось обновить статус генерации');
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const handleMove = async (locationId: string | null) => {
+  const move = async (locationId: string | null) => {
     if (!snapshot?.sessionId || !locationId) return;
+    setPending(true);
     try {
-      setPending(true);
-      setError(null);
       setSnapshot(await moveTextRuntime(snapshot.sessionId, locationId));
-      setInspectResult(null);
-      setGenerationStatus(await generationStatusTextRuntime(snapshot.sessionId));
+      setResultText(null);
+      setStatus(await generationStatusTextRuntime(snapshot.sessionId));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Переход недоступен');
     } finally {
@@ -126,14 +106,11 @@ export function TextRuntimeQuestPage() {
     }
   };
 
-  const handleTake = async (itemId: string) => {
+  const take = async (itemId: string) => {
     if (!snapshot?.sessionId) return;
+    setPending(true);
     try {
-      setPending(true);
-      setError(null);
-      const next = await takeTextRuntime(snapshot.sessionId, itemId);
-      setSnapshot(next);
-      setInspectResult(null);
+      setSnapshot(await takeTextRuntime(snapshot.sessionId, itemId));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось взять предмет');
     } finally {
@@ -141,32 +118,31 @@ export function TextRuntimeQuestPage() {
     }
   };
 
-  const handleInteract = async (customTarget?: string) => {
+  const interact = async (customTarget?: string) => {
     if (!snapshot?.sessionId) return;
     const target = (customTarget ?? targetId).trim();
     if (!target) return;
+    setPending(true);
     try {
-      setPending(true);
-      setError(null);
       const result = await interactTextRuntime(snapshot.sessionId, target);
       setSnapshot(result.snapshot);
-      setInspectResult(`${result.message}\nДвижок: ${result.engineAction}`);
       setTargetId(target);
+      setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось выполнить взаимодействие');
+      setError(e instanceof Error ? e.message : 'Не удалось выполнить действие');
     } finally {
       setPending(false);
     }
   };
 
-  const handleInspectTarget = async (customTarget?: string) => {
+  const inspectTarget = async (customTarget?: string) => {
     if (!snapshot?.sessionId) return;
     const target = (customTarget ?? targetId).trim();
     if (!target) return;
+    setPending(true);
     try {
-      setPending(true);
-      setError(null);
-      setInspectResult(await inspectTargetTextRuntime(snapshot.sessionId, target));
+      const description = await inspectTargetTextRuntime(snapshot.sessionId, target);
+      setResultText(description);
       setTargetId(target);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось осмотреть цель');
@@ -175,16 +151,14 @@ export function TextRuntimeQuestPage() {
     }
   };
 
-  const handleUse = async () => {
+  const useItemOnTarget = async (customTarget?: string) => {
     if (!snapshot?.sessionId || !selectedInventoryItem) return;
-    const target = targetId.trim();
+    const target = (customTarget ?? targetId).trim();
     if (!target) return;
+    setPending(true);
     try {
-      setPending(true);
-      setError(null);
-      const next = await useTextRuntime(snapshot.sessionId, selectedInventoryItem, target);
-      setSnapshot(next);
-      setInspectResult(`Использовано: ${selectedInventoryItem} -> ${target}`);
+      setSnapshot(await useTextRuntime(snapshot.sessionId, selectedInventoryItem, target));
+      setResultText(`Использован предмет ${selectedInventoryItem} на ${target}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось использовать предмет');
     } finally {
@@ -192,139 +166,134 @@ export function TextRuntimeQuestPage() {
     }
   };
 
-  const inventory: RuntimeItem[] = useMemo(() => snapshot?.inventory ?? [], [snapshot]);
-
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
-      <Breadcrumbs aria-label="breadcrumb">
-        <MuiLink component={Link} to="/text-runtime" underline="hover" color="inherit">Текстовый режим</MuiLink>
+
+      <Breadcrumbs>
+        <MuiLink component={Link} to="/text-runtime" underline="hover" color="inherit">
+          Текстовый режим
+        </MuiLink>
         <Typography color="text.primary">{questId}</Typography>
       </Breadcrumbs>
 
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, alignItems: 'start' }}>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
         <Stack spacing={2}>
           <SectionCard title={snapshot ? `Сцена ${snapshot.currentLocationId}` : 'Сцена'}>
-            <Stack spacing={1.25}>
-              <Typography variant="body2">{snapshot?.description || (pending ? 'Загрузка...' : 'Нет данных.')}</Typography>
+            <Stack spacing={1}>
+              <Typography variant="body2">{snapshot?.description ?? 'Нет данных'}</Typography>
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
-                <Button size="small" variant="outlined" onClick={() => void handleGenerateScene()} disabled={!snapshot || pending}>Сгенерировать сцену</Button>
-                <Button size="small" variant="outlined" onClick={() => void handleGenerateActions()} disabled={!snapshot || pending}>Сгенерировать действия</Button>
-                <Button size="small" variant="text" onClick={() => void handleRefreshGenerationStatus()} disabled={!snapshot || pending}>Статус</Button>
-                <Button size="small" variant="outlined" onClick={() => setShowGeneratedScenes((prev) => !prev)} disabled={generatedScenes.length === 0}>
-                  {`Сгенерированные сцены (${generatedScenes.length})`}
-                </Button>
+                <Button size="small" variant="outlined" onClick={() => void generateScene()} disabled={!snapshot || pending}>Сгенерировать сцену</Button>
+                <Button size="small" variant="outlined" onClick={() => void generateActions()} disabled={!snapshot || pending}>Сгенерировать действия</Button>
               </Stack>
-              {generationStatus ? (
-                <Stack spacing={0.5}>
-                  <Typography variant="caption" color="text.secondary">
-                    {`Сцена: ${generationStatus.sceneGenerated ? 'готово' : 'нет'} | Действия: ${generationStatus.actionsGenerated ? 'готово' : 'нет'}`}
-                  </Typography>
-                  {generationStatus.generatedSceneText ? <Typography variant="body2">{generationStatus.generatedSceneText}</Typography> : null}
-                </Stack>
-              ) : null}
-              {showGeneratedScenes ? (
-                <Stack spacing={0.5}>
-                  {generatedScenes.map((sceneId) => (
-                    <Button key={sceneId} size="small" variant="text" onClick={() => void handleMove(sceneId)} disabled={pending || snapshot?.currentLocationId === sceneId}>
-                      {sceneId}
-                    </Button>
-                  ))}
-                </Stack>
+              {status ? (
+                <Typography variant="caption" color="text.secondary">
+                  {`Сцена: ${status.sceneGenerated ? 'готово' : 'нет'} | Действия: ${status.actionsGenerated ? 'готово' : 'нет'}`}
+                </Typography>
               ) : null}
             </Stack>
           </SectionCard>
 
           <SectionCard title="Действия">
             <Stack spacing={1}>
-              <TextField size="small" label="Цель" placeholder="ворота, метки, выживший..." value={targetId} onChange={(e) => setTargetId(e.target.value)} fullWidth />
+              <TextField size="small" label="Цель" value={targetId} onChange={(e) => setTargetId(e.target.value)} fullWidth />
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                <Button size="small" variant="outlined" onClick={() => void handleInspectTarget()} disabled={pending || !targetId.trim()}>Осмотреть цель</Button>
-                <Button size="small" variant="contained" onClick={() => void handleInteract()} disabled={pending || !targetId.trim()}>Взаимодействовать</Button>
-              </Stack>
-
-              <Stack spacing={0.75}>
-                <Typography variant="caption" color="text.secondary">Сгенерированные действия</Typography>
-                {(generationStatus?.generatedActions ?? []).length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">Нажми "Сгенерировать действия".</Typography>
-                ) : null}
-                {(generationStatus?.generatedActions ?? []).map((action) => (
-                  <Button
-                    key={action.id}
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                      if (!action.targetId) {
-                        setInspectResult(`Действие ${action.label} нельзя выполнить напрямую`);
-                        return;
-                      }
-                      void handleInteract(action.targetId);
-                    }}
-                    disabled={pending}
-                  >
-                    {action.label}
-                  </Button>
-                ))}
-              </Stack>
-
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                {inventory.map((item) => (
-                  <Button key={item.id} size="small" variant={selectedInventoryItem === item.id ? 'contained' : 'outlined'} onClick={() => setSelectedInventoryItem(item.id)}>
-                    {item.name || item.id}
-                  </Button>
-                ))}
-                <Button size="small" variant="outlined" onClick={() => void handleUse()} disabled={pending || !selectedInventoryItem || !targetId.trim()}>
-                  Использовать на цели
+                <Button size="small" variant="outlined" onClick={() => void inspectTarget()} disabled={pending || !targetId.trim()}>
+                  Осмотреть цель
+                </Button>
+                <Button size="small" variant="contained" onClick={() => void interact()} disabled={pending || !targetId.trim()}>
+                  Выполнить действие
                 </Button>
               </Stack>
-              {inspectResult ? <Alert severity="info">{inspectResult}</Alert> : null}
+
+              <Typography variant="caption" color="text.secondary">Сгенерированные действия</Typography>
+              {(status?.generatedActions ?? []).length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Сначала нажми «Сгенерировать действия».</Typography>
+              ) : null}
+              {(status?.generatedActions ?? []).map((action) => (
+                <Button
+                  key={action.id}
+                  size="small"
+                  variant="outlined"
+                  disabled={pending || !action.targetId}
+                  onClick={() => void interact(action.targetId ?? undefined)}
+                >
+                  {action.label}
+                </Button>
+              ))}
+
+              {resultText ? <Alert severity="info" sx={{ whiteSpace: 'pre-line' }}>{resultText}</Alert> : null}
             </Stack>
           </SectionCard>
         </Stack>
 
         <Stack spacing={2}>
+          <SectionCard title="Куда применить предмет">
+            <Stack spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                {inventory.map((item) => (
+                  <Button
+                    key={item.id}
+                    size="small"
+                    variant={selectedInventoryItem === item.id ? 'contained' : 'outlined'}
+                    onClick={() => setSelectedInventoryItem(item.id)}
+                  >
+                    {item.name || item.id}
+                  </Button>
+                ))}
+              </Stack>
+              {selectedInventoryItem && applicableTargets.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Для этого предмета сейчас нет доступных целей.</Typography>
+              ) : null}
+              {applicableTargets.map((target) => (
+                <Button
+                  key={`${target.id}:${target.targetId}`}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => void useItemOnTarget(target.targetId)}
+                  disabled={pending}
+                >
+                  {`${target.label} (${target.targetId})`}
+                </Button>
+              ))}
+            </Stack>
+          </SectionCard>
+
+          <SectionCard title="Факты">
+            <Stack spacing={0.5}>
+              {(snapshot?.knownFacts ?? []).length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Пока нет открытых фактов.</Typography>
+              ) : null}
+              {(snapshot?.knownFacts ?? []).map((fact) => (
+                <Typography key={fact} variant="body2">• {fact}</Typography>
+              ))}
+            </Stack>
+          </SectionCard>
+
           <SectionCard title="Переходы">
             <Stack spacing={1}>
-              {(snapshot?.exits ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет доступных переходов.</Typography> : null}
               {(snapshot?.exits ?? []).map((exit, index) => (
-                <Button key={`${exit.actionText}-${index}`} variant="outlined" onClick={() => void handleMove(exit.targetLocationId)} disabled={pending || !exit.targetLocationId}>
+                <Button key={`${exit.actionText}-${index}`} variant="outlined" onClick={() => void move(exit.targetLocationId)} disabled={pending || !exit.targetLocationId}>
                   {exit.actionText}
                 </Button>
               ))}
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Предметы сцены">
+          <SectionCard title="Предметы и NPC">
             <Stack spacing={1}>
-              {(snapshot?.items ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет предметов.</Typography> : null}
               {(snapshot?.items ?? []).map((item) => (
                 <Stack direction="row" spacing={1} key={item.id}>
-                  <Button variant="text" onClick={() => void handleTake(item.id)} disabled={pending}>Взять: {item.name || item.id}</Button>
-                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(item.id)} disabled={pending}>Осмотреть</Button>
-                  <Button size="small" variant="outlined" onClick={() => void handleInteract(item.id)} disabled={pending}>Взаимодействовать</Button>
+                  <Button size="small" variant="text" onClick={() => void take(item.id)} disabled={pending}>Взять: {item.name || item.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(item.id)} disabled={pending}>Осмотреть</Button>
                 </Stack>
               ))}
-            </Stack>
-          </SectionCard>
-
-          <SectionCard title="Персонажи">
-            <Stack spacing={1}>
-              {(snapshot?.npcs ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет персонажей рядом.</Typography> : null}
               {(snapshot?.npcs ?? []).map((npc) => (
                 <Stack direction="row" spacing={1} key={npc.id}>
-                  <Button size="small" variant="contained" onClick={() => void handleInteract(npc.id)} disabled={pending}>Поговорить: {npc.id}</Button>
-                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(npc.id)} disabled={pending}>Осмотреть</Button>
+                  <Button size="small" variant="contained" onClick={() => void interact(npc.id)} disabled={pending}>Поговорить: {npc.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(npc.id)} disabled={pending}>Осмотреть</Button>
                 </Stack>
-              ))}
-            </Stack>
-          </SectionCard>
-
-          <SectionCard title="Инвентарь">
-            <Stack spacing={0.5}>
-              {(snapshot?.inventory ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Пусто.</Typography> : null}
-              {(snapshot?.inventory ?? []).map((item) => (
-                <Typography key={item.id} variant="body2">• {item.name || item.id}</Typography>
               ))}
             </Stack>
           </SectionCard>

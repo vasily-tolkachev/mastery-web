@@ -20,6 +20,7 @@ export type RuntimeAction = {
   id: string;
   description: string;
   targetId: string | null;
+  requiredItems: string[];
 };
 
 export type RuntimeSnapshot = {
@@ -31,6 +32,7 @@ export type RuntimeSnapshot = {
   availableActions: RuntimeAction[];
   inventory: RuntimeItem[];
   npcs: RuntimeNpc[];
+  knownFacts: string[];
 };
 
 export type RuntimeActionResult = {
@@ -43,6 +45,21 @@ export type RuntimeQuestSummary = {
   id: string;
   name: string;
   description: string;
+};
+
+export type RuntimeGeneratedAction = {
+  id: string;
+  label: string;
+  targetId: string | null;
+};
+
+export type RuntimeGenerationStatus = {
+  sessionId: string;
+  sceneId: string;
+  sceneGenerated: boolean;
+  actionsGenerated: boolean;
+  generatedSceneText: string | null;
+  generatedActions: RuntimeGeneratedAction[];
 };
 
 async function toRuntimeError(response: Response, fallback: string): Promise<Error> {
@@ -132,21 +149,6 @@ export async function inspectTargetTextRuntime(sessionId: string, targetId: stri
   const payload = await response.json() as { description?: string };
   return payload.description ?? '';
 }
-
-export type RuntimeGenerationStatus = {
-  sessionId: string;
-  sceneId: string;
-  sceneGenerated: boolean;
-  actionsGenerated: boolean;
-  generatedSceneText: string | null;
-  generatedActions: RuntimeGeneratedAction[];
-};
-
-export type RuntimeGeneratedAction = {
-  id: string;
-  label: string;
-  targetId: string | null;
-};
 
 export async function generateSceneTextRuntime(sessionId: string): Promise<RuntimeGenerationStatus> {
   const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/generate-scene`, {
