@@ -35,15 +35,6 @@ async function toRuntimeError(response: Response, fallback: string): Promise<Err
   }
 }
 
-export async function startTextRuntime(projectId: string): Promise<RuntimeSnapshot> {
-  const response = await authFetch(`/api/text-runtime/projects/${projectId}/start`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось запустить текстовый режим');
-  return await response.json() as RuntimeSnapshot;
-}
-
 export async function listTextRuntimeQuests(): Promise<RuntimeQuestSummary[]> {
   const response = await authFetch('/api/text-runtime/quests');
   if (!response.ok) throw await toRuntimeError(response, 'Не удалось загрузить список квестов');
