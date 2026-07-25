@@ -1,13 +1,40 @@
-import { Alert, Box, Breadcrumbs, Link as MuiLink, Stack, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Stack, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getNodeGeneratorProjects } from '../api/nodeGeneratorApi';
 import { LoadingState, SectionCard } from '../components/ui';
-import { useNodeGeneratorProjects } from '../hooks/useNodeGeneratorProjects';
+import type { NodeGeneratorProject } from '../types/nodeGenerator';
 
 export function TextRuntimeProjectsPage() {
-  const { data: projects, isLoading, isError, error } = useNodeGeneratorProjects();
+  const [projects, setProjects] = useState<NodeGeneratorProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const loaded = await getNodeGeneratorProjects();
+        if (cancelled) return;
+        setProjects(loaded);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : 'Не удалось загрузить квесты');
+      } finally {
+        if (cancelled) return;
+        setIsLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (isLoading) return <LoadingState message="Загрузка квестов..." />;
-  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить квесты'}</Alert>;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
     <Stack spacing={2}>
@@ -46,4 +73,3 @@ export function TextRuntimeProjectsPage() {
     </Stack>
   );
 }
-
