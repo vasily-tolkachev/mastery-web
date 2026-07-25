@@ -36,6 +36,7 @@ export type RuntimeSnapshot = {
 export type RuntimeActionResult = {
   message: string;
   snapshot: RuntimeSnapshot;
+  engineAction: string;
 };
 
 export type RuntimeQuestSummary = {
@@ -138,7 +139,13 @@ export type RuntimeGenerationStatus = {
   sceneGenerated: boolean;
   actionsGenerated: boolean;
   generatedSceneText: string | null;
-  generatedActions: string[];
+  generatedActions: RuntimeGeneratedAction[];
+};
+
+export type RuntimeGeneratedAction = {
+  id: string;
+  label: string;
+  targetId: string | null;
 };
 
 export async function generateSceneTextRuntime(sessionId: string): Promise<RuntimeGenerationStatus> {

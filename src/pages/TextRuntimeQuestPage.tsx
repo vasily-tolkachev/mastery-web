@@ -150,7 +150,7 @@ export function TextRuntimeQuestPage() {
       setError(null);
       const result = await interactTextRuntime(snapshot.sessionId, target);
       setSnapshot(result.snapshot);
-      setInspectResult(result.message);
+      setInspectResult(`${result.message}\nДвижок: ${result.engineAction}`);
       setTargetId(target);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось выполнить взаимодействие');
@@ -250,8 +250,20 @@ export function TextRuntimeQuestPage() {
                   <Typography variant="body2" color="text.secondary">Нажми "Сгенерировать действия".</Typography>
                 ) : null}
                 {(generationStatus?.generatedActions ?? []).map((action) => (
-                  <Button key={action} size="small" variant="outlined" onClick={() => setTargetId(action)} disabled={pending}>
-                    {action}
+                  <Button
+                    key={action.id}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      if (!action.targetId) {
+                        setInspectResult(`Действие ${action.label} нельзя выполнить напрямую`);
+                        return;
+                      }
+                      void handleInteract(action.targetId);
+                    }}
+                    disabled={pending}
+                  >
+                    {action.label}
                   </Button>
                 ))}
               </Stack>
