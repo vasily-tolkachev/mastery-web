@@ -147,7 +147,7 @@ export function TextRuntimeQuestPage() {
         setSnapshot(await moveTextRuntime(snapshot.sessionId, (targetId ?? '').trim()));
         return;
       }
-      if (actionId.startsWith('item:') || actionId.startsWith('npc:')) {
+      if (actionId.startsWith('item:')) {
         if (!(targetId ?? '').trim()) {
           throw new Error('Цель взаимодействия не указана');
         }
