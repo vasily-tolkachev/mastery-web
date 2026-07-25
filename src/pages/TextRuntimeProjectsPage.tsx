@@ -1,12 +1,11 @@
 import { Alert, Box, Breadcrumbs, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getNodeGeneratorProjects } from '../api/nodeGeneratorApi';
+import { listTextRuntimeQuests, type RuntimeQuestSummary } from '../api/textRuntimeApi';
 import { LoadingState, SectionCard } from '../components/ui';
-import type { NodeGeneratorProject } from '../types/nodeGenerator';
 
 export function TextRuntimeProjectsPage() {
-  const [projects, setProjects] = useState<NodeGeneratorProject[]>([]);
+  const [quests, setQuests] = useState<RuntimeQuestSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,9 +15,9 @@ export function TextRuntimeProjectsPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const loaded = await getNodeGeneratorProjects();
+        const loaded = await listTextRuntimeQuests();
         if (cancelled) return;
-        setProjects(loaded);
+        setQuests(loaded);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Не удалось загрузить квесты');
@@ -44,14 +43,14 @@ export function TextRuntimeProjectsPage() {
 
       <SectionCard title="Выберите квест">
         <Stack spacing={1}>
-          {(projects ?? []).length === 0 ? (
+          {(quests ?? []).length === 0 ? (
             <Typography variant="body2" color="text.secondary">Нет квестов.</Typography>
           ) : null}
-          {(projects ?? []).map((project) => (
+          {(quests ?? []).map((quest) => (
             <Box
-              key={project.id}
+              key={quest.id}
               component={Link}
-              to={`/node-generator/projects/${project.id}/runtime`}
+              to={`/text-runtime/${encodeURIComponent(quest.id)}`}
               sx={{
                 display: 'block',
                 border: 1,
@@ -62,9 +61,9 @@ export function TextRuntimeProjectsPage() {
                 color: 'text.primary',
               }}
             >
-              <Typography variant="body1">{project.name}</Typography>
+              <Typography variant="body1">{quest.name}</Typography>
               <Typography variant="caption" color="text.secondary">
-                Сцен: {project.workspace?.nodes?.length ?? 0}
+                {quest.description}
               </Typography>
             </Box>
           ))}

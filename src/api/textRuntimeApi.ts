@@ -19,6 +19,12 @@ export type RuntimeSnapshot = {
   inventory: RuntimeItem[];
 };
 
+export type RuntimeQuestSummary = {
+  id: string;
+  name: string;
+  description: string;
+};
+
 async function toRuntimeError(response: Response, fallback: string): Promise<Error> {
   try {
     const payload = await response.json();
@@ -35,6 +41,27 @@ export async function startTextRuntime(projectId: string): Promise<RuntimeSnapsh
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) throw await toRuntimeError(response, 'Не удалось запустить текстовый режим');
+  return await response.json() as RuntimeSnapshot;
+}
+
+export async function listTextRuntimeQuests(): Promise<RuntimeQuestSummary[]> {
+  const response = await authFetch('/api/text-runtime/quests');
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось загрузить список квестов');
+  const raw = await response.json();
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => ({
+    id: String(item?.id ?? ''),
+    name: String(item?.name ?? ''),
+    description: String(item?.description ?? ''),
+  })).filter((item) => item.id.length > 0);
+}
+
+export async function startTextRuntimeQuest(questId: string): Promise<RuntimeSnapshot> {
+  const response = await authFetch(`/api/text-runtime/quests/${encodeURIComponent(questId)}/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось запустить квест');
   return await response.json() as RuntimeSnapshot;
 }
 

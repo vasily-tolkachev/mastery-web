@@ -18,6 +18,7 @@ import { NodeGeneratorKnowledgePage } from './pages/NodeGeneratorKnowledgePage';
 import { NodeGeneratorExpansionReviewPage } from './pages/NodeGeneratorExpansionReviewPage';
 import { NodeGeneratorRuntimePage } from './pages/NodeGeneratorRuntimePage';
 import { TextRuntimeProjectsPage } from './pages/TextRuntimeProjectsPage';
+import { TextRuntimeQuestPage } from './pages/TextRuntimeQuestPage';
 import { ProgramsPage } from './pages/ProgramsPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { QuestsPage } from './pages/QuestsPage';
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/node-generator/projects/:projectId/knowledge" element={<NodeGeneratorKnowledgePage />} />
         <Route path="/node-generator/projects/:projectId/expansion" element={<NodeGeneratorExpansionReviewPage />} />
         <Route path="/node-generator/projects/:projectId/runtime" element={<NodeGeneratorRuntimePage />} />
+        <Route path="/text-runtime/:questId" element={<TextRuntimeQuestPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/node-generator" replace />} />
       </Routes>
