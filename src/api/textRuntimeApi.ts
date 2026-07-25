@@ -139,6 +139,16 @@ export async function interactTextRuntime(sessionId: string, targetId: string): 
   return await response.json() as RuntimeActionResult;
 }
 
+export async function executeActionTextRuntime(sessionId: string, actionId: string): Promise<RuntimeSnapshot> {
+  const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/execute-action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ actionId }),
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось выполнить действие');
+  return await response.json() as RuntimeSnapshot;
+}
+
 export async function inspectTargetTextRuntime(sessionId: string, targetId: string): Promise<string> {
   const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/inspect-target`, {
     method: 'POST',

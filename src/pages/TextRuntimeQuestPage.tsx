@@ -2,6 +2,7 @@ import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typ
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
+  executeActionTextRuntime,
   generateActionsTextRuntime,
   generateSceneTextRuntime,
   generationStatusTextRuntime,
@@ -135,6 +136,29 @@ export function TextRuntimeQuestPage() {
     }
   };
 
+  const runGeneratedAction = async (actionId: string, targetId: string | null) => {
+    if (!snapshot?.sessionId) return;
+    setPending(true);
+    try {
+      if (actionId.startsWith('move:')) {
+        setSnapshot(await moveTextRuntime(snapshot.sessionId, targetId));
+        return;
+      }
+      if (actionId.startsWith('item:') || actionId.startsWith('npc:')) {
+        const result = await interactTextRuntime(snapshot.sessionId, targetId ?? '');
+        setSnapshot(result.snapshot);
+        setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
+        return;
+      }
+      setSnapshot(await executeActionTextRuntime(snapshot.sessionId, actionId));
+      setResultText(`Действие движка: executeAction:${actionId}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось выполнить сгенерированное действие');
+    } finally {
+      setPending(false);
+    }
+  };
+
   const inspectTarget = async (customTarget?: string) => {
     if (!snapshot?.sessionId) return;
     const target = (customTarget ?? targetId).trim();
@@ -216,8 +240,8 @@ export function TextRuntimeQuestPage() {
                   key={action.id}
                   size="small"
                   variant="outlined"
-                  disabled={pending || !action.targetId}
-                  onClick={() => void interact(action.targetId ?? undefined)}
+                  disabled={pending || (!action.targetId && !action.id)}
+                  onClick={() => void runGeneratedAction(action.id, action.targetId)}
                 >
                   {action.label}
                 </Button>
