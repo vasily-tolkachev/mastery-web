@@ -5,6 +5,12 @@ export type RuntimeItem = {
   name: string;
 };
 
+export type RuntimeNpc = {
+  id: string;
+  description: string;
+  dialogue: string;
+};
+
 export type RuntimeExit = {
   actionText: string;
   targetLocationId: string | null;
@@ -17,6 +23,12 @@ export type RuntimeSnapshot = {
   items: RuntimeItem[];
   exits: RuntimeExit[];
   inventory: RuntimeItem[];
+  npcs: RuntimeNpc[];
+};
+
+export type RuntimeActionResult = {
+  message: string;
+  snapshot: RuntimeSnapshot;
 };
 
 export type RuntimeQuestSummary = {
@@ -80,4 +92,35 @@ export async function takeTextRuntime(sessionId: string, itemId: string): Promis
   });
   if (!response.ok) throw await toRuntimeError(response, 'Не удалось взять предмет');
   return await response.json() as RuntimeSnapshot;
+}
+
+export async function useTextRuntime(sessionId: string, itemId: string, targetId: string): Promise<RuntimeSnapshot> {
+  const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/use`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itemId, targetId }),
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось использовать предмет');
+  return await response.json() as RuntimeSnapshot;
+}
+
+export async function interactTextRuntime(sessionId: string, targetId: string): Promise<RuntimeActionResult> {
+  const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/interact`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetId }),
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось выполнить взаимодействие');
+  return await response.json() as RuntimeActionResult;
+}
+
+export async function inspectTargetTextRuntime(sessionId: string, targetId: string): Promise<string> {
+  const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/inspect-target`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetId }),
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось осмотреть цель');
+  const payload = await response.json() as { description?: string };
+  return payload.description ?? '';
 }

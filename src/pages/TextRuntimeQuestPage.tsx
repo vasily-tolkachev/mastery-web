@@ -1,7 +1,17 @@
-import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { inspectTextRuntime, moveTextRuntime, startTextRuntimeQuest, takeTextRuntime, type RuntimeSnapshot } from '../api/textRuntimeApi';
+import {
+  inspectTargetTextRuntime,
+  inspectTextRuntime,
+  interactTextRuntime,
+  moveTextRuntime,
+  startTextRuntimeQuest,
+  takeTextRuntime,
+  useTextRuntime,
+  type RuntimeItem,
+  type RuntimeSnapshot,
+} from '../api/textRuntimeApi';
 import { SectionCard } from '../components/ui';
 
 export function TextRuntimeQuestPage() {
@@ -9,6 +19,9 @@ export function TextRuntimeQuestPage() {
   const [snapshot, setSnapshot] = useState<RuntimeSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [targetId, setTargetId] = useState('');
+  const [inspectResult, setInspectResult] = useState<string | null>(null);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -19,6 +32,7 @@ export function TextRuntimeQuestPage() {
         const started = await startTextRuntimeQuest(questId);
         if (cancelled) return;
         setSnapshot(started);
+        setSelectedInventoryItem('');
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Не удалось запустить текстовый режим');
@@ -35,7 +49,12 @@ export function TextRuntimeQuestPage() {
 
   const refresh = async () => {
     if (!snapshot?.sessionId) return;
-    setSnapshot(await inspectTextRuntime(snapshot.sessionId));
+    setPending(true);
+    try {
+      setSnapshot(await inspectTextRuntime(snapshot.sessionId));
+    } finally {
+      setPending(false);
+    }
   };
 
   const handleMove = async (locationId: string | null) => {
@@ -44,6 +63,7 @@ export function TextRuntimeQuestPage() {
       setPending(true);
       setError(null);
       setSnapshot(await moveTextRuntime(snapshot.sessionId, locationId));
+      setInspectResult(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Переход недоступен');
     } finally {
@@ -56,13 +76,68 @@ export function TextRuntimeQuestPage() {
     try {
       setPending(true);
       setError(null);
-      setSnapshot(await takeTextRuntime(snapshot.sessionId, itemId));
+      const next = await takeTextRuntime(snapshot.sessionId, itemId);
+      setSnapshot(next);
+      setInspectResult(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось взять предмет');
     } finally {
       setPending(false);
     }
   };
+
+  const handleInteract = async (customTarget?: string) => {
+    if (!snapshot?.sessionId) return;
+    const target = (customTarget ?? targetId).trim();
+    if (!target) return;
+    try {
+      setPending(true);
+      setError(null);
+      const result = await interactTextRuntime(snapshot.sessionId, target);
+      setSnapshot(result.snapshot);
+      setInspectResult(result.message);
+      setTargetId(target);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось выполнить взаимодействие');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleInspectTarget = async (customTarget?: string) => {
+    if (!snapshot?.sessionId) return;
+    const target = (customTarget ?? targetId).trim();
+    if (!target) return;
+    try {
+      setPending(true);
+      setError(null);
+      setInspectResult(await inspectTargetTextRuntime(snapshot.sessionId, target));
+      setTargetId(target);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось осмотреть цель');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleUse = async () => {
+    if (!snapshot?.sessionId || !selectedInventoryItem) return;
+    const target = targetId.trim();
+    if (!target) return;
+    try {
+      setPending(true);
+      setError(null);
+      const next = await useTextRuntime(snapshot.sessionId, selectedInventoryItem, target);
+      setSnapshot(next);
+      setInspectResult(`Использовано: ${selectedInventoryItem} -> ${target}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось использовать предмет');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const inventory: RuntimeItem[] = useMemo(() => snapshot?.inventory ?? [], [snapshot]);
 
   return (
     <Stack spacing={2}>
@@ -81,7 +156,49 @@ export function TextRuntimeQuestPage() {
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Доступные действия">
+      <SectionCard title="Взаимодействие">
+        <Stack spacing={1}>
+          <TextField
+            size="small"
+            label="Цель"
+            placeholder="ворота, метки, выживший..."
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            fullWidth
+          />
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+            <Button size="small" variant="outlined" onClick={() => void handleInspectTarget()} disabled={pending || !targetId.trim()}>
+              Осмотреть цель
+            </Button>
+            <Button size="small" variant="contained" onClick={() => void handleInteract()} disabled={pending || !targetId.trim()}>
+              Взаимодействовать
+            </Button>
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+            {inventory.map((item) => (
+              <Button
+                key={item.id}
+                size="small"
+                variant={selectedInventoryItem === item.id ? 'contained' : 'outlined'}
+                onClick={() => setSelectedInventoryItem(item.id)}
+              >
+                {item.name || item.id}
+              </Button>
+            ))}
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => void handleUse()}
+              disabled={pending || !selectedInventoryItem || !targetId.trim()}
+            >
+              Использовать на цели
+            </Button>
+          </Stack>
+          {inspectResult ? <Alert severity="info">{inspectResult}</Alert> : null}
+        </Stack>
+      </SectionCard>
+
+      <SectionCard title="Переходы">
         <Stack spacing={1}>
           {(snapshot?.exits ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет доступных переходов.</Typography> : null}
           {(snapshot?.exits ?? []).map((exit, index) => (
@@ -101,9 +218,33 @@ export function TextRuntimeQuestPage() {
         <Stack spacing={1}>
           {(snapshot?.items ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет предметов.</Typography> : null}
           {(snapshot?.items ?? []).map((item) => (
-            <Button key={item.id} variant="text" onClick={() => void handleTake(item.id)} disabled={pending}>
-              Взять: {item.name || item.id}
-            </Button>
+            <Stack direction="row" spacing={1} key={item.id}>
+              <Button variant="text" onClick={() => void handleTake(item.id)} disabled={pending}>
+                Взять: {item.name || item.id}
+              </Button>
+              <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(item.id)} disabled={pending}>
+                Осмотреть
+              </Button>
+              <Button size="small" variant="outlined" onClick={() => void handleInteract(item.id)} disabled={pending}>
+                Взаимодействовать
+              </Button>
+            </Stack>
+          ))}
+        </Stack>
+      </SectionCard>
+
+      <SectionCard title="Персонажи">
+        <Stack spacing={1}>
+          {(snapshot?.npcs ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет персонажей рядом.</Typography> : null}
+          {(snapshot?.npcs ?? []).map((npc) => (
+            <Stack direction="row" spacing={1} key={npc.id}>
+              <Button size="small" variant="contained" onClick={() => void handleInteract(npc.id)} disabled={pending}>
+                Поговорить: {npc.id}
+              </Button>
+              <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(npc.id)} disabled={pending}>
+                Осмотреть
+              </Button>
+            </Stack>
           ))}
         </Stack>
       </SectionCard>
@@ -119,4 +260,3 @@ export function TextRuntimeQuestPage() {
     </Stack>
   );
 }
-
