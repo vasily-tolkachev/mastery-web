@@ -2,6 +2,9 @@ import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typ
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
+  generateActionsTextRuntime,
+  generateSceneTextRuntime,
+  generationStatusTextRuntime,
   inspectTargetTextRuntime,
   inspectTextRuntime,
   interactTextRuntime,
@@ -9,6 +12,7 @@ import {
   startTextRuntimeQuest,
   takeTextRuntime,
   useTextRuntime,
+  type RuntimeGenerationStatus,
   type RuntimeItem,
   type RuntimeSnapshot,
 } from '../api/textRuntimeApi';
@@ -24,6 +28,7 @@ export function TextRuntimeQuestPage() {
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<string>('');
   const [generatedScenes, setGeneratedScenes] = useState<string[]>([]);
   const [showGeneratedScenes, setShowGeneratedScenes] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<RuntimeGenerationStatus | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +41,7 @@ export function TextRuntimeQuestPage() {
         setSnapshot(started);
         setSelectedInventoryItem('');
         setGeneratedScenes(started.currentLocationId ? [started.currentLocationId] : []);
+        setGenerationStatus(await generationStatusTextRuntime(started.sessionId));
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Не удалось запустить текстовый режим');
@@ -60,6 +66,46 @@ export function TextRuntimeQuestPage() {
     setPending(true);
     try {
       setSnapshot(await inspectTextRuntime(snapshot.sessionId));
+      setGenerationStatus(await generationStatusTextRuntime(snapshot.sessionId));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleGenerateScene = async () => {
+    if (!snapshot?.sessionId) return;
+    try {
+      setPending(true);
+      setError(null);
+      setGenerationStatus(await generateSceneTextRuntime(snapshot.sessionId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать сцену');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleGenerateActions = async () => {
+    if (!snapshot?.sessionId) return;
+    try {
+      setPending(true);
+      setError(null);
+      setGenerationStatus(await generateActionsTextRuntime(snapshot.sessionId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сгенерировать действия');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleRefreshGenerationStatus = async () => {
+    if (!snapshot?.sessionId) return;
+    try {
+      setPending(true);
+      setError(null);
+      setGenerationStatus(await generationStatusTextRuntime(snapshot.sessionId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось обновить статус генерации');
     } finally {
       setPending(false);
     }
@@ -72,6 +118,7 @@ export function TextRuntimeQuestPage() {
       setError(null);
       setSnapshot(await moveTextRuntime(snapshot.sessionId, locationId));
       setInspectResult(null);
+      setGenerationStatus(await generationStatusTextRuntime(snapshot.sessionId));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Переход недоступен');
     } finally {
@@ -160,27 +207,27 @@ export function TextRuntimeQuestPage() {
           <SectionCard title={snapshot ? `Сцена ${snapshot.currentLocationId}` : 'Сцена'}>
             <Stack spacing={1.25}>
               <Typography variant="body2">{snapshot?.description || (pending ? 'Загрузка...' : 'Нет данных.')}</Typography>
-              <Stack direction="row" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => setShowGeneratedScenes((prev) => !prev)}
-                  disabled={generatedScenes.length === 0}
-                >
+                <Button size="small" variant="outlined" onClick={() => void handleGenerateScene()} disabled={!snapshot || pending}>Сгенерировать сцену</Button>
+                <Button size="small" variant="outlined" onClick={() => void handleGenerateActions()} disabled={!snapshot || pending}>Сгенерировать действия</Button>
+                <Button size="small" variant="text" onClick={() => void handleRefreshGenerationStatus()} disabled={!snapshot || pending}>Статус</Button>
+                <Button size="small" variant="outlined" onClick={() => setShowGeneratedScenes((prev) => !prev)} disabled={generatedScenes.length === 0}>
                   {`Сгенерированные сцены (${generatedScenes.length})`}
                 </Button>
               </Stack>
+              {generationStatus ? (
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary">
+                    {`Сцена: ${generationStatus.sceneGenerated ? 'готово' : 'нет'} | Действия: ${generationStatus.actionsGenerated ? 'готово' : 'нет'}`}
+                  </Typography>
+                  {generationStatus.generatedSceneText ? <Typography variant="body2">{generationStatus.generatedSceneText}</Typography> : null}
+                </Stack>
+              ) : null}
               {showGeneratedScenes ? (
                 <Stack spacing={0.5}>
                   {generatedScenes.map((sceneId) => (
-                    <Button
-                      key={sceneId}
-                      size="small"
-                      variant="text"
-                      onClick={() => void handleMove(sceneId)}
-                      disabled={pending || snapshot?.currentLocationId === sceneId}
-                    >
+                    <Button key={sceneId} size="small" variant="text" onClick={() => void handleMove(sceneId)} disabled={pending || snapshot?.currentLocationId === sceneId}>
                       {sceneId}
                     </Button>
                   ))}
@@ -191,65 +238,31 @@ export function TextRuntimeQuestPage() {
 
           <SectionCard title="Действия">
             <Stack spacing={1}>
-              <TextField
-                size="small"
-                label="Цель"
-                placeholder="ворота, метки, выживший..."
-                value={targetId}
-                onChange={(e) => setTargetId(e.target.value)}
-                fullWidth
-              />
+              <TextField size="small" label="Цель" placeholder="ворота, метки, выживший..." value={targetId} onChange={(e) => setTargetId(e.target.value)} fullWidth />
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                <Button size="small" variant="outlined" onClick={() => void handleInspectTarget()} disabled={pending || !targetId.trim()}>
-                  Осмотреть цель
-                </Button>
-                <Button size="small" variant="contained" onClick={() => void handleInteract()} disabled={pending || !targetId.trim()}>
-                  Взаимодействовать
-                </Button>
+                <Button size="small" variant="outlined" onClick={() => void handleInspectTarget()} disabled={pending || !targetId.trim()}>Осмотреть цель</Button>
+                <Button size="small" variant="contained" onClick={() => void handleInteract()} disabled={pending || !targetId.trim()}>Взаимодействовать</Button>
               </Stack>
 
               <Stack spacing={0.75}>
                 <Typography variant="caption" color="text.secondary">Сгенерированные действия</Typography>
-                {(snapshot?.availableActions ?? []).length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">Нет действий для текущего состояния.</Typography>
+                {(generationStatus?.generatedActions ?? []).length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">Нажми "Сгенерировать действия".</Typography>
                 ) : null}
-                {(snapshot?.availableActions ?? []).map((action) => (
-                  <Button
-                    key={action.id}
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                      if (action.targetId) {
-                        setTargetId(action.targetId);
-                        void handleInteract(action.targetId);
-                      } else {
-                        setInspectResult(`Действие ${action.id} не имеет targetId`);
-                      }
-                    }}
-                    disabled={pending}
-                  >
-                    {action.description || action.id}
+                {(generationStatus?.generatedActions ?? []).map((action) => (
+                  <Button key={action} size="small" variant="outlined" onClick={() => setTargetId(action)} disabled={pending}>
+                    {action}
                   </Button>
                 ))}
               </Stack>
 
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 {inventory.map((item) => (
-                  <Button
-                    key={item.id}
-                    size="small"
-                    variant={selectedInventoryItem === item.id ? 'contained' : 'outlined'}
-                    onClick={() => setSelectedInventoryItem(item.id)}
-                  >
+                  <Button key={item.id} size="small" variant={selectedInventoryItem === item.id ? 'contained' : 'outlined'} onClick={() => setSelectedInventoryItem(item.id)}>
                     {item.name || item.id}
                   </Button>
                 ))}
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => void handleUse()}
-                  disabled={pending || !selectedInventoryItem || !targetId.trim()}
-                >
+                <Button size="small" variant="outlined" onClick={() => void handleUse()} disabled={pending || !selectedInventoryItem || !targetId.trim()}>
                   Использовать на цели
                 </Button>
               </Stack>
@@ -263,12 +276,7 @@ export function TextRuntimeQuestPage() {
             <Stack spacing={1}>
               {(snapshot?.exits ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет доступных переходов.</Typography> : null}
               {(snapshot?.exits ?? []).map((exit, index) => (
-                <Button
-                  key={`${exit.actionText}-${index}`}
-                  variant="outlined"
-                  onClick={() => void handleMove(exit.targetLocationId)}
-                  disabled={pending || !exit.targetLocationId}
-                >
+                <Button key={`${exit.actionText}-${index}`} variant="outlined" onClick={() => void handleMove(exit.targetLocationId)} disabled={pending || !exit.targetLocationId}>
                   {exit.actionText}
                 </Button>
               ))}
@@ -280,15 +288,9 @@ export function TextRuntimeQuestPage() {
               {(snapshot?.items ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет предметов.</Typography> : null}
               {(snapshot?.items ?? []).map((item) => (
                 <Stack direction="row" spacing={1} key={item.id}>
-                  <Button variant="text" onClick={() => void handleTake(item.id)} disabled={pending}>
-                    Взять: {item.name || item.id}
-                  </Button>
-                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(item.id)} disabled={pending}>
-                    Осмотреть
-                  </Button>
-                  <Button size="small" variant="outlined" onClick={() => void handleInteract(item.id)} disabled={pending}>
-                    Взаимодействовать
-                  </Button>
+                  <Button variant="text" onClick={() => void handleTake(item.id)} disabled={pending}>Взять: {item.name || item.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(item.id)} disabled={pending}>Осмотреть</Button>
+                  <Button size="small" variant="outlined" onClick={() => void handleInteract(item.id)} disabled={pending}>Взаимодействовать</Button>
                 </Stack>
               ))}
             </Stack>
@@ -299,12 +301,8 @@ export function TextRuntimeQuestPage() {
               {(snapshot?.npcs ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет персонажей рядом.</Typography> : null}
               {(snapshot?.npcs ?? []).map((npc) => (
                 <Stack direction="row" spacing={1} key={npc.id}>
-                  <Button size="small" variant="contained" onClick={() => void handleInteract(npc.id)} disabled={pending}>
-                    Поговорить: {npc.id}
-                  </Button>
-                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(npc.id)} disabled={pending}>
-                    Осмотреть
-                  </Button>
+                  <Button size="small" variant="contained" onClick={() => void handleInteract(npc.id)} disabled={pending}>Поговорить: {npc.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(npc.id)} disabled={pending}>Осмотреть</Button>
                 </Stack>
               ))}
             </Stack>

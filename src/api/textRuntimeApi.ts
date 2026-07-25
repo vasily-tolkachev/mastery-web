@@ -131,3 +131,36 @@ export async function inspectTargetTextRuntime(sessionId: string, targetId: stri
   const payload = await response.json() as { description?: string };
   return payload.description ?? '';
 }
+
+export type RuntimeGenerationStatus = {
+  sessionId: string;
+  sceneId: string;
+  sceneGenerated: boolean;
+  actionsGenerated: boolean;
+  generatedSceneText: string | null;
+  generatedActions: string[];
+};
+
+export async function generateSceneTextRuntime(sessionId: string): Promise<RuntimeGenerationStatus> {
+  const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/generate-scene`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось сгенерировать сцену');
+  return await response.json() as RuntimeGenerationStatus;
+}
+
+export async function generateActionsTextRuntime(sessionId: string): Promise<RuntimeGenerationStatus> {
+  const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/generate-actions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось сгенерировать действия');
+  return await response.json() as RuntimeGenerationStatus;
+}
+
+export async function generationStatusTextRuntime(sessionId: string): Promise<RuntimeGenerationStatus> {
+  const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/generation-status`);
+  if (!response.ok) throw await toRuntimeError(response, 'Не удалось получить статус генерации');
+  return await response.json() as RuntimeGenerationStatus;
+}
