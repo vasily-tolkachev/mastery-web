@@ -17,6 +17,7 @@ import { NodeGeneratorNextSceneDescriptionPage } from './pages/NodeGeneratorNext
 import { NodeGeneratorKnowledgePage } from './pages/NodeGeneratorKnowledgePage';
 import { NodeGeneratorExpansionReviewPage } from './pages/NodeGeneratorExpansionReviewPage';
 import { NodeGeneratorRuntimePage } from './pages/NodeGeneratorRuntimePage';
+import { TextRuntimeProjectsPage } from './pages/TextRuntimeProjectsPage';
 import { ProgramsPage } from './pages/ProgramsPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { QuestsPage } from './pages/QuestsPage';
@@ -47,7 +48,7 @@ export default function App() {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/generator" element={<GeneratorPage />} />
         <Route path="/node-generator" element={<NodeGeneratorProjectsPage />} />
-        <Route path="/text-runtime" element={<NodeGeneratorProjectsPage />} />
+        <Route path="/text-runtime" element={<TextRuntimeProjectsPage />} />
         <Route path="/node-generator/new" element={<NodeGeneratorNewQuestPage />} />
         <Route path="/node-generator/projects/:projectId/scenes/:sceneId/first-actions" element={<NodeGeneratorFirstSceneActionsPage />} />
         <Route path="/node-generator/projects/:projectId" element={<NodeGeneratorProjectHomePage />} />
