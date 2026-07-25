@@ -141,11 +141,17 @@ export function TextRuntimeQuestPage() {
     setPending(true);
     try {
       if (actionId.startsWith('move:')) {
-        setSnapshot(await moveTextRuntime(snapshot.sessionId, targetId));
+        if (!(targetId ?? '').trim()) {
+          throw new Error('Цель перехода не указана');
+        }
+        setSnapshot(await moveTextRuntime(snapshot.sessionId, (targetId ?? '').trim()));
         return;
       }
       if (actionId.startsWith('item:') || actionId.startsWith('npc:')) {
-        const result = await interactTextRuntime(snapshot.sessionId, targetId ?? '');
+        if (!(targetId ?? '').trim()) {
+          throw new Error('Цель взаимодействия не указана');
+        }
+        const result = await interactTextRuntime(snapshot.sessionId, (targetId ?? '').trim());
         setSnapshot(result.snapshot);
         setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
         return;
