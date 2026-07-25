@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestError, createQuestFromNodeGeneratorProject, renameNodeGeneratorProject } from '../api/nodeGeneratorApi';
@@ -99,16 +99,6 @@ export function NodeGeneratorProjectHomePage() {
         </MuiLink>
         <Typography color="text.primary">{project.name}</Typography>
       </Breadcrumbs>
-
-      <Tabs
-        value="profile"
-        aria-label="Вкладки квеста"
-        variant="scrollable"
-        allowScrollButtonsMobile
-      >
-        <Tab label="Профиль" value="profile" component={Link} to={`/node-generator/projects/${project.id}`} />
-        <Tab label="Текстовое прохождение" value="runtime" component={Link} to={`/node-generator/projects/${project.id}/runtime`} />
-      </Tabs>
 
       <SectionCard title="Профиль квеста">
         <Stack spacing={1.5}>
