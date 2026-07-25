@@ -1,4 +1,4 @@
-import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -147,116 +147,129 @@ export function TextRuntimeQuestPage() {
         <Typography color="text.primary">{questId}</Typography>
       </Breadcrumbs>
 
-      <SectionCard title={snapshot ? `Сцена ${snapshot.currentLocationId}` : 'Текстовый режим'}>
-        <Stack spacing={1.25}>
-          <Typography variant="body2">{snapshot?.description || (pending ? 'Загрузка...' : 'Нет данных.')}</Typography>
-          <Stack direction="row" spacing={1}>
-            <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
-          </Stack>
-        </Stack>
-      </SectionCard>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+          alignItems: 'start',
+        }}
+      >
+        <Stack spacing={2}>
+          <SectionCard title={snapshot ? `Сцена ${snapshot.currentLocationId}` : 'Сцена'}>
+            <Stack spacing={1.25}>
+              <Typography variant="body2">{snapshot?.description || (pending ? 'Загрузка...' : 'Нет данных.')}</Typography>
+              <Stack direction="row" spacing={1}>
+                <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
+              </Stack>
+            </Stack>
+          </SectionCard>
 
-      <SectionCard title="Взаимодействие">
-        <Stack spacing={1}>
-          <TextField
-            size="small"
-            label="Цель"
-            placeholder="ворота, метки, выживший..."
-            value={targetId}
-            onChange={(e) => setTargetId(e.target.value)}
-            fullWidth
-          />
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-            <Button size="small" variant="outlined" onClick={() => void handleInspectTarget()} disabled={pending || !targetId.trim()}>
-              Осмотреть цель
-            </Button>
-            <Button size="small" variant="contained" onClick={() => void handleInteract()} disabled={pending || !targetId.trim()}>
-              Взаимодействовать
-            </Button>
-          </Stack>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-            {inventory.map((item) => (
-              <Button
-                key={item.id}
+          <SectionCard title="Действия">
+            <Stack spacing={1}>
+              <TextField
                 size="small"
-                variant={selectedInventoryItem === item.id ? 'contained' : 'outlined'}
-                onClick={() => setSelectedInventoryItem(item.id)}
-              >
-                {item.name || item.id}
-              </Button>
-            ))}
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => void handleUse()}
-              disabled={pending || !selectedInventoryItem || !targetId.trim()}
-            >
-              Использовать на цели
-            </Button>
-          </Stack>
-          {inspectResult ? <Alert severity="info">{inspectResult}</Alert> : null}
-        </Stack>
-      </SectionCard>
-
-      <SectionCard title="Переходы">
-        <Stack spacing={1}>
-          {(snapshot?.exits ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет доступных переходов.</Typography> : null}
-          {(snapshot?.exits ?? []).map((exit, index) => (
-            <Button
-              key={`${exit.actionText}-${index}`}
-              variant="outlined"
-              onClick={() => void handleMove(exit.targetLocationId)}
-              disabled={pending || !exit.targetLocationId}
-            >
-              {exit.actionText}
-            </Button>
-          ))}
-        </Stack>
-      </SectionCard>
-
-      <SectionCard title="Предметы сцены">
-        <Stack spacing={1}>
-          {(snapshot?.items ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет предметов.</Typography> : null}
-          {(snapshot?.items ?? []).map((item) => (
-            <Stack direction="row" spacing={1} key={item.id}>
-              <Button variant="text" onClick={() => void handleTake(item.id)} disabled={pending}>
-                Взять: {item.name || item.id}
-              </Button>
-              <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(item.id)} disabled={pending}>
-                Осмотреть
-              </Button>
-              <Button size="small" variant="outlined" onClick={() => void handleInteract(item.id)} disabled={pending}>
-                Взаимодействовать
-              </Button>
+                label="Цель"
+                placeholder="ворота, метки, выживший..."
+                value={targetId}
+                onChange={(e) => setTargetId(e.target.value)}
+                fullWidth
+              />
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                <Button size="small" variant="outlined" onClick={() => void handleInspectTarget()} disabled={pending || !targetId.trim()}>
+                  Осмотреть цель
+                </Button>
+                <Button size="small" variant="contained" onClick={() => void handleInteract()} disabled={pending || !targetId.trim()}>
+                  Взаимодействовать
+                </Button>
+              </Stack>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                {inventory.map((item) => (
+                  <Button
+                    key={item.id}
+                    size="small"
+                    variant={selectedInventoryItem === item.id ? 'contained' : 'outlined'}
+                    onClick={() => setSelectedInventoryItem(item.id)}
+                  >
+                    {item.name || item.id}
+                  </Button>
+                ))}
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => void handleUse()}
+                  disabled={pending || !selectedInventoryItem || !targetId.trim()}
+                >
+                  Использовать на цели
+                </Button>
+              </Stack>
+              {inspectResult ? <Alert severity="info">{inspectResult}</Alert> : null}
             </Stack>
-          ))}
+          </SectionCard>
         </Stack>
-      </SectionCard>
 
-      <SectionCard title="Персонажи">
-        <Stack spacing={1}>
-          {(snapshot?.npcs ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет персонажей рядом.</Typography> : null}
-          {(snapshot?.npcs ?? []).map((npc) => (
-            <Stack direction="row" spacing={1} key={npc.id}>
-              <Button size="small" variant="contained" onClick={() => void handleInteract(npc.id)} disabled={pending}>
-                Поговорить: {npc.id}
-              </Button>
-              <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(npc.id)} disabled={pending}>
-                Осмотреть
-              </Button>
+        <Stack spacing={2}>
+          <SectionCard title="Переходы">
+            <Stack spacing={1}>
+              {(snapshot?.exits ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет доступных переходов.</Typography> : null}
+              {(snapshot?.exits ?? []).map((exit, index) => (
+                <Button
+                  key={`${exit.actionText}-${index}`}
+                  variant="outlined"
+                  onClick={() => void handleMove(exit.targetLocationId)}
+                  disabled={pending || !exit.targetLocationId}
+                >
+                  {exit.actionText}
+                </Button>
+              ))}
             </Stack>
-          ))}
-        </Stack>
-      </SectionCard>
+          </SectionCard>
 
-      <SectionCard title="Инвентарь">
-        <Stack spacing={0.5}>
-          {(snapshot?.inventory ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Пусто.</Typography> : null}
-          {(snapshot?.inventory ?? []).map((item) => (
-            <Typography key={item.id} variant="body2">• {item.name || item.id}</Typography>
-          ))}
+          <SectionCard title="Предметы сцены">
+            <Stack spacing={1}>
+              {(snapshot?.items ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет предметов.</Typography> : null}
+              {(snapshot?.items ?? []).map((item) => (
+                <Stack direction="row" spacing={1} key={item.id}>
+                  <Button variant="text" onClick={() => void handleTake(item.id)} disabled={pending}>
+                    Взять: {item.name || item.id}
+                  </Button>
+                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(item.id)} disabled={pending}>
+                    Осмотреть
+                  </Button>
+                  <Button size="small" variant="outlined" onClick={() => void handleInteract(item.id)} disabled={pending}>
+                    Взаимодействовать
+                  </Button>
+                </Stack>
+              ))}
+            </Stack>
+          </SectionCard>
+
+          <SectionCard title="Персонажи">
+            <Stack spacing={1}>
+              {(snapshot?.npcs ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Нет персонажей рядом.</Typography> : null}
+              {(snapshot?.npcs ?? []).map((npc) => (
+                <Stack direction="row" spacing={1} key={npc.id}>
+                  <Button size="small" variant="contained" onClick={() => void handleInteract(npc.id)} disabled={pending}>
+                    Поговорить: {npc.id}
+                  </Button>
+                  <Button size="small" variant="outlined" onClick={() => void handleInspectTarget(npc.id)} disabled={pending}>
+                    Осмотреть
+                  </Button>
+                </Stack>
+              ))}
+            </Stack>
+          </SectionCard>
+
+          <SectionCard title="Инвентарь">
+            <Stack spacing={0.5}>
+              {(snapshot?.inventory ?? []).length === 0 ? <Typography variant="body2" color="text.secondary">Пусто.</Typography> : null}
+              {(snapshot?.inventory ?? []).map((item) => (
+                <Typography key={item.id} variant="body2">• {item.name || item.id}</Typography>
+              ))}
+            </Stack>
+          </SectionCard>
         </Stack>
-      </SectionCard>
+      </Box>
     </Stack>
   );
 }
