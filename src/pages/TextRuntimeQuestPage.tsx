@@ -22,6 +22,8 @@ export function TextRuntimeQuestPage() {
   const [targetId, setTargetId] = useState('');
   const [inspectResult, setInspectResult] = useState<string | null>(null);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<string>('');
+  const [generatedScenes, setGeneratedScenes] = useState<string[]>([]);
+  const [showGeneratedScenes, setShowGeneratedScenes] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +35,7 @@ export function TextRuntimeQuestPage() {
         if (cancelled) return;
         setSnapshot(started);
         setSelectedInventoryItem('');
+        setGeneratedScenes(started.currentLocationId ? [started.currentLocationId] : []);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Не удалось запустить текстовый режим');
@@ -46,6 +49,11 @@ export function TextRuntimeQuestPage() {
       cancelled = true;
     };
   }, [questId]);
+
+  useEffect(() => {
+    if (!snapshot?.currentLocationId) return;
+    setGeneratedScenes((prev) => (prev.includes(snapshot.currentLocationId) ? prev : [...prev, snapshot.currentLocationId]));
+  }, [snapshot?.currentLocationId]);
 
   const refresh = async () => {
     if (!snapshot?.sessionId) return;
@@ -147,21 +155,37 @@ export function TextRuntimeQuestPage() {
         <Typography color="text.primary">{questId}</Typography>
       </Breadcrumbs>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 2,
-          gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
-          alignItems: 'start',
-        }}
-      >
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, alignItems: 'start' }}>
         <Stack spacing={2}>
           <SectionCard title={snapshot ? `Сцена ${snapshot.currentLocationId}` : 'Сцена'}>
             <Stack spacing={1.25}>
               <Typography variant="body2">{snapshot?.description || (pending ? 'Загрузка...' : 'Нет данных.')}</Typography>
               <Stack direction="row" spacing={1}>
                 <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setShowGeneratedScenes((prev) => !prev)}
+                  disabled={generatedScenes.length === 0}
+                >
+                  {`Сгенерированные сцены (${generatedScenes.length})`}
+                </Button>
               </Stack>
+              {showGeneratedScenes ? (
+                <Stack spacing={0.5}>
+                  {generatedScenes.map((sceneId) => (
+                    <Button
+                      key={sceneId}
+                      size="small"
+                      variant="text"
+                      onClick={() => void handleMove(sceneId)}
+                      disabled={pending || snapshot?.currentLocationId === sceneId}
+                    >
+                      {sceneId}
+                    </Button>
+                  ))}
+                </Stack>
+              ) : null}
             </Stack>
           </SectionCard>
 
@@ -183,6 +207,32 @@ export function TextRuntimeQuestPage() {
                   Взаимодействовать
                 </Button>
               </Stack>
+
+              <Stack spacing={0.75}>
+                <Typography variant="caption" color="text.secondary">Сгенерированные действия</Typography>
+                {(snapshot?.availableActions ?? []).length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">Нет действий для текущего состояния.</Typography>
+                ) : null}
+                {(snapshot?.availableActions ?? []).map((action) => (
+                  <Button
+                    key={action.id}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      if (action.targetId) {
+                        setTargetId(action.targetId);
+                        void handleInteract(action.targetId);
+                      } else {
+                        setInspectResult(`Действие ${action.id} не имеет targetId`);
+                      }
+                    }}
+                    disabled={pending}
+                  >
+                    {action.description || action.id}
+                  </Button>
+                ))}
+              </Stack>
+
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 {inventory.map((item) => (
                   <Button

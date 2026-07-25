@@ -16,12 +16,19 @@ export type RuntimeExit = {
   targetLocationId: string | null;
 };
 
+export type RuntimeAction = {
+  id: string;
+  description: string;
+  targetId: string | null;
+};
+
 export type RuntimeSnapshot = {
   sessionId: string;
   currentLocationId: string;
   description: string;
   items: RuntimeItem[];
   exits: RuntimeExit[];
+  availableActions: RuntimeAction[];
   inventory: RuntimeItem[];
   npcs: RuntimeNpc[];
 };
