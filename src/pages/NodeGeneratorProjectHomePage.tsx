@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestError, createQuestFromNodeGeneratorProject, renameNodeGeneratorProject } from '../api/nodeGeneratorApi';
@@ -100,6 +100,16 @@ export function NodeGeneratorProjectHomePage() {
         <Typography color="text.primary">{project.name}</Typography>
       </Breadcrumbs>
 
+      <Tabs
+        value="profile"
+        aria-label="Вкладки квеста"
+        variant="scrollable"
+        allowScrollButtonsMobile
+      >
+        <Tab label="Профиль" value="profile" component={Link} to={`/node-generator/projects/${project.id}`} />
+        <Tab label="Текстовое прохождение" value="runtime" component={Link} to={`/node-generator/projects/${project.id}/runtime`} />
+      </Tabs>
+
       <SectionCard title="Профиль квеста">
         <Stack spacing={1.5}>
           <TextField
@@ -124,7 +134,6 @@ export function NodeGeneratorProjectHomePage() {
             title="Продолжить работу"
             to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(firstSceneId)}`}
           />
-          <NavCard title="Текстовое прохождение" to={`/node-generator/projects/${project.id}/runtime`} />
           <NavCard title="Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
           <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} disabled />
         </Stack>

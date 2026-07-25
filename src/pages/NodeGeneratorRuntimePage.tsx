@@ -1,4 +1,4 @@
-import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
+import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { inspectTextRuntime, moveTextRuntime, startTextRuntime, takeTextRuntime, type RuntimeSnapshot } from '../api/textRuntimeApi';
@@ -74,6 +74,18 @@ export function NodeGeneratorRuntimePage() {
         {project ? <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">{project.name}</MuiLink> : null}
         <Typography color="text.primary">Текстовый режим</Typography>
       </Breadcrumbs>
+
+      {project ? (
+        <Tabs
+          value="runtime"
+          aria-label="Вкладки квеста"
+          variant="scrollable"
+          allowScrollButtonsMobile
+        >
+          <Tab label="Профиль" value="profile" component={Link} to={`/node-generator/projects/${project.id}`} />
+          <Tab label="Текстовое прохождение" value="runtime" component={Link} to={`/node-generator/projects/${project.id}/runtime`} />
+        </Tabs>
+      ) : null}
 
       <SectionCard title={snapshot ? `Сцена ${snapshot.currentLocationId}` : 'Текстовый режим'}>
         <Stack spacing={1.25}>
