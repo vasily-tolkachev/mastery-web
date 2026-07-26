@@ -11,6 +11,11 @@ export type RuntimeNpc = {
   dialogue: string;
 };
 
+export type RuntimeObject = {
+  id: string;
+  description: string;
+};
+
 export type RuntimeExit = {
   actionText: string;
   targetLocationId: string | null;
@@ -32,6 +37,7 @@ export type RuntimeSnapshot = {
   availableActions: RuntimeAction[];
   inventory: RuntimeItem[];
   npcs: RuntimeNpc[];
+  objects: RuntimeObject[];
   knownFacts: string[];
 };
 
@@ -55,8 +61,10 @@ export type RuntimeQuestImportPayload = {
   locations: Array<{ id: string; description: string }>;
   items: Array<{ id: string; description: string }>;
   npcs: Array<{ id: string; description: string; dialogue: string }>;
+  worldObjects?: Array<{ id: string; description: string }>;
   locationItems: Record<string, string[]>;
   locationNpcs: Record<string, string[]>;
+  locationObjects?: Record<string, string[]>;
   transitions: Array<{ fromId: string; toId: string; condition?: unknown }>;
   actions: Array<{
     id: string;

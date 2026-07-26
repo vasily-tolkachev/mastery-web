@@ -339,6 +339,12 @@ export function TextRuntimeQuestPage() {
                   <Button size="small" variant="outlined" onClick={() => void inspectTarget(npc.id)} disabled={pending}>Осмотреть</Button>
                 </Stack>
               ))}
+              {(snapshot?.objects ?? []).map((worldObject) => (
+                <Stack direction="row" spacing={1} key={worldObject.id}>
+                  <Button size="small" variant="outlined" onClick={() => void interact(worldObject.id)} disabled={pending}>Взаимодействовать: {worldObject.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(worldObject.id)} disabled={pending}>Осмотреть</Button>
+                </Stack>
+              ))}
             </Stack>
           </SectionCard>
         </Stack>
