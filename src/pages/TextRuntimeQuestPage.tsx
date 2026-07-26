@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -39,7 +39,7 @@ export function TextRuntimeQuestPage() {
         const started = await startTextRuntimeQuest(questId);
         if (cancelled) return;
         setSnapshot(started);
-        setStatus(await generationStatusTextRuntime(started.sessionId));
+        setStatus(await generateActionsTextRuntime(started.sessionId));
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Не удалось открыть квест');
@@ -68,7 +68,7 @@ export function TextRuntimeQuestPage() {
     setPending(true);
     try {
       setSnapshot(await inspectTextRuntime(snapshot.sessionId));
-      setStatus(await generationStatusTextRuntime(snapshot.sessionId));
+      setStatus(await generateActionsTextRuntime(snapshot.sessionId));
     } finally {
       setPending(false);
     }
@@ -79,16 +79,6 @@ export function TextRuntimeQuestPage() {
     setPending(true);
     try {
       setStatus(await generateSceneTextRuntime(snapshot.sessionId));
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const generateActions = async () => {
-    if (!snapshot?.sessionId) return;
-    setPending(true);
-    try {
-      setStatus(await generateActionsTextRuntime(snapshot.sessionId));
     } finally {
       setPending(false);
     }
@@ -158,6 +148,7 @@ export function TextRuntimeQuestPage() {
           throw new Error('Цель перехода не указана');
         }
         setSnapshot(await moveTextRuntime(snapshot.sessionId, (targetId ?? '').trim()));
+        setStatus(await generateActionsTextRuntime(snapshot.sessionId));
         return;
       }
       if (actionId.startsWith('item:')) {
@@ -228,7 +219,6 @@ export function TextRuntimeQuestPage() {
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
                 <Button size="small" variant="outlined" onClick={() => void generateScene()} disabled={!snapshot || pending}>Сгенерировать сцену</Button>
-                <Button size="small" variant="outlined" onClick={() => void generateActions()} disabled={!snapshot || pending}>Сгенерировать действия</Button>
                 <Button size="small" variant="outlined" onClick={() => void exportQuest()} disabled={!questId || pending}>Экспорт</Button>
               </Stack>
               {status ? (
@@ -241,19 +231,9 @@ export function TextRuntimeQuestPage() {
 
           <SectionCard title="Действия">
             <Stack spacing={1}>
-              <TextField size="small" label="Цель" value={targetId} onChange={(e) => setTargetId(e.target.value)} fullWidth />
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                <Button size="small" variant="outlined" onClick={() => void inspectTarget()} disabled={pending || !targetId.trim()}>
-                  Осмотреть цель
-                </Button>
-                <Button size="small" variant="contained" onClick={() => void interact()} disabled={pending || !targetId.trim()}>
-                  Выполнить действие
-                </Button>
-              </Stack>
-
               <Typography variant="caption" color="text.secondary">Сгенерированные действия</Typography>
               {(status?.generatedActions ?? []).length === 0 ? (
-                <Typography variant="body2" color="text.secondary">Сначала нажми «Сгенерировать действия».</Typography>
+                <Typography variant="body2" color="text.secondary">Нет доступных действий для текущей сцены.</Typography>
               ) : null}
               {(status?.generatedActions ?? []).map((action) => (
                 <Button
