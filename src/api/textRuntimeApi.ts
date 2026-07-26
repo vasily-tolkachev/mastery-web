@@ -183,3 +183,16 @@ export async function generationStatusTextRuntime(sessionId: string): Promise<Ru
   if (!response.ok) throw await toRuntimeError(response, 'Не удалось получить статус генерации');
   return await response.json() as RuntimeGenerationStatus;
 }
+export async function exportTextRuntimeQuest(questId: string): Promise<void> {
+  const response = await authFetch(`/api/text-runtime/quests/${encodeURIComponent(questId)}/export`);
+  if (!response.ok) throw await toRuntimeError(response, 'Export failed');
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${questId || 'runtime-quest'}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}

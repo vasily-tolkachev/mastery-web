@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   executeActionTextRuntime,
+  exportTextRuntimeQuest,
   generateActionsTextRuntime,
   generateSceneTextRuntime,
   generationStatusTextRuntime,
@@ -88,6 +89,18 @@ export function TextRuntimeQuestPage() {
     setPending(true);
     try {
       setStatus(await generateActionsTextRuntime(snapshot.sessionId));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const exportQuest = async () => {
+    if (!questId) return;
+    setPending(true);
+    try {
+      await exportTextRuntimeQuest(questId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось экспортировать квест');
     } finally {
       setPending(false);
     }
@@ -216,6 +229,7 @@ export function TextRuntimeQuestPage() {
                 <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
                 <Button size="small" variant="outlined" onClick={() => void generateScene()} disabled={!snapshot || pending}>Сгенерировать сцену</Button>
                 <Button size="small" variant="outlined" onClick={() => void generateActions()} disabled={!snapshot || pending}>Сгенерировать действия</Button>
+                <Button size="small" variant="outlined" onClick={() => void exportQuest()} disabled={!questId || pending}>Экспорт</Button>
               </Stack>
               {status ? (
                 <Typography variant="caption" color="text.secondary">
