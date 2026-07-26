@@ -1,7 +1,12 @@
-import { Alert, Box, Breadcrumbs, Stack, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Alert, Box, Breadcrumbs, Button, Stack, Typography } from '@mui/material';
+import { type ChangeEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listTextRuntimeQuests, type RuntimeQuestSummary } from '../api/textRuntimeApi';
+import {
+  importTextRuntimeQuest,
+  listTextRuntimeQuests,
+  type RuntimeQuestImportPayload,
+  type RuntimeQuestSummary,
+} from '../api/textRuntimeApi';
 import { LoadingState, SectionCard } from '../components/ui';
 
 export function TextRuntimeProjectsPage() {
@@ -32,6 +37,22 @@ export function TextRuntimeProjectsPage() {
     };
   }, []);
 
+  const onImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      setError(null);
+      const text = await file.text();
+      const payload = JSON.parse(text) as RuntimeQuestImportPayload;
+      await importTextRuntimeQuest(payload);
+      const loaded = await listTextRuntimeQuests();
+      setQuests(loaded);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось импортировать квест');
+    }
+  };
+
   if (isLoading) return <LoadingState message="Загрузка квестов..." />;
   if (error) return <Alert severity="error">{error}</Alert>;
 
@@ -43,6 +64,10 @@ export function TextRuntimeProjectsPage() {
 
       <SectionCard title="Выберите квест">
         <Stack spacing={1}>
+          <Button variant="outlined" component="label" size="small">
+            Импорт JSON
+            <input hidden type="file" accept="application/json,.json" onChange={(e) => void onImport(e)} />
+          </Button>
           {(quests ?? []).length === 0 ? (
             <Typography variant="body2" color="text.secondary">Нет квестов.</Typography>
           ) : null}

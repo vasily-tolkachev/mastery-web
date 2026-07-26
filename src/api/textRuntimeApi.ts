@@ -47,6 +47,30 @@ export type RuntimeQuestSummary = {
   description: string;
 };
 
+export type RuntimeQuestImportPayload = {
+  id: string;
+  name: string;
+  description?: string;
+  startLocationId: string;
+  locations: Array<{ id: string; description: string }>;
+  items: Array<{ id: string; description: string }>;
+  npcs: Array<{ id: string; description: string; dialogue: string }>;
+  locationItems: Record<string, string[]>;
+  locationNpcs: Record<string, string[]>;
+  transitions: Array<{ fromId: string; toId: string; condition?: unknown }>;
+  actions: Array<{
+    id: string;
+    locationId?: string;
+    description: string;
+    targetId?: string;
+    requiredItems?: string[];
+    progressFlagsToSet?: string[];
+    condition?: unknown;
+    effects: Array<{ type: string; key?: string; value?: string }>;
+  }>;
+  endings: Array<{ id: string; condition?: unknown }>;
+};
+
 export type RuntimeGeneratedAction = {
   id: string;
   label: string;
@@ -91,6 +115,16 @@ export async function startTextRuntimeQuest(questId: string): Promise<RuntimeSna
   });
   if (!response.ok) throw await toRuntimeError(response, 'Не удалось запустить квест');
   return await response.json() as RuntimeSnapshot;
+}
+
+export async function importTextRuntimeQuest(payload: RuntimeQuestImportPayload): Promise<RuntimeQuestSummary> {
+  const response = await authFetch('/api/text-runtime/quests/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw await toRuntimeError(response, 'ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¸Ð¼Ð¿Ð¾Ñ€Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ ÐºÐ²ÐµÑÑ‚');
+  return await response.json() as RuntimeQuestSummary;
 }
 
 export async function inspectTextRuntime(sessionId: string): Promise<RuntimeSnapshot> {
