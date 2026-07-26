@@ -151,7 +151,7 @@ export function TextRuntimeQuestPage() {
         setStatus(await generateActionsTextRuntime(snapshot.sessionId));
         return;
       }
-      if (actionId.startsWith('item:')) {
+      if (actionId.startsWith('item:') || actionId.startsWith('npc:')) {
         if (!(targetId ?? '').trim()) {
           throw new Error('Цель взаимодействия не указана');
         }
@@ -291,6 +291,28 @@ export function TextRuntimeQuestPage() {
               ) : null}
               {(snapshot?.knownFacts ?? []).map((fact) => (
                 <Typography key={fact} variant="body2">• {fact}</Typography>
+              ))}
+            </Stack>
+          </SectionCard>
+
+          <SectionCard title="Состояния объектов">
+            <Stack spacing={0.5}>
+              {Object.keys(snapshot?.objectStates ?? {}).length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Нет изменений состояний объектов.</Typography>
+              ) : null}
+              {Object.entries(snapshot?.objectStates ?? {}).map(([key, value]) => (
+                <Typography key={key} variant="body2">{`• ${key}: ${value}`}</Typography>
+              ))}
+            </Stack>
+          </SectionCard>
+
+          <SectionCard title="Состояния персонажей">
+            <Stack spacing={0.5}>
+              {Object.keys(snapshot?.characterStates ?? {}).length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Нет изменений состояний персонажей.</Typography>
+              ) : null}
+              {Object.entries(snapshot?.characterStates ?? {}).map(([key, value]) => (
+                <Typography key={key} variant="body2">{`• ${key}: ${value}`}</Typography>
               ))}
             </Stack>
           </SectionCard>

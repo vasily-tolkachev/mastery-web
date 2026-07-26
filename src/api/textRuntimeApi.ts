@@ -39,6 +39,8 @@ export type RuntimeSnapshot = {
   npcs: RuntimeNpc[];
   objects: RuntimeObject[];
   knownFacts: string[];
+  objectStates: Record<string, string>;
+  characterStates: Record<string, string>;
 };
 
 export type RuntimeActionResult = {
