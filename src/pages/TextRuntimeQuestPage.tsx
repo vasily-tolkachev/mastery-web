@@ -157,10 +157,12 @@ export function TextRuntimeQuestPage() {
         }
         const result = await interactTextRuntime(snapshot.sessionId, (targetId ?? '').trim());
         setSnapshot(result.snapshot);
+        setStatus(await generateActionsTextRuntime(snapshot.sessionId));
         setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
         return;
       }
       setSnapshot(await executeActionTextRuntime(snapshot.sessionId, actionId));
+      setStatus(await generateActionsTextRuntime(snapshot.sessionId));
       setResultText(`Действие движка: executeAction:${actionId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось выполнить сгенерированное действие');
