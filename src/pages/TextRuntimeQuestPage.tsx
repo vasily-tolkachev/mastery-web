@@ -1,4 +1,5 @@
 import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -203,7 +204,7 @@ export function TextRuntimeQuestPage() {
     }
   };
 
-  const renderObjectives = (objectives: RuntimeObjective[], level = 0) => objectives.flatMap((objective) => {
+  const renderObjectives = (objectives: RuntimeObjective[], level = 0): ReactNode[] => objectives.flatMap((objective): ReactNode[] => {
     const row = (
       <Typography
         key={`${level}:${objective.id}`}
@@ -223,7 +224,7 @@ export function TextRuntimeQuestPage() {
         {objective.description}
       </Typography>
     ) : null;
-    const children = renderObjectives(objective.children ?? [], level + 1);
+    const children: ReactNode[] = renderObjectives(objective.children ?? [], level + 1);
     return description ? [row, description, ...children] : [row, ...children];
   });
 
