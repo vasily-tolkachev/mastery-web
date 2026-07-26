@@ -16,6 +16,7 @@ import {
   useTextRuntime,
   type RuntimeGenerationStatus,
   type RuntimeItem,
+  type RuntimeObjective,
   type RuntimeSnapshot,
 } from '../api/textRuntimeApi';
 import { SectionCard } from '../components/ui';
@@ -202,6 +203,30 @@ export function TextRuntimeQuestPage() {
     }
   };
 
+  const renderObjectives = (objectives: RuntimeObjective[], level = 0) => objectives.flatMap((objective) => {
+    const row = (
+      <Typography
+        key={`${level}:${objective.id}`}
+        variant="body2"
+        sx={{ pl: level * 1.5 }}
+      >
+        {objective.completed ? '✓' : '○'} {objective.title}
+      </Typography>
+    );
+    const description = objective.description ? (
+      <Typography
+        key={`${level}:${objective.id}:desc`}
+        variant="caption"
+        color="text.secondary"
+        sx={{ pl: (level * 1.5) + 2 }}
+      >
+        {objective.description}
+      </Typography>
+    ) : null;
+    const children = renderObjectives(objective.children ?? [], level + 1);
+    return description ? [row, description, ...children] : [row, ...children];
+  });
+
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
@@ -294,6 +319,14 @@ export function TextRuntimeQuestPage() {
               {(snapshot?.knownFacts ?? []).map((fact) => (
                 <Typography key={fact} variant="body2">• {fact}</Typography>
               ))}
+            </Stack>
+          </SectionCard>
+
+          <SectionCard title="Цели">
+            <Stack spacing={0.5}>
+              {(snapshot?.objectives ?? []).length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Цели для этого квеста не заданы.</Typography>
+              ) : renderObjectives(snapshot?.objectives ?? [])}
             </Stack>
           </SectionCard>
 

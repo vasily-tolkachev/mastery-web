@@ -38,9 +38,18 @@ export type RuntimeSnapshot = {
   inventory: RuntimeItem[];
   npcs: RuntimeNpc[];
   objects: RuntimeObject[];
+  objectives: RuntimeObjective[];
   knownFacts: string[];
   objectStates: Record<string, string>;
   characterStates: Record<string, string>;
+};
+
+export type RuntimeObjective = {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  children?: RuntimeObjective[];
 };
 
 export type RuntimeActionResult = {
@@ -78,7 +87,16 @@ export type RuntimeQuestImportPayload = {
     condition?: unknown;
     effects: Array<{ type: string; key?: string; value?: string }>;
   }>;
+  objectives?: RuntimeQuestObjectiveImport[];
   endings: Array<{ id: string; condition?: unknown }>;
+};
+
+export type RuntimeQuestObjectiveImport = {
+  id: string;
+  title: string;
+  description?: string;
+  condition?: unknown;
+  children?: RuntimeQuestObjectiveImport[];
 };
 
 export type RuntimeGeneratedAction = {
