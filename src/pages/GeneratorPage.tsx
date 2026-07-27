@@ -3,7 +3,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   ApiRequestError,
@@ -41,6 +41,7 @@ export function GeneratorPage() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [validationResult, setValidationResult] = useState<unknown>(null);
   const [promptPreviews, setPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
+  const [promptDrafts, setPromptDrafts] = useState<Record<string, { systemPrompt: string; userPrompt: string }>>({});
   const [wayPromptPreviews, setWayPromptPreviews] = useState<Record<string, StagePromptPreview>>({});
 
   const selectedProject = useMemo(
@@ -119,6 +120,13 @@ export function GeneratorPage() {
       clearUiError();
       const preview = await previewStagePrompt(selectedProjectId, stageType);
       setPromptPreviews((prev) => ({ ...prev, [stageType]: preview }));
+      setPromptDrafts((prev) => ({
+        ...prev,
+        [stageType]: prev[stageType] ?? {
+          systemPrompt: preview.systemPrompt,
+          userPrompt: preview.userPrompt,
+        },
+      }));
     } catch (e) {
       applyUiError(e, 'Failed to preview stage prompt');
       await refreshSelectedProject(selectedProjectId);
@@ -135,7 +143,17 @@ export function GeneratorPage() {
     try {
       setBusyAction(actionKey);
       clearUiError();
-      const updated = await generateStage(selectedProjectId, stageType);
+      const draft = promptDrafts[stageType];
+      const updated = await generateStage(
+        selectedProjectId,
+        stageType,
+        draft
+          ? {
+            systemPrompt: draft.systemPrompt,
+            userPrompt: draft.userPrompt,
+          }
+          : undefined,
+      );
       setProjects((prev) => prev.map((project) => (project.id === updated.id ? updated : project)));
     } catch (e) {
       applyUiError(e, 'Failed to generate stage');
@@ -503,6 +521,22 @@ export function GeneratorPage() {
                   key={stage.type}
                   stage={stage}
                   promptPreview={promptPreviews[stage.type] ?? null}
+                  promptDraft={promptDrafts[stage.type] ?? null}
+                  onPromptDraftChange={(field, value) => {
+                    setPromptDrafts((prev) => {
+                      const existing = prev[stage.type] ?? {
+                        systemPrompt: promptPreviews[stage.type]?.systemPrompt ?? '',
+                        userPrompt: promptPreviews[stage.type]?.userPrompt ?? '',
+                      };
+                      return {
+                        ...prev,
+                        [stage.type]: {
+                          ...existing,
+                          [field]: value,
+                        },
+                      };
+                    });
+                  }}
                   onGenerate={() => void handlePreview(stage.type)}
                   onSend={() => void handleSend(stage.type)}
                   onApprove={() => void handleApprove(stage.type)}
@@ -787,6 +821,8 @@ export function GeneratorPage() {
 type StageRowProps = {
   stage: GeneratorStage;
   promptPreview: StagePromptPreview | null;
+  promptDraft: { systemPrompt: string; userPrompt: string } | null;
+  onPromptDraftChange: (_field: 'systemPrompt' | 'userPrompt', _value: string) => void;
   onGenerate: () => void;
   onSend: () => void;
   onApprove: () => void;
@@ -795,7 +831,18 @@ type StageRowProps = {
   disableStageApprove?: boolean;
 };
 
-function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGenerateStep, disableStageSend, disableStageApprove }: StageRowProps) {
+function StageRow({
+  stage,
+  promptPreview,
+  promptDraft,
+  onPromptDraftChange,
+  onGenerate,
+  onSend,
+  onApprove,
+  onGenerateStep,
+  disableStageSend,
+  disableStageApprove,
+}: StageRowProps) {
   const steps: string[] = [];
 
   return (
@@ -846,23 +893,28 @@ function StageRow({ stage, promptPreview, onGenerate, onSend, onApprove, onGener
       </Stack>
 
       {promptPreview ? (
-        <Box
-          component="pre"
-          sx={{
-            mt: 1.5,
-            mb: 0,
-            p: 1,
-            borderRadius: 1,
-            bgcolor: 'background.default',
-            maxHeight: 220,
-            overflow: 'auto',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            fontSize: 12,
-          }}
-        >
-          {`SYSTEM:\n${promptPreview.systemPrompt}\n\nUSER:\n${promptPreview.userPrompt}`}
-        </Box>
+        <Stack spacing={1} sx={{ mt: 1.5 }}>
+          <TextField
+            label="System Prompt"
+            value={promptDraft?.systemPrompt ?? promptPreview.systemPrompt}
+            onChange={(event) => onPromptDraftChange('systemPrompt', event.target.value)}
+            multiline
+            minRows={4}
+            maxRows={10}
+            fullWidth
+            size="small"
+          />
+          <TextField
+            label="User Prompt"
+            value={promptDraft?.userPrompt ?? promptPreview.userPrompt}
+            onChange={(event) => onPromptDraftChange('userPrompt', event.target.value)}
+            multiline
+            minRows={6}
+            maxRows={14}
+            fullWidth
+            size="small"
+          />
+        </Stack>
       ) : null}
 
       {stage.currentRevision ? (

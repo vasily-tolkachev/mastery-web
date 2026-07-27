@@ -53,10 +53,20 @@ export async function getGeneratorProject(id: string): Promise<GeneratorProject>
   return normalizeProject(await response.json());
 }
 
-export async function generateStage(projectId: string, stageType: GeneratorStageType): Promise<GeneratorProject> {
+export async function generateStage(
+  projectId: string,
+  stageType: GeneratorStageType,
+  overrides?: { systemPrompt?: string; userPrompt?: string },
+): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${projectId}/stages/${stageType}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: overrides
+      ? JSON.stringify({
+        systemPrompt: overrides.systemPrompt ?? null,
+        userPrompt: overrides.userPrompt ?? null,
+      })
+      : undefined,
   });
   if (!response.ok) {
     throw await toError(response, 'Не удалось сгенерировать этап');
