@@ -4,6 +4,7 @@ import { AppLayout } from './layouts/AppLayout';
 import { ConceptPage } from './pages/ConceptPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { GeneratorPage } from './pages/GeneratorPage';
+import { PipelineBuilderPage } from './pages/PipelineBuilderPage';
 import { HomePage } from './pages/HomePage';
 import { LearningPage } from './pages/LearningPage';
 import { LoginPage } from './pages/LoginPage';
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/quests" element={<QuestsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/generator" element={<GeneratorPage />} />
+        <Route path="/pipeline-builder" element={<PipelineBuilderPage />} />
         <Route path="/node-generator" element={<NodeGeneratorProjectsPage />} />
         <Route path="/text-runtime" element={<TextRuntimeProjectsPage />} />
         <Route path="/node-generator/new" element={<NodeGeneratorNewQuestPage />} />
