@@ -9,6 +9,7 @@ export type RuntimeNpc = {
   id: string;
   description: string;
   dialogue: string;
+  dialogueId?: string | null;
 };
 
 export type RuntimeObject = {
@@ -71,7 +72,17 @@ export type RuntimeQuestImportPayload = {
   startLocationId: string;
   locations: Array<{ id: string; description: string }>;
   items: Array<{ id: string; description: string }>;
-  npcs: Array<{ id: string; description: string; dialogue: string }>;
+  npcs: Array<{ id: string; description: string; dialogue?: string; dialogueId?: string }>;
+  dialogues?: Array<{
+    id: string;
+    startNodeId: string;
+    nodes: Array<{
+      id: string;
+      text: string;
+      options?: Array<{ text: string; nextNodeId: string | null }>;
+      effects?: Array<{ type: string; key?: string; value?: string }>;
+    }>;
+  }>;
   worldObjects?: Array<{ id: string; description: string }>;
   locationItems: Record<string, string[]>;
   locationNpcs: Record<string, string[]>;

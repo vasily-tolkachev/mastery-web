@@ -31,6 +31,8 @@ export function TextRuntimeQuestPage() {
   const [targetId, setTargetId] = useState('');
   const [selectedInventoryItem, setSelectedInventoryItem] = useState('');
   const [resultText, setResultText] = useState<string | null>(null);
+  const [activeDialogueNpcId, setActiveDialogueNpcId] = useState<string | null>(null);
+  const [dialogueText, setDialogueText] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +66,28 @@ export function TextRuntimeQuestPage() {
       .filter((a) => a.targetId)
       .map((a) => ({ id: a.id, label: a.description || a.id, targetId: a.targetId as string }));
   }, [snapshot, selectedInventoryItem]);
+
+  const dialogueActionGroups = useMemo(() => {
+    const map = new Map<string, Array<{ id: string; description: string }>>();
+    for (const action of snapshot?.availableActions ?? []) {
+      if (!action.id?.startsWith('dialogue:')) continue;
+      const parts = action.id.split(':');
+      if (parts.length < 3 || !parts[1]) continue;
+      const npcId = parts[1];
+      const option = { id: action.id, description: action.description || action.id };
+      map.set(npcId, [...(map.get(npcId) ?? []), option]);
+    }
+    return map;
+  }, [snapshot]);
+
+  useEffect(() => {
+    if (activeDialogueNpcId && dialogueActionGroups.has(activeDialogueNpcId)) return;
+    const firstNpcWithDialogue = Array.from(dialogueActionGroups.keys())[0] ?? null;
+    setActiveDialogueNpcId(firstNpcWithDialogue);
+    if (!firstNpcWithDialogue) {
+      setDialogueText(null);
+    }
+  }, [activeDialogueNpcId, dialogueActionGroups]);
 
   const refresh = async () => {
     if (!snapshot?.sessionId) return;
@@ -104,6 +128,8 @@ export function TextRuntimeQuestPage() {
     try {
       setSnapshot(await moveTextRuntime(snapshot.sessionId, locationId));
       setResultText(null);
+      setDialogueText(null);
+      setActiveDialogueNpcId(null);
       setStatus(await generationStatusTextRuntime(snapshot.sessionId));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Переход недоступен');
@@ -133,6 +159,11 @@ export function TextRuntimeQuestPage() {
       const result = await interactTextRuntime(snapshot.sessionId, target);
       setSnapshot(result.snapshot);
       setTargetId(target);
+      const npcExists = (result.snapshot.npcs ?? []).some((npc) => npc.id === target);
+      if (npcExists) {
+        setActiveDialogueNpcId(target);
+        setDialogueText(result.message);
+      }
       setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось выполнить действие');
@@ -161,6 +192,18 @@ export function TextRuntimeQuestPage() {
         setSnapshot(result.snapshot);
         setStatus(await generateActionsTextRuntime(snapshot.sessionId));
         setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
+        return;
+      }
+      if (actionId.startsWith('dialogue:')) {
+        const result = await interactTextRuntime(snapshot.sessionId, actionId);
+        setSnapshot(result.snapshot);
+        const parts = actionId.split(':');
+        if (parts.length >= 3) {
+          setActiveDialogueNpcId(parts[1]);
+        }
+        setDialogueText(result.message);
+        setStatus(await generateActionsTextRuntime(snapshot.sessionId));
+        setResultText(`${result.message}\nÐ”ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ Ð´Ð²Ð¸Ð¶ÐºÐ°: ${result.engineAction}`);
         return;
       }
       setSnapshot(await executeActionTextRuntime(snapshot.sessionId, actionId));
@@ -309,6 +352,33 @@ export function TextRuntimeQuestPage() {
                   {`${target.label} (${target.targetId})`}
                 </Button>
               ))}
+            </Stack>
+          </SectionCard>
+
+          <SectionCard title="Диалог">
+            <Stack spacing={1}>
+              {!activeDialogueNpcId ? (
+                <Typography variant="body2" color="text.secondary">Диалог не активен.</Typography>
+              ) : (
+                <>
+                  <Typography variant="caption" color="text.secondary">NPC: {activeDialogueNpcId}</Typography>
+                  <Typography variant="body2">{dialogueText ?? 'Нажмите "Поговорить", чтобы начать диалог.'}</Typography>
+                  {(dialogueActionGroups.get(activeDialogueNpcId) ?? []).length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">Нет доступных реплик.</Typography>
+                  ) : null}
+                  {(dialogueActionGroups.get(activeDialogueNpcId) ?? []).map((option) => (
+                    <Button
+                      key={option.id}
+                      size="small"
+                      variant="contained"
+                      onClick={() => void runGeneratedAction(option.id, option.id)}
+                      disabled={pending}
+                    >
+                      {option.description}
+                    </Button>
+                  ))}
+                </>
+              )}
             </Stack>
           </SectionCard>
 
