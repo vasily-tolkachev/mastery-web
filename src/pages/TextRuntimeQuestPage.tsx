@@ -203,7 +203,7 @@ export function TextRuntimeQuestPage() {
         }
         setDialogueText(result.message);
         setStatus(await generateActionsTextRuntime(snapshot.sessionId));
-        setResultText(`${result.message}\nÐ”ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ Ð´Ð²Ð¸Ð¶ÐºÐ°: ${result.engineAction}`);
+        setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
         return;
       }
       setSnapshot(await executeActionTextRuntime(snapshot.sessionId, actionId));
