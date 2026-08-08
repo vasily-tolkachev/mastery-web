@@ -1,5 +1,6 @@
 import { authFetch } from './http';
 import type {
+  MicroConceptGeneratedContent,
   LearningProgram,
   MicroConceptGenerationStatus,
   ProgramConcept,
@@ -89,6 +90,26 @@ export async function getMicroConceptGenerationStatus(programId: number, microCo
     status: String(raw.status ?? 'NOT_STARTED') as MicroConceptGenerationStatus['status'],
     progressPercent: toNumber(raw.progressPercent, 0),
     message: String(raw.message ?? ''),
+    updatedAt: String(raw.updatedAt ?? ''),
+  };
+}
+
+export async function getMicroConceptGeneratedContent(programId: number, microConceptId: number): Promise<MicroConceptGeneratedContent> {
+  const response = await authFetch(`/api/programs/${programId}/micro-concepts/${microConceptId}/content`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch micro-concept generated content (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    programId: toNumber(raw.programId, programId),
+    microConceptId: toNumber(raw.microConceptId, microConceptId),
+    status: String(raw.status ?? ''),
+    questionPayload: String(raw.questionPayload ?? ''),
+    learningCardPayload: String(raw.learningCardPayload ?? ''),
+    practicePayload: String(raw.practicePayload ?? ''),
+    quickCheckPayload: String(raw.quickCheckPayload ?? ''),
+    retryPayload: String(raw.retryPayload ?? ''),
+    generatedAt: String(raw.generatedAt ?? ''),
     updatedAt: String(raw.updatedAt ?? ''),
   };
 }

@@ -2,10 +2,10 @@ import { Button, Grid, Stack, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { EmptyState, ErrorState, InfoCard, LoadingState, PageHeader, SectionCard } from '../components/ui';
-import { getMicroConceptGenerationStatus, generateMicroConceptContent } from '../api/programApi';
+import { getMicroConceptGeneratedContent, getMicroConceptGenerationStatus, generateMicroConceptContent } from '../api/programApi';
 import { useGoalProgram } from '../hooks/useGoals';
 import { useCurrentProgram, useProgramTree } from '../hooks/useProgram';
-import type { MicroConceptGenerationStatus } from '../types/program';
+import type { MicroConceptGeneratedContent, MicroConceptGenerationStatus } from '../types/program';
 
 export function ConceptPage() {
   const params = useParams<{ conceptId: string }>();
@@ -53,6 +53,8 @@ export function ConceptPage() {
   }, [programQuery.data?.programId, selectedProgramId]);
 
   const [generationStatusByMicroId, setGenerationStatusByMicroId] = useState<Record<number, MicroConceptGenerationStatus>>({});
+  const [generatedContentByMicroId, setGeneratedContentByMicroId] = useState<Record<number, MicroConceptGeneratedContent>>({});
+  const [showContentByMicroId, setShowContentByMicroId] = useState<Record<number, boolean>>({});
   const [generationBusyByMicroId, setGenerationBusyByMicroId] = useState<Record<number, boolean>>({});
   const [generationError, setGenerationError] = useState<string | null>(null);
 
@@ -117,6 +119,18 @@ export function ConceptPage() {
     }
   };
 
+  const handleToggleContent = async (microConceptId: number) => {
+    const nextVisible = !showContentByMicroId[microConceptId];
+    setShowContentByMicroId((prev) => ({ ...prev, [microConceptId]: nextVisible }));
+    if (!nextVisible || generatedContentByMicroId[microConceptId] || effectiveProgramId <= 0) return;
+    try {
+      const content = await getMicroConceptGeneratedContent(effectiveProgramId, microConceptId);
+      setGeneratedContentByMicroId((prev) => ({ ...prev, [microConceptId]: content }));
+    } catch (e) {
+      setGenerationError(e instanceof Error ? e.message : 'Failed to load generated content');
+    }
+  };
+
   return (
     <Stack spacing={2}>
       <PageHeader
@@ -174,11 +188,45 @@ export function ConceptPage() {
                           >
                             {busy ? 'Starting...' : 'Generate'}
                           </Button>
+                          <Button
+                            size="small"
+                            variant="text"
+                            disabled={id === null || status?.status !== 'READY'}
+                            onClick={() => {
+                              if (id !== null) void handleToggleContent(id);
+                            }}
+                          >
+                            {id !== null && showContentByMicroId[id] ? 'Hide' : 'Show'}
+                          </Button>
                         </Stack>
                         {status?.message ? (
                           <Typography variant="caption" color={status.status === 'FAILED' ? 'error.main' : 'text.secondary'} sx={{ width: '100%' }}>
                             {status.message}
                           </Typography>
+                        ) : null}
+                        {id !== null && showContentByMicroId[id] ? (
+                          <Stack spacing={0.5} sx={{ width: '100%' }}>
+                            <Typography variant="caption" color="text.secondary">Question</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {generatedContentByMicroId[id]?.questionPayload || 'No content loaded.'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">Learning Card</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {generatedContentByMicroId[id]?.learningCardPayload || 'No content loaded.'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">Practice</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {generatedContentByMicroId[id]?.practicePayload || 'No content loaded.'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">Quick Check</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {generatedContentByMicroId[id]?.quickCheckPayload || 'No content loaded.'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">Retry</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {generatedContentByMicroId[id]?.retryPayload || 'No content loaded.'}
+                            </Typography>
+                          </Stack>
                         ) : null}
                       </Stack>
                     );

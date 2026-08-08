@@ -61,3 +61,16 @@ export interface MicroConceptGenerationStatus {
   message: string;
   updatedAt: string;
 }
+
+export interface MicroConceptGeneratedContent {
+  programId: number;
+  microConceptId: number;
+  status: string;
+  questionPayload: string;
+  learningCardPayload: string;
+  practicePayload: string;
+  quickCheckPayload: string;
+  retryPayload: string;
+  generatedAt: string;
+  updatedAt: string;
+}
