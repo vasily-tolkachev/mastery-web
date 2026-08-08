@@ -1,4 +1,4 @@
-import { Grid, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
+import { Button, Grid, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
@@ -12,7 +12,7 @@ import {
   StatusChip,
 } from '../components/ui';
 import { useLearningState } from '../hooks/useLearning';
-import { useGoal, useGoalProgram } from '../hooks/useGoals';
+import { useGoal, useGoalProgram, useGoals } from '../hooks/useGoals';
 import { useCurrentProgram, useProgramStatus, useProgramTree } from '../hooks/useProgram';
 import type { LearningProgram } from '../types/program';
 
@@ -109,6 +109,7 @@ export function ProgramsPage() {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   });
 
+  const goalsQuery = useGoals();
   const goalQuery = useGoal(activeGoalId);
   const goalProgramQuery = useGoalProgram(activeGoalId);
   const selectedProgramId = useMemo(() => {
@@ -137,7 +138,7 @@ export function ProgramsPage() {
   );
   const error = hasProgramDataForView
     ? null
-    : learningStateQuery.error ?? programQuery.error ?? goalProgramQuery.error ?? programStatusQuery.error;
+    : goalsQuery.error ?? learningStateQuery.error ?? programQuery.error ?? goalProgramQuery.error ?? programStatusQuery.error;
 
   useEffect(() => {
     if (activeGoalId <= 0) return;
@@ -146,6 +147,17 @@ export function ProgramsPage() {
       setActiveGoalId(0);
     }
   }, [activeGoalId, goalQuery.data, goalQuery.isSuccess]);
+
+  useEffect(() => {
+    if (activeGoalId > 0) return;
+    const firstGoalId = goalsQuery.data?.[0]?.id ?? 0;
+    if (firstGoalId <= 0) return;
+    localStorage.setItem('active-goal-id', String(firstGoalId));
+    setActiveGoalId(firstGoalId);
+  }, [activeGoalId, goalsQuery.data]);
+
+  const selectableGoals = goalsQuery.data ?? [];
+  const selectedGoalTitle = selectableGoals.find((goal) => goal.id === activeGoalId)?.title ?? '';
   const microStatusMap = buildMicroStatusMap(programForView, state?.context.microConceptId ?? null);
   const roadmapItems = buildRoadmapItems(programForView);
   const totalConcepts = program?.progress.totalConcepts ?? 0;
@@ -189,6 +201,33 @@ export function ProgramsPage() {
       {!isLoading && !error && programStatus === 'FAILED' ? (
         <ErrorState message="Не удалось сгенерировать программу." />
       ) : null}
+
+      <SectionCard title="Program selection">
+        {!selectableGoals.length ? (
+          <EmptyState message="No goals found yet." />
+        ) : (
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            {selectableGoals.map((goal) => (
+              <Button
+                key={goal.id}
+                size="small"
+                variant={goal.id === activeGoalId ? 'contained' : 'outlined'}
+                onClick={() => {
+                  localStorage.setItem('active-goal-id', String(goal.id));
+                  setActiveGoalId(goal.id);
+                }}
+              >
+                {goal.title || `Goal ${goal.id}`}
+              </Button>
+            ))}
+          </Stack>
+        )}
+        {selectedGoalTitle ? (
+          <Typography variant="caption" color="text.secondary">
+            {`Current goal: ${selectedGoalTitle}`}
+          </Typography>
+        ) : null}
+      </SectionCard>
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>
