@@ -49,3 +49,15 @@ export interface ProgramRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+export type MicroConceptGenerationStatusType = 'NOT_STARTED' | 'GENERATING' | 'READY' | 'FAILED';
+
+export interface MicroConceptGenerationStatus {
+  programId: number;
+  microConceptId: number;
+  jobId: number | null;
+  status: MicroConceptGenerationStatusType;
+  progressPercent: number;
+  message: string;
+  updatedAt: string;
+}

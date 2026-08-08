@@ -1,9 +1,11 @@
-import { Grid, Stack } from '@mui/material';
-import { useMemo } from 'react';
+import { Button, Grid, Stack, Typography } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { EmptyState, ErrorState, InfoCard, LoadingState, PageHeader, SectionCard } from '../components/ui';
+import { getMicroConceptGenerationStatus, generateMicroConceptContent } from '../api/programApi';
 import { useGoalProgram } from '../hooks/useGoals';
 import { useCurrentProgram, useProgramTree } from '../hooks/useProgram';
+import type { MicroConceptGenerationStatus } from '../types/program';
 
 export function ConceptPage() {
   const params = useParams<{ conceptId: string }>();
@@ -44,6 +46,76 @@ export function ConceptPage() {
   const completedMicro = concept?.microConcepts.filter((micro) => micro.completed).length ?? 0;
   const loading = goalProgramQuery.isLoading || programQuery.isLoading;
   const error = goalProgramQuery.error ?? programQuery.error;
+  const effectiveProgramId = useMemo(() => {
+    if (selectedProgramId > 0) return selectedProgramId;
+    const parsed = Number(programQuery.data?.programId ?? 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }, [programQuery.data?.programId, selectedProgramId]);
+
+  const [generationStatusByMicroId, setGenerationStatusByMicroId] = useState<Record<number, MicroConceptGenerationStatus>>({});
+  const [generationBusyByMicroId, setGenerationBusyByMicroId] = useState<Record<number, boolean>>({});
+  const [generationError, setGenerationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadStatuses() {
+      if (!concept || effectiveProgramId <= 0) {
+        setGenerationStatusByMicroId({});
+        return;
+      }
+      const ids = concept.microConcepts
+        .map((micro) => micro.microConceptId)
+        .filter((id): id is number => id !== null);
+      if (!ids.length) {
+        setGenerationStatusByMicroId({});
+        return;
+      }
+      try {
+        const pairs = await Promise.all(ids.map(async (id) => [id, await getMicroConceptGenerationStatus(effectiveProgramId, id)] as const));
+        if (cancelled) return;
+        setGenerationStatusByMicroId(Object.fromEntries(pairs));
+      } catch (e) {
+        if (cancelled) return;
+        setGenerationError(e instanceof Error ? e.message : 'Failed to load generation statuses');
+      }
+    }
+    void loadStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, [concept, effectiveProgramId]);
+
+  useEffect(() => {
+    if (!concept || effectiveProgramId <= 0) return;
+    const ids = concept.microConcepts
+      .map((micro) => micro.microConceptId)
+      .filter((id): id is number => id !== null);
+    if (!ids.length) return;
+    const shouldPoll = ids.some((id) => generationStatusByMicroId[id]?.status === 'GENERATING');
+    if (!shouldPoll) return;
+
+    const handle = window.setInterval(() => {
+      void Promise.all(ids.map(async (id) => [id, await getMicroConceptGenerationStatus(effectiveProgramId, id)] as const))
+        .then((pairs) => setGenerationStatusByMicroId((prev) => ({ ...prev, ...Object.fromEntries(pairs) })))
+        .catch(() => {});
+    }, 1500);
+    return () => window.clearInterval(handle);
+  }, [concept, effectiveProgramId, generationStatusByMicroId]);
+
+  const handleGenerate = async (microConceptId: number) => {
+    if (effectiveProgramId <= 0) return;
+    setGenerationError(null);
+    setGenerationBusyByMicroId((prev) => ({ ...prev, [microConceptId]: true }));
+    try {
+      const started = await generateMicroConceptContent(effectiveProgramId, microConceptId);
+      const status = await getMicroConceptGenerationStatus(effectiveProgramId, microConceptId);
+      setGenerationStatusByMicroId((prev) => ({ ...prev, [microConceptId]: { ...status, jobId: status.jobId ?? started.jobId } }));
+    } catch (e) {
+      setGenerationError(e instanceof Error ? e.message : 'Failed to start generation');
+    } finally {
+      setGenerationBusyByMicroId((prev) => ({ ...prev, [microConceptId]: false }));
+    }
+  };
 
   return (
     <Stack spacing={2}>
@@ -56,6 +128,7 @@ export function ConceptPage() {
       {error ? (
         <ErrorState message={error instanceof Error ? error.message : 'Непредвиденная ошибка'} />
       ) : null}
+      {generationError ? <ErrorState message={generationError} /> : null}
 
       {!loading && !error && !concept ? (
         <EmptyState message="Концепт не найден в текущей программе." />
@@ -76,9 +149,35 @@ export function ConceptPage() {
 
               <SectionCard title="Микроконцепты">
                 <Stack spacing={1}>
-                  {concept.microConcepts.map((micro, index) => (
-                    <InfoCard key={micro.microConceptId ?? `${micro.title}-${index}`} label={`Шаг ${index + 1}`} value={micro.title} />
-                  ))}
+                  {concept.microConcepts.map((micro, index) => {
+                    const id = micro.microConceptId;
+                    const status = id === null ? null : generationStatusByMicroId[id];
+                    const busy = id === null ? false : Boolean(generationBusyByMicroId[id]);
+                    const statusLabel = status ? `${status.status} ${status.progressPercent}%` : 'NOT_STARTED';
+                    return (
+                      <Stack
+                        key={micro.microConceptId ?? `${micro.title}-${index}`}
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1}
+                        sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
+                      >
+                        <Typography variant="body2">{`Шаг ${index + 1}: ${micro.title}`}</Typography>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          <Typography variant="caption" color="text.secondary">{statusLabel}</Typography>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={id === null || busy || status?.status === 'GENERATING'}
+                            onClick={() => {
+                              if (id !== null) void handleGenerate(id);
+                            }}
+                          >
+                            {busy ? 'Starting...' : 'Generate'}
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    );
+                  })}
                 </Stack>
               </SectionCard>
             </Stack>

@@ -1,6 +1,7 @@
 import { authFetch } from './http';
 import type {
   LearningProgram,
+  MicroConceptGenerationStatus,
   ProgramConcept,
   ProgramGenerationStatus,
   ProgramMicroConcept,
@@ -51,6 +52,43 @@ export async function getProgramStatus(programId: number): Promise<ProgramGenera
   return {
     programId: toNumber(raw.programId, 0),
     status: String(raw.status ?? 'CREATED') as ProgramGenerationStatus['status'],
+    updatedAt: String(raw.updatedAt ?? ''),
+  };
+}
+
+export async function generateMicroConceptContent(programId: number, microConceptId: number): Promise<MicroConceptGenerationStatus> {
+  const response = await authFetch(`/api/programs/${programId}/micro-concepts/${microConceptId}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to generate micro-concept content (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    programId: toNumber(raw.programId, programId),
+    microConceptId: toNumber(raw.microConceptId, microConceptId),
+    jobId: toNullableNumber(raw.jobId),
+    status: String(raw.status ?? 'GENERATING') as MicroConceptGenerationStatus['status'],
+    progressPercent: toNumber(raw.progressPercent, 0),
+    message: String(raw.message ?? ''),
+    updatedAt: '',
+  };
+}
+
+export async function getMicroConceptGenerationStatus(programId: number, microConceptId: number): Promise<MicroConceptGenerationStatus> {
+  const response = await authFetch(`/api/programs/${programId}/micro-concepts/${microConceptId}/generation-status`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch micro-concept generation status (${response.status})`);
+  }
+  const raw = (await response.json()) as Record<string, unknown>;
+  return {
+    programId: toNumber(raw.programId, programId),
+    microConceptId: toNumber(raw.microConceptId, microConceptId),
+    jobId: toNullableNumber(raw.jobId),
+    status: String(raw.status ?? 'NOT_STARTED') as MicroConceptGenerationStatus['status'],
+    progressPercent: toNumber(raw.progressPercent, 0),
+    message: String(raw.message ?? ''),
     updatedAt: String(raw.updatedAt ?? ''),
   };
 }

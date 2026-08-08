@@ -119,7 +119,16 @@ export function GoalsPage() {
       return next;
     });
     try {
-      await startGoalMutation.mutateAsync(goalId);
+      const result = await startGoalMutation.mutateAsync(goalId);
+      if (result.status !== 'READY') {
+        setStartErrorByGoalId((previous) => ({
+          ...previous,
+          [goalId]: result.status === 'MICRO_CONCEPT_CONTENT_NOT_READY'
+            ? 'Контент для первого микроконцепта еще не сгенерирован.'
+            : `Не удалось запустить цель (${result.status})`,
+        }));
+        return;
+      }
       localStorage.setItem('active-goal-id', String(goalId));
       navigate('/learning');
     } catch (error) {
