@@ -206,7 +206,7 @@ export function ProgramsPage() {
         {!selectableGoals.length ? (
           <EmptyState message="No goals found yet." />
         ) : (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
             {selectableGoals.map((goal) => (
               <Button
                 key={goal.id}
