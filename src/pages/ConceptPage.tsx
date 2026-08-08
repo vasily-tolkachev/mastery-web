@@ -2,12 +2,26 @@ import { Grid, Stack } from '@mui/material';
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { EmptyState, ErrorState, InfoCard, LoadingState, PageHeader, SectionCard } from '../components/ui';
-import { useCurrentProgram } from '../hooks/useProgram';
+import { useGoalProgram } from '../hooks/useGoals';
+import { useCurrentProgram, useProgramTree } from '../hooks/useProgram';
 
 export function ConceptPage() {
   const params = useParams<{ conceptId: string }>();
   const conceptId = params.conceptId ? Number(params.conceptId) : null;
-  const programQuery = useCurrentProgram();
+
+  const activeGoalIdRaw = localStorage.getItem('active-goal-id');
+  const activeGoalId = activeGoalIdRaw ? Number(activeGoalIdRaw) : 0;
+  const safeGoalId = Number.isFinite(activeGoalId) && activeGoalId > 0 ? activeGoalId : 0;
+
+  const goalProgramQuery = useGoalProgram(safeGoalId);
+  const selectedProgramId = useMemo(() => {
+    const parsed = Number(goalProgramQuery.data?.programId ?? 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }, [goalProgramQuery.data?.programId]);
+
+  const programTreeQuery = useProgramTree(selectedProgramId);
+  const currentProgramQuery = useCurrentProgram();
+  const programQuery = selectedProgramId > 0 ? programTreeQuery : currentProgramQuery;
 
   const concept = useMemo(() => {
     if (!programQuery.data || conceptId === null || Number.isNaN(conceptId)) {
@@ -25,8 +39,11 @@ export function ConceptPage() {
     if (!programQuery.data || conceptIndex <= 0) return [];
     return programQuery.data.concepts.slice(0, conceptIndex).map((item) => item.title);
   }, [programQuery.data, conceptIndex]);
+
   const totalMicro = concept?.microConcepts.length ?? 0;
   const completedMicro = concept?.microConcepts.filter((micro) => micro.completed).length ?? 0;
+  const loading = goalProgramQuery.isLoading || programQuery.isLoading;
+  const error = goalProgramQuery.error ?? programQuery.error;
 
   return (
     <Stack spacing={2}>
@@ -35,12 +52,12 @@ export function ConceptPage() {
         subtitle={`${programQuery.data?.title ?? 'Программа'} -> ${concept?.title ?? 'Неизвестный концепт'}`}
       />
 
-      {programQuery.isLoading ? <LoadingState message="Загрузка концепта..." /> : null}
-      {programQuery.error ? (
-        <ErrorState message={programQuery.error instanceof Error ? programQuery.error.message : 'Непредвиденная ошибка'} />
+      {loading ? <LoadingState message="Загрузка концепта..." /> : null}
+      {error ? (
+        <ErrorState message={error instanceof Error ? error.message : 'Непредвиденная ошибка'} />
       ) : null}
 
-      {!programQuery.isLoading && !programQuery.error && !concept ? (
+      {!loading && !error && !concept ? (
         <EmptyState message="Концепт не найден в текущей программе." />
       ) : null}
 
