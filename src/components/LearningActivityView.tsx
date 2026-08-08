@@ -1,3 +1,4 @@
+import { Alert } from '@mui/material';
 import type { LearningActivity } from '../types/learning';
 import {
   CompletedActivityView,
@@ -27,6 +28,6 @@ export function LearningActivityView({ activity }: Props) {
     case 'COMPLETED':
       return <CompletedActivityView activity={activity} />;
     default:
-      return <CompletedActivityView activity={{ type: 'COMPLETED', summary: 'Unknown activity' }} />;
+      return <Alert severity="error">Unsupported activity type</Alert>;
   }
 }

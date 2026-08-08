@@ -1,4 +1,4 @@
-import { Stack, Typography } from '@mui/material';
+import { Chip, Stack, Typography } from '@mui/material';
 import type { QuickCheckActivity } from '../../types/learning';
 
 interface Props {
@@ -10,6 +10,7 @@ export function QuickCheckActivityView({ activity }: Props) {
     <Stack spacing={1}>
       <Typography variant="h6">Quick Check</Typography>
       <Typography>{activity.question ?? 'No question available'}</Typography>
+      <Chip label={`Type: ${activity.questionType ?? 'UNKNOWN'}`} sx={{ alignSelf: 'flex-start' }} />
     </Stack>
   );
 }

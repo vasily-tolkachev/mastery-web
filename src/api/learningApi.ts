@@ -4,12 +4,14 @@ import type { LearningState } from '../types/learning';
 export interface StartRequest {}
 
 export interface AnswerRequest {
-  answer: string;
+  answer?: string | null;
 }
 
 export interface PracticeRequest {
   booleanAnswer: boolean | null;
   selectedOptions: number[];
+  orderedOptions: number[];
+  matches: Record<number, number>;
 }
 
 export async function getLearningState(): Promise<LearningState> {
@@ -46,13 +48,13 @@ export async function submitPractice(
 }
 
 export async function submitQuickCheck(
-  payload: AnswerRequest,
+  payload: PracticeRequest,
 ): Promise<LearningState> {
   return postLearningState('/api/learning/quick-check', payload);
 }
 
 export async function submitRetry(
-  payload: AnswerRequest,
+  payload: PracticeRequest,
 ): Promise<LearningState> {
   return postLearningState('/api/learning/retry', payload);
 }
@@ -76,6 +78,14 @@ function normalizeLearningState(value: unknown): LearningState {
   const raw = (value ?? {}) as Record<string, unknown>;
   const phase = ((raw.phase as string | undefined) ?? 'COMPLETED') as LearningState['phase'];
   const currentActivityRaw = (raw.currentActivity ?? {}) as Record<string, unknown>;
+  const normalizedItems = Array.isArray(currentActivityRaw.items)
+    ? (currentActivityRaw.items as Array<Record<string, unknown>>).map((item) => ({
+      ...item,
+      options: Array.isArray(item.options) ? item.options : [],
+      leftItems: Array.isArray(item.leftItems) ? item.leftItems : [],
+      rightItems: Array.isArray(item.rightItems) ? item.rightItems : [],
+    }))
+    : [];
 
   const context = (raw.context ?? {}) as Record<string, unknown>;
   const progress = (raw.progress ?? {}) as Record<string, unknown>;
@@ -103,8 +113,10 @@ function normalizeLearningState(value: unknown): LearningState {
     currentActivity: ({
       ...currentActivityRaw,
       type: ((currentActivityRaw.type as string | undefined) ?? phase) as LearningState['currentActivity']['type'],
-      items: Array.isArray(currentActivityRaw.items) ? currentActivityRaw.items : [],
-      rubric: Array.isArray(currentActivityRaw.rubric) ? currentActivityRaw.rubric : [],
+      items: normalizedItems,
+      options: Array.isArray(currentActivityRaw.options) ? currentActivityRaw.options : [],
+      leftItems: Array.isArray(currentActivityRaw.leftItems) ? currentActivityRaw.leftItems : [],
+      rightItems: Array.isArray(currentActivityRaw.rightItems) ? currentActivityRaw.rightItems : [],
     } as unknown) as LearningState['currentActivity'],
     availableActions: Array.isArray(raw.availableActions)
       ? (raw.availableActions as LearningState['availableActions'])

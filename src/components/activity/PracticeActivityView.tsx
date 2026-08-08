@@ -6,7 +6,8 @@ interface Props {
 }
 
 export function PracticeActivityView({ activity }: Props) {
-  const item = activity.items[0];
+  const index = Math.max(0, (activity.currentItem ?? 1) - 1);
+  const item = activity.items[index];
 
   return (
     <Stack spacing={1}>

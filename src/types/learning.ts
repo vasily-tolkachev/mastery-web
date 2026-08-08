@@ -53,9 +53,11 @@ export interface LearningCardActivity extends BaseActivity {
 }
 
 export interface PracticeItemView {
-  type: 'TRUE_FALSE' | 'MULTIPLE_CHOICE' | string;
+  type: 'TRUE_FALSE' | 'MULTIPLE_CHOICE' | 'MULTI_SELECT' | 'ORDERING' | 'MATCHING' | string;
   question: string | null;
   options: string[];
+  leftItems: string[];
+  rightItems: string[];
 }
 
 export interface PracticeActivity extends BaseActivity {
@@ -67,13 +69,20 @@ export interface PracticeActivity extends BaseActivity {
 
 export interface QuickCheckActivity extends BaseActivity {
   type: 'QUICK_CHECK';
+  questionType: PracticeItemView['type'] | null;
   question: string | null;
+  options: string[];
+  leftItems: string[];
+  rightItems: string[];
 }
 
 export interface RetryActivity extends BaseActivity {
   type: 'RETRY';
+  questionType: PracticeItemView['type'] | null;
   question: string | null;
-  rubric: string[];
+  options: string[];
+  leftItems: string[];
+  rightItems: string[];
 }
 
 export interface CompletedActivity extends BaseActivity {

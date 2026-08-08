@@ -52,7 +52,12 @@ export function useContinueLearning() {
 export function useSubmitPractice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { booleanAnswer: boolean | null; selectedOptions: number[] }) =>
+    mutationFn: (payload: {
+      booleanAnswer: boolean | null;
+      selectedOptions: number[];
+      orderedOptions: number[];
+      matches: Record<number, number>;
+    }) =>
       submitPractice({ ...payload }),
     onSuccess: (state) => {
       queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
@@ -63,7 +68,12 @@ export function useSubmitPractice() {
 export function useSubmitQuickCheck() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (answer: string) => submitQuickCheck({ answer }),
+    mutationFn: (payload: {
+      booleanAnswer: boolean | null;
+      selectedOptions: number[];
+      orderedOptions: number[];
+      matches: Record<number, number>;
+    }) => submitQuickCheck({ ...payload }),
     onSuccess: (state) => {
       queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },
@@ -73,7 +83,12 @@ export function useSubmitQuickCheck() {
 export function useSubmitRetry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (answer: string) => submitRetry({ answer }),
+    mutationFn: (payload: {
+      booleanAnswer: boolean | null;
+      selectedOptions: number[];
+      orderedOptions: number[];
+      matches: Record<number, number>;
+    }) => submitRetry({ ...payload }),
     onSuccess: (state) => {
       queryClient.setQueryData<LearningState>(LEARNING_STATE_QUERY_KEY, state);
     },

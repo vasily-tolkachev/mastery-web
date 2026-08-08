@@ -1,4 +1,4 @@
-import { List, ListItem, Paper, Stack, Typography } from '@mui/material';
+import { Chip, Stack, Typography } from '@mui/material';
 import type { RetryActivity } from '../../types/learning';
 
 interface Props {
@@ -10,15 +10,7 @@ export function RetryActivityView({ activity }: Props) {
     <Stack spacing={1}>
       <Typography variant="h6">Retry</Typography>
       <Typography>{activity.question ?? 'No retry question'}</Typography>
-      {activity.rubric.length > 0 ? (
-        <Paper variant="outlined" sx={{ p: 1 }}>
-          <List dense>
-            {activity.rubric.map((line, index) => (
-              <ListItem key={index}>{line}</ListItem>
-            ))}
-          </List>
-        </Paper>
-      ) : null}
+      <Chip label={`Type: ${activity.questionType ?? 'UNKNOWN'}`} sx={{ alignSelf: 'flex-start' }} />
     </Stack>
   );
 }
