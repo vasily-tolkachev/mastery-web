@@ -1,4 +1,4 @@
-import { Divider, Grid, Stack, TextField } from '@mui/material';
+import { Checkbox, Divider, FormControlLabel, Grid, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LearningActivityView } from '../components/LearningActivityView';
@@ -27,35 +27,16 @@ import { useCurrentProgram } from '../hooks/useProgram';
 import { spacing } from '../theme/tokens';
 import type { LearningState } from '../types/learning';
 
-function parsePracticeInput(input: string): { booleanAnswer: boolean | null; selectedOptions: number[] } {
-  const normalized = input.trim().toLowerCase();
-  const booleanAnswer =
-    normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'y' || normalized === 'da'
-      ? true
-      : normalized === 'false' ||
-          normalized === '0' ||
-          normalized === 'no' ||
-          normalized === 'n' ||
-          normalized === 'net'
-        ? false
-        : null;
-
-  const selectedOptions = normalized
-    .split(/[,\s;/|]+/)
-    .map((token) => Number.parseInt(token, 10))
-    .filter((value) => Number.isInteger(value));
-
-  return { booleanAnswer, selectedOptions };
-}
-
 function getActivityTitle(state: LearningState | undefined): string {
-  if (!state) return 'БЕЗ_СЕССИИ';
+  if (!state) return 'NO_SESSION';
   return state.currentActivity.type.replace('_', ' ');
 }
 
 export function LearningPage() {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
+  const [practiceBooleanAnswer, setPracticeBooleanAnswer] = useState<boolean | null>(null);
+  const [practiceSelectedOptions, setPracticeSelectedOptions] = useState<number[]>([]);
   const [activeGoalId, setActiveGoalId] = useState(() => {
     const raw = localStorage.getItem('active-goal-id');
     if (!raw) return 0;
@@ -85,6 +66,7 @@ export function LearningPage() {
       setActiveGoalId(0);
     }
   }, [activeGoalId, goalQuery.data, goalQuery.isSuccess]);
+
   const isPending =
     learningStateQuery.isLoading ||
     currentProgramQuery.isLoading ||
@@ -105,10 +87,31 @@ export function LearningPage() {
     startMutation.error ??
     submitAnswerMutation.error;
 
+  const currentPracticeItem = useMemo(() => {
+    if (!state || state.currentActivity.type !== 'PRACTICE') return null;
+    const index = (state.currentActivity.currentItem ?? 1) - 1;
+    if (index < 0 || index >= state.currentActivity.items.length) return null;
+    return state.currentActivity.items[index];
+  }, [state]);
+
+  useEffect(() => {
+    setPracticeBooleanAnswer(null);
+    setPracticeSelectedOptions([]);
+  }, [currentPracticeItem?.type, currentPracticeItem?.question]);
+
   const canSubmitInput = useMemo(() => {
     if (!state) return false;
-    return state.currentActivity.type !== 'LEARNING_CARD' && state.currentActivity.type !== 'COMPLETED';
+    return state.currentActivity.type !== 'LEARNING_CARD'
+      && state.currentActivity.type !== 'COMPLETED'
+      && state.currentActivity.type !== 'PRACTICE';
   }, [state]);
+
+  const canSubmitPractice = useMemo(() => {
+    if (!currentPracticeItem) return false;
+    if (currentPracticeItem.type === 'TRUE_FALSE') return practiceBooleanAnswer !== null;
+    if (currentPracticeItem.type === 'MULTIPLE_CHOICE') return practiceSelectedOptions.length > 0;
+    return false;
+  }, [currentPracticeItem, practiceBooleanAnswer, practiceSelectedOptions]);
 
   const handleSubmit = async () => {
     if (!state) return;
@@ -118,8 +121,12 @@ export function LearningPage() {
       return;
     }
     if (state.currentActivity.type === 'PRACTICE') {
-      await practiceMutation.mutateAsync(parsePracticeInput(input));
-      setInput('');
+      await practiceMutation.mutateAsync({
+        booleanAnswer: practiceBooleanAnswer,
+        selectedOptions: practiceSelectedOptions,
+      });
+      setPracticeBooleanAnswer(null);
+      setPracticeSelectedOptions([]);
       return;
     }
     if (state.currentActivity.type === 'QUICK_CHECK') {
@@ -217,6 +224,50 @@ export function LearningPage() {
                 </ActionButton>
               ) : null}
 
+              {state?.currentActivity.type === 'PRACTICE' && currentPracticeItem ? (
+                <Stack spacing={1.5}>
+                  {currentPracticeItem.type === 'TRUE_FALSE' ? (
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                      <ActionButton aria-label="Practice True" onClick={() => setPracticeBooleanAnswer(true)} disabled={isPending}>
+                        True
+                      </ActionButton>
+                      <ActionButton aria-label="Practice False" onClick={() => setPracticeBooleanAnswer(false)} disabled={isPending}>
+                        False
+                      </ActionButton>
+                      <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                        {practiceBooleanAnswer === null ? 'No answer selected' : `Selected: ${practiceBooleanAnswer ? 'True' : 'False'}`}
+                      </Typography>
+                    </Stack>
+                  ) : null}
+
+                  {currentPracticeItem.type === 'MULTIPLE_CHOICE' ? (
+                    <Stack spacing={0.5}>
+                      {currentPracticeItem.options.map((option, index) => (
+                        <FormControlLabel
+                          key={`${index}-${option}`}
+                          control={(
+                            <Checkbox
+                              checked={practiceSelectedOptions.includes(index)}
+                              onChange={(event) => {
+                                setPracticeSelectedOptions((prev) => {
+                                  if (event.target.checked) return [...prev, index];
+                                  return prev.filter((value) => value !== index);
+                                });
+                              }}
+                            />
+                          )}
+                          label={option}
+                        />
+                      ))}
+                    </Stack>
+                  ) : null}
+
+                  <ActionButton aria-label="Submit practice answer" onClick={() => void handleSubmit()} disabled={isPending || !canSubmitPractice}>
+                    Submit practice
+                  </ActionButton>
+                </Stack>
+              ) : null}
+
               {canSubmitInput ? (
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <TextField
@@ -226,7 +277,7 @@ export function LearningPage() {
                     onChange={(event) => setInput(event.target.value)}
                     fullWidth
                   />
-                  <ActionButton aria-label="Отправить ответ" onClick={handleSubmit} disabled={isPending || !input.trim()}>
+                  <ActionButton aria-label="Отправить ответ" onClick={() => void handleSubmit()} disabled={isPending || !input.trim()}>
                     Отправить
                   </ActionButton>
                 </Stack>
