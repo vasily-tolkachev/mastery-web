@@ -114,6 +114,16 @@ export async function getMicroConceptGeneratedContent(programId: number, microCo
   };
 }
 
+export async function startLearningFromMicroConcept(programId: number, microConceptId: number): Promise<void> {
+  const response = await authFetch(`/api/programs/${programId}/micro-concepts/${microConceptId}/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to start learning from micro-concept (${response.status})`);
+  }
+}
+
 function normalizeLearningProgram(value: unknown): LearningProgram {
   const raw = (value ?? {}) as Record<string, unknown>;
   const progressRaw = (raw.progress ?? {}) as Record<string, unknown>;

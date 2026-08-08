@@ -1,13 +1,14 @@
 import { Button, Grid, Stack, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { EmptyState, ErrorState, InfoCard, LoadingState, PageHeader, SectionCard } from '../components/ui';
-import { getMicroConceptGeneratedContent, getMicroConceptGenerationStatus, generateMicroConceptContent } from '../api/programApi';
+import { getMicroConceptGeneratedContent, getMicroConceptGenerationStatus, generateMicroConceptContent, startLearningFromMicroConcept } from '../api/programApi';
 import { useGoalProgram } from '../hooks/useGoals';
 import { useCurrentProgram, useProgramTree } from '../hooks/useProgram';
 import type { MicroConceptGeneratedContent, MicroConceptGenerationStatus } from '../types/program';
 
 export function ConceptPage() {
+  const navigate = useNavigate();
   const params = useParams<{ conceptId: string }>();
   const conceptId = params.conceptId ? Number(params.conceptId) : null;
 
@@ -131,6 +132,17 @@ export function ConceptPage() {
     }
   };
 
+  const handleStartStudying = async (microConceptId: number) => {
+    if (effectiveProgramId <= 0) return;
+    setGenerationError(null);
+    try {
+      await startLearningFromMicroConcept(effectiveProgramId, microConceptId);
+      navigate('/learning');
+    } catch (e) {
+      setGenerationError(e instanceof Error ? e.message : 'Failed to start studying');
+    }
+  };
+
   return (
     <Stack spacing={2}>
       <PageHeader
@@ -197,6 +209,16 @@ export function ConceptPage() {
                             }}
                           >
                             {id !== null && showContentByMicroId[id] ? 'Hide' : 'Show'}
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            disabled={id === null || status?.status !== 'READY'}
+                            onClick={() => {
+                              if (id !== null) void handleStartStudying(id);
+                            }}
+                          >
+                            Start studying
                           </Button>
                         </Stack>
                         {status?.message ? (
