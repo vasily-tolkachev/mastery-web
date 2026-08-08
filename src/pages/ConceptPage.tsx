@@ -175,6 +175,11 @@ export function ConceptPage() {
                             {busy ? 'Starting...' : 'Generate'}
                           </Button>
                         </Stack>
+                        {status?.message ? (
+                          <Typography variant="caption" color={status.status === 'FAILED' ? 'error.main' : 'text.secondary'} sx={{ width: '100%' }}>
+                            {status.message}
+                          </Typography>
+                        ) : null}
                       </Stack>
                     );
                   })}
