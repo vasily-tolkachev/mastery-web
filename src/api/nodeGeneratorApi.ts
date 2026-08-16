@@ -16,6 +16,8 @@ export type FirstSceneIdea = {
   scenarioText: string;
 };
 
+const ENGLISH_ONLY_INSTRUCTION = 'Important: generate all text in English only. Do not use Russian.';
+
 export class ApiRequestError extends Error {
   code: string;
   errors: string[];
@@ -143,7 +145,7 @@ export async function generateWorkspaceNodeDescription(projectId: string, nodeId
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/generate-description`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(promptOverride ?? {}),
+    body: JSON.stringify(withEnglishOnlyPrompt(promptOverride)),
   });
   if (!response.ok) throw await toError(response, 'Failed to generate description');
   return normalizeProject(await response.json());
@@ -163,7 +165,7 @@ export async function extractWorkspaceNodeKnowledge(projectId: string, nodeId: s
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/extract-knowledge`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(promptOverride ?? {}),
+    body: JSON.stringify(withEnglishOnlyPrompt(promptOverride)),
   });
   if (!response.ok) throw await toError(response, 'Failed to extract knowledge');
   return normalizeProject(await response.json());
@@ -183,7 +185,7 @@ export async function generateWorkspaceNodeActions(projectId: string, nodeId: st
   const response = await authFetch(`/api/node-generator/projects/${projectId}/nodes/${encodeURIComponent(nodeId)}/generate-actions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(promptOverride ?? {}),
+    body: JSON.stringify(withEnglishOnlyPrompt(promptOverride)),
   });
   if (!response.ok) throw await toError(response, 'Failed to generate actions');
   return normalizeProject(await response.json());
@@ -290,7 +292,9 @@ export async function generateFirstSceneIdeas(prompt: string): Promise<FirstScen
   const response = await authFetch('/api/node-generator/projects/first-scene-ideas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({
+      prompt: [ENGLISH_ONLY_INSTRUCTION, (prompt ?? '').trim()].filter(Boolean).join('\n\n'),
+    }),
   });
   if (!response.ok) throw await toError(response, 'Failed to generate ideas');
   const raw = (await response.json()) as Record<string, unknown>;
@@ -312,6 +316,9 @@ export async function generateNextSceneIdeas(projectId: string, nodeId: string, 
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: ENGLISH_ONLY_INSTRUCTION,
+      }),
     },
   );
   if (!response.ok) throw await toError(response, 'Failed to generate next-scene ideas');
@@ -326,6 +333,18 @@ export async function generateNextSceneIdeas(projectId: string, nodeId: string, 
       };
     })
     .filter((item) => item.title && item.scenarioText);
+}
+
+function withEnglishOnlyPrompt(promptOverride?: PromptOverride): PromptOverride {
+  const currentSystemPrompt = (promptOverride?.systemPrompt ?? '').trim();
+  const currentUserPrompt = (promptOverride?.userPrompt ?? '').trim();
+  const hasEnglishInstruction = [currentSystemPrompt, currentUserPrompt].some((value) => /english only|in english|do not use russian/i.test(value));
+  const instruction = hasEnglishInstruction ? '' : ENGLISH_ONLY_INSTRUCTION;
+
+  return {
+    systemPrompt: [currentSystemPrompt, instruction].filter(Boolean).join('\n\n') || undefined,
+    userPrompt: currentUserPrompt || undefined,
+  };
 }
 
 async function toError(response: Response, fallback: string): Promise<Error> {
