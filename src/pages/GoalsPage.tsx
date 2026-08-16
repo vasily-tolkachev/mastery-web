@@ -10,7 +10,7 @@ function GoalResolutionBadge({ goalId }: { goalId: number }) {
   const status = statusQuery.data;
 
   if (!status) {
-    return <StatusChip label="В ОЧЕРЕДИ" tone="default" />;
+    return <StatusChip label="QUEUED" tone="default" />;
   }
 
   const tone =
@@ -55,32 +55,32 @@ function GoalCard({
       {programQuery.data ? (
         <Stack spacing={0.25} sx={{ mt: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            Программа: {programQuery.data.title || programQuery.data.programId}
+            Program: {programQuery.data.title || programQuery.data.programId}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Источник: {programQuery.data.origin ?? 'GOAL_BASED'}
+            Source: {programQuery.data.origin ?? 'GOAL_BASED'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Концепты: {programQuery.data.progress.totalConcepts} | Микро: {programQuery.data.progress.totalMicroConcepts}
+            Concepts: {programQuery.data.progress.totalConcepts} | Micro: {programQuery.data.progress.totalMicroConcepts}
           </Typography>
         </Stack>
       ) : (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Программа: пока не привязана
+          Program: not linked yet
         </Typography>
       )}
       <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
         <ActionButton
-          aria-label={`Запустить цель ${goal.title}`}
+          aria-label={`Start goal ${goal.title}`}
           onClick={() => onStart(goal.id)}
           disabled={isStarting || !canStart}
         >
-          Старт
+          Start
         </ActionButton>
       </Stack>
       {!canStart ? (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          Старт будет доступен после завершения генерации.
+          Start will be available after generation is complete.
         </Typography>
       ) : null}
       {startError ? (
@@ -124,56 +124,56 @@ export function GoalsPage() {
         setStartErrorByGoalId((previous) => ({
           ...previous,
           [goalId]: result.status === 'MICRO_CONCEPT_CONTENT_NOT_READY'
-            ? 'Контент для первого микроконцепта еще не сгенерирован.'
-            : `Не удалось запустить цель (${result.status})`,
+            ? 'Content for the first micro concept is not generated yet.'
+            : `Failed to start goal (${result.status})`,
         }));
         return;
       }
       localStorage.setItem('active-goal-id', String(goalId));
       navigate('/learning');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Не удалось запустить цель';
+      const message = error instanceof Error ? error.message : 'Failed to start goal';
       setStartErrorByGoalId((previous) => ({ ...previous, [goalId]: message }));
     }
   };
 
   return (
     <Stack spacing={2}>
-      <PageHeader title="Цели" subtitle="Создание и управление целями обучения." />
+      <PageHeader title="Goals" subtitle="Create and manage learning goals." />
 
-      <SectionCard title="Создать цель">
+      <SectionCard title="Create Goal">
         <Stack spacing={1.5}>
           <TextField
-            label="Название"
+            label="Title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Стать Java Backend разработчиком"
+            placeholder="Become a Java Backend Engineer"
           />
           <TextField
-            label="Описание"
+            label="Description"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Дополнительные детали"
+            placeholder="Additional details"
             multiline
             minRows={2}
           />
           <ActionButton
-            aria-label="Создать цель"
+            aria-label="Create goal"
             onClick={handleCreate}
             disabled={createGoalMutation.isPending || !title.trim()}
           >
-            + Создать цель
+            + Create Goal
           </ActionButton>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Список целей">
-        {goalsQuery.isLoading ? <LoadingState message="Загрузка целей..." /> : null}
+      <SectionCard title="Goal List">
+        {goalsQuery.isLoading ? <LoadingState message="Loading goals..." /> : null}
         {goalsQuery.error ? (
-          <ErrorState message={goalsQuery.error instanceof Error ? goalsQuery.error.message : 'Не удалось загрузить цели'} />
+          <ErrorState message={goalsQuery.error instanceof Error ? goalsQuery.error.message : 'Failed to load goals'} />
         ) : null}
         {!goalsQuery.isLoading && !goalsQuery.error && !goalsQuery.data?.length ? (
-          <EmptyState message="Целей пока нет. Создайте первую цель." />
+          <EmptyState message="No goals yet. Create your first goal." />
         ) : null}
 
         <Stack spacing={1.5}>

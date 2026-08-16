@@ -1,4 +1,4 @@
-import { authFetch } from './http';
+﻿import { authFetch } from './http';
 import type {
   GeneratorProject,
   GeneratorProjectSnapshot,
@@ -30,7 +30,7 @@ export async function createGeneratorProject(name: string, questStyle: string): 
     body: JSON.stringify({ name, questStyle }),
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось создать проект генератора');
+    throw await toError(response, 'Failed to create generator project');
   }
   return normalizeProject(await response.json());
 }
@@ -38,7 +38,7 @@ export async function createGeneratorProject(name: string, questStyle: string): 
 export async function getGeneratorProjects(): Promise<GeneratorProject[]> {
   const response = await authFetch('/api/generator/projects');
   if (!response.ok) {
-    throw await toError(response, 'Не удалось загрузить проекты генератора');
+    throw await toError(response, 'Failed to load generator projects');
   }
   const raw = await response.json();
   if (!Array.isArray(raw)) return [];
@@ -48,7 +48,7 @@ export async function getGeneratorProjects(): Promise<GeneratorProject[]> {
 export async function getGeneratorProject(id: string): Promise<GeneratorProject> {
   const response = await authFetch(`/api/generator/projects/${id}`);
   if (!response.ok) {
-    throw await toError(response, 'Не удалось загрузить проект генератора');
+    throw await toError(response, 'Failed to load generator project');
   }
   return normalizeProject(await response.json());
 }
@@ -69,7 +69,7 @@ export async function generateStage(
       : undefined,
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось сгенерировать этап');
+    throw await toError(response, 'Failed to generate stage');
   }
   return normalizeProject(await response.json());
 }
@@ -95,7 +95,7 @@ export async function generateStageStep(projectId: string, stageType: GeneratorS
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось сгенерировать шаг этапа');
+    throw await toError(response, 'Failed to generate stage step');
   }
   return normalizeProject(await response.json());
 }
@@ -106,7 +106,7 @@ export async function approveStage(projectId: string, stageType: GeneratorStageT
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось подтвердить этап');
+    throw await toError(response, 'Failed to approve stage');
   }
   return normalizeProject(await response.json());
 }
@@ -114,7 +114,7 @@ export async function approveStage(projectId: string, stageType: GeneratorStageT
 export async function exportProjectJson(projectId: string): Promise<GeneratorProjectSnapshot> {
   const response = await authFetch(`/api/generator/projects/${projectId}/export-json`);
   if (!response.ok) {
-    throw await toError(response, 'Не удалось экспортировать JSON проекта');
+    throw await toError(response, 'Failed to export project JSON');
   }
   return (await response.json()) as GeneratorProjectSnapshot;
 }
@@ -126,7 +126,7 @@ export async function importProjectJson(projectId: string, snapshotJson: unknown
     body: JSON.stringify({ snapshotJson }),
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось импортировать JSON проекта');
+    throw await toError(response, 'Failed to import project JSON');
   }
   return normalizeProject(await response.json());
 }
@@ -137,7 +137,7 @@ export async function generateChapter(projectId: string, chapterId: string): Pro
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось сгенерировать главу');
+    throw await toError(response, 'Failed to generate chapter');
   }
   return normalizeProject(await response.json());
 }
@@ -148,7 +148,7 @@ export async function approveChapter(projectId: string, chapterId: string): Prom
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось подтвердить главу');
+    throw await toError(response, 'Failed to approve chapter');
   }
   return normalizeProject(await response.json());
 }
@@ -159,7 +159,7 @@ export async function generateScene(projectId: string, sceneId: string): Promise
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось сгенерировать сцену');
+    throw await toError(response, 'Failed to generate scene');
   }
   return normalizeProject(await response.json());
 }
@@ -170,7 +170,7 @@ export async function approveScene(projectId: string, sceneId: string): Promise<
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw await toError(response, 'Не удалось подтвердить сцену');
+    throw await toError(response, 'Failed to approve scene');
   }
   return normalizeProject(await response.json());
 }
@@ -378,3 +378,4 @@ function normalizeRevision(rawValue: unknown): StageRevision | null {
     createdAt: String(raw.createdAt ?? ''),
   };
 }
+

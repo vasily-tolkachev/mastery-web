@@ -17,19 +17,19 @@ import { useLearningState, useStartLearning } from '../hooks/useLearning';
 function mapNextAction(activityType: string | undefined): string {
   switch (activityType) {
     case 'QUESTION':
-      return 'Ответить на вопрос';
+      return 'Answer the question';
     case 'LEARNING_CARD':
-      return 'Продолжить обучение';
+      return 'Continue learning';
     case 'PRACTICE':
-      return 'Отправить практику';
+      return 'Submit practice';
     case 'QUICK_CHECK':
-      return 'Отправить быструю проверку';
+      return 'Submit quick check';
     case 'RETRY':
-      return 'Отправить повтор';
+      return 'Submit retry';
     case 'COMPLETED':
-      return 'Начать новое обучение';
+      return 'Start a new learning session';
     default:
-      return 'Начать обучение';
+      return 'Start learning';
   }
 }
 
@@ -51,83 +51,83 @@ export function HomePage() {
   return (
     <Stack spacing={2}>
       <PageHeader
-        title="Главная"
-        subtitle="Продолжайте с того места, где остановились."
+        title="Home"
+        subtitle="Continue from where you left off."
         actions={<StatusChip label={state?.currentActivity.type ?? 'IDLE'} tone={state ? 'info' : 'default'} />}
       />
 
-      {isPending ? <LoadingState message="Загрузка панели..." /> : null}
-      {error ? <ErrorState message={error instanceof Error ? error.message : 'Непредвиденная ошибка'} /> : null}
+      {isPending ? <LoadingState message="Loading dashboard..." /> : null}
+      {error ? <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} /> : null}
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard
-            title="Продолжить обучение"
+            title="Continue Learning"
             action={
-              <ActionButton aria-label="Открыть обучение" onClick={() => navigate('/learning')}>
-                Открыть обучение
+              <ActionButton aria-label="Open learning" onClick={() => navigate('/learning')}>
+                Open Learning
               </ActionButton>
             }
           >
             {state ? (
               <Stack spacing={1}>
-                <InfoCard label="Следующее действие" value={mapNextAction(state.currentActivity.type)} />
-                <InfoCard label="Текущая активность" value={state.currentActivity.type} />
-                <InfoCard label="Пользователь" value={state.userId} />
+                <InfoCard label="Next Action" value={mapNextAction(state.currentActivity.type)} />
+                <InfoCard label="Current Activity" value={state.currentActivity.type} />
+                <InfoCard label="User" value={state.userId} />
               </Stack>
             ) : (
-              <EmptyState message="Активная сессия обучения не найдена." />
+              <EmptyState message="No active learning session found." />
             )}
           </SectionCard>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard
-            title="Текущая программа"
+            title="Current Program"
             action={
-              <ActionButton aria-label="Открыть программы" onClick={() => navigate('/programs')}>
-                Открыть программу
+              <ActionButton aria-label="Open programs" onClick={() => navigate('/programs')}>
+                Open Program
               </ActionButton>
             }
           >
             {state ? (
               <Stack spacing={1}>
-                <InfoCard label="Тема" value={state.context.topicName ?? '-'} />
-                <InfoCard label="Концепт" value={state.context.conceptName ?? '-'} />
-                <InfoCard label="Микроконцепт" value={state.context.microConceptName ?? '-'} />
+                <InfoCard label="Topic" value={state.context.topicName ?? '-'} />
+                <InfoCard label="Concept" value={state.context.conceptName ?? '-'} />
+                <InfoCard label="Micro Concept" value={state.context.microConceptName ?? '-'} />
               </Stack>
             ) : (
-              <EmptyState message="Данные программы появятся после старта обучения." />
+              <EmptyState message="Program data will appear after you start learning." />
             )}
           </SectionCard>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <SectionCard title="Общий прогресс">
+          <SectionCard title="Overall Progress">
             <Stack spacing={1.5}>
               <ProgressCard
-                title="Прогресс по концептам"
+                title="Concept Progress"
                 current={state?.progress.conceptOrder ?? null}
                 total={state?.progress.totalConcepts ?? null}
               />
-              <InfoCard label="Ответов" value={String(state?.progress.answeredCount ?? 0)} hint={`Концепты: ${progressHint}`} />
+              <InfoCard label="Answers" value={String(state?.progress.answeredCount ?? 0)} hint={`Concepts: ${progressHint}`} />
             </Stack>
           </SectionCard>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard
-            title="Последние программы"
+            title="Recent Programs"
             action={
-              <ActionButton aria-label="Начать обучение" onClick={() => startMutation.mutate()} disabled={isPending}>
-                Начать обучение
+              <ActionButton aria-label="Start learning" onClick={() => startMutation.mutate()} disabled={isPending}>
+                Start Learning
               </ActionButton>
             }
           >
             <Stack spacing={1}>
-              <InfoCard label="Последняя" value={state?.context.topicName ?? 'Нет недавней программы'} />
-              <InfoCard label="Статус" value={state ? 'Есть активная сессия' : 'Сессии нет'} />
-              <InfoCard label="Рекомендация" value="Перейдите в «Обучение» и продолжите текущую активность." />
+              <InfoCard label="Latest" value={state?.context.topicName ?? 'No recent program'} />
+              <InfoCard label="Status" value={state ? 'Active session available' : 'No session'} />
+              <InfoCard label="Recommendation" value='Go to "Learning" and continue your current activity.' />
             </Stack>
           </SectionCard>
         </Grid>

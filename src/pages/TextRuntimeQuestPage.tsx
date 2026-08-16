@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
+﻿import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -46,7 +46,7 @@ export function TextRuntimeQuestPage() {
         setStatus(await generateActionsTextRuntime(started.sessionId));
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Не удалось открыть квест');
+        setError(e instanceof Error ? e.message : 'Failed to open quest');
       } finally {
         if (!cancelled) setPending(false);
       }
@@ -116,7 +116,7 @@ export function TextRuntimeQuestPage() {
     try {
       await exportTextRuntimeQuest(questId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось экспортировать квест');
+      setError(e instanceof Error ? e.message : 'Failed to export quest');
     } finally {
       setPending(false);
     }
@@ -132,7 +132,7 @@ export function TextRuntimeQuestPage() {
       setActiveDialogueNpcId(null);
       setStatus(await generationStatusTextRuntime(snapshot.sessionId));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Переход недоступен');
+      setError(e instanceof Error ? e.message : 'Move is not available');
     } finally {
       setPending(false);
     }
@@ -144,7 +144,7 @@ export function TextRuntimeQuestPage() {
     try {
       setSnapshot(await takeTextRuntime(snapshot.sessionId, itemId));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось взять предмет');
+      setError(e instanceof Error ? e.message : 'Failed to take item');
     } finally {
       setPending(false);
     }
@@ -164,9 +164,9 @@ export function TextRuntimeQuestPage() {
         setActiveDialogueNpcId(target);
         setDialogueText(result.message);
       }
-      setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
+      setResultText(`${result.message}\nEngine action: ${result.engineAction}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось выполнить действие');
+      setError(e instanceof Error ? e.message : 'Failed to execute action');
     } finally {
       setPending(false);
     }
@@ -178,7 +178,7 @@ export function TextRuntimeQuestPage() {
     try {
       if (actionId.startsWith('move:')) {
         if (!(targetId ?? '').trim()) {
-          throw new Error('Цель перехода не указана');
+          throw new Error('Move target is not specified');
         }
         setSnapshot(await moveTextRuntime(snapshot.sessionId, (targetId ?? '').trim()));
         setStatus(await generateActionsTextRuntime(snapshot.sessionId));
@@ -186,12 +186,12 @@ export function TextRuntimeQuestPage() {
       }
       if (actionId.startsWith('item:') || actionId.startsWith('npc:')) {
         if (!(targetId ?? '').trim()) {
-          throw new Error('Цель взаимодействия не указана');
+          throw new Error('Interaction target is not specified');
         }
         const result = await interactTextRuntime(snapshot.sessionId, (targetId ?? '').trim());
         setSnapshot(result.snapshot);
         setStatus(await generateActionsTextRuntime(snapshot.sessionId));
-        setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
+        setResultText(`${result.message}\nEngine action: ${result.engineAction}`);
         return;
       }
       if (actionId.startsWith('dialogue:')) {
@@ -203,14 +203,14 @@ export function TextRuntimeQuestPage() {
         }
         setDialogueText(result.message);
         setStatus(await generateActionsTextRuntime(snapshot.sessionId));
-        setResultText(`${result.message}\nДействие движка: ${result.engineAction}`);
+        setResultText(`${result.message}\nEngine action: ${result.engineAction}`);
         return;
       }
       setSnapshot(await executeActionTextRuntime(snapshot.sessionId, actionId));
       setStatus(await generateActionsTextRuntime(snapshot.sessionId));
-      setResultText(`Действие движка: executeAction:${actionId}`);
+      setResultText(`Engine action: executeAction:${actionId}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось выполнить сгенерированное действие');
+      setError(e instanceof Error ? e.message : 'Failed to execute generated action');
     } finally {
       setPending(false);
     }
@@ -226,7 +226,7 @@ export function TextRuntimeQuestPage() {
       setResultText(description);
       setTargetId(target);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось осмотреть цель');
+      setError(e instanceof Error ? e.message : 'Failed to inspect target');
     } finally {
       setPending(false);
     }
@@ -239,9 +239,9 @@ export function TextRuntimeQuestPage() {
     setPending(true);
     try {
       setSnapshot(await useTextRuntime(snapshot.sessionId, selectedInventoryItem, target));
-      setResultText(`Использован предмет ${selectedInventoryItem} на ${target}`);
+      setResultText(`Used item ${selectedInventoryItem} on ${target}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось использовать предмет');
+      setError(e instanceof Error ? e.message : 'Failed to use item');
     } finally {
       setPending(false);
     }
@@ -254,7 +254,7 @@ export function TextRuntimeQuestPage() {
         variant="body2"
         sx={{ pl: level * 1.5 }}
       >
-        {objective.completed ? '✓' : '○'} {objective.title}
+        {objective.completed ? '[x]' : '[ ]'} {objective.title}
       </Typography>
     );
     const description = objective.description ? (
@@ -277,34 +277,34 @@ export function TextRuntimeQuestPage() {
 
       <Breadcrumbs>
         <MuiLink component={Link} to="/text-runtime" underline="hover" color="inherit">
-          Текстовый режим
+          Text Runtime
         </MuiLink>
         <Typography color="text.primary">{questId}</Typography>
       </Breadcrumbs>
 
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
         <Stack spacing={2}>
-          <SectionCard title={snapshot ? `Сцена ${snapshot.currentLocationId}` : 'Сцена'}>
+          <SectionCard title={snapshot ? `Scene ${snapshot.currentLocationId}` : 'Scene'}>
             <Stack spacing={1}>
-              <Typography variant="body2">{snapshot?.description ?? 'Нет данных'}</Typography>
+              <Typography variant="body2">{snapshot?.description ?? 'No data'}</Typography>
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Обновить</Button>
-                <Button size="small" variant="outlined" onClick={() => void generateScene()} disabled={!snapshot || pending}>Сгенерировать сцену</Button>
-                <Button size="small" variant="outlined" onClick={() => void exportQuest()} disabled={!questId || pending}>Экспорт</Button>
+                <Button size="small" variant="outlined" onClick={() => void refresh()} disabled={!snapshot || pending}>Refresh</Button>
+                <Button size="small" variant="outlined" onClick={() => void generateScene()} disabled={!snapshot || pending}>Generate Scene</Button>
+                <Button size="small" variant="outlined" onClick={() => void exportQuest()} disabled={!questId || pending}>Export</Button>
               </Stack>
               {status ? (
                 <Typography variant="caption" color="text.secondary">
-                  {`Сцена: ${status.sceneGenerated ? 'готово' : 'нет'} | Действия: ${status.actionsGenerated ? 'готово' : 'нет'}`}
+                  {`Scene: ${status.sceneGenerated ? 'ready' : 'no'} | Actions: ${status.actionsGenerated ? 'ready' : 'no'}`}
                 </Typography>
               ) : null}
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Действия">
+          <SectionCard title="Actions">
             <Stack spacing={1}>
-              <Typography variant="caption" color="text.secondary">Сгенерированные действия</Typography>
+              <Typography variant="caption" color="text.secondary">Generated actions</Typography>
               {(status?.generatedActions ?? []).length === 0 ? (
-                <Typography variant="body2" color="text.secondary">Нет доступных действий для текущей сцены.</Typography>
+                <Typography variant="body2" color="text.secondary">No available actions for the current scene.</Typography>
               ) : null}
               {(status?.generatedActions ?? []).map((action) => (
                 <Button
@@ -324,7 +324,7 @@ export function TextRuntimeQuestPage() {
         </Stack>
 
         <Stack spacing={2}>
-          <SectionCard title="Куда применить предмет">
+          <SectionCard title="Use Item On">
             <Stack spacing={1}>
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 {inventory.map((item) => (
@@ -339,7 +339,7 @@ export function TextRuntimeQuestPage() {
                 ))}
               </Stack>
               {selectedInventoryItem && applicableTargets.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">Для этого предмета сейчас нет доступных целей.</Typography>
+                <Typography variant="body2" color="text.secondary">No available targets for this item right now.</Typography>
               ) : null}
               {applicableTargets.map((target) => (
                 <Button
@@ -355,16 +355,16 @@ export function TextRuntimeQuestPage() {
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Диалог">
+          <SectionCard title="Dialogue">
             <Stack spacing={1}>
               {!activeDialogueNpcId ? (
-                <Typography variant="body2" color="text.secondary">Диалог не активен.</Typography>
+                <Typography variant="body2" color="text.secondary">Dialogue is not active.</Typography>
               ) : (
                 <>
                   <Typography variant="caption" color="text.secondary">NPC: {activeDialogueNpcId}</Typography>
-                  <Typography variant="body2">{dialogueText ?? 'Нажмите "Поговорить", чтобы начать диалог.'}</Typography>
+                  <Typography variant="body2">{dialogueText ?? 'Click "Talk" to start dialogue.'}</Typography>
                   {(dialogueActionGroups.get(activeDialogueNpcId) ?? []).length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">Нет доступных реплик.</Typography>
+                    <Typography variant="body2" color="text.secondary">No dialogue options available.</Typography>
                   ) : null}
                   {(dialogueActionGroups.get(activeDialogueNpcId) ?? []).map((option) => (
                     <Button
@@ -382,48 +382,48 @@ export function TextRuntimeQuestPage() {
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Факты">
+          <SectionCard title="Facts">
             <Stack spacing={0.5}>
               {(snapshot?.knownFacts ?? []).length === 0 ? (
-                <Typography variant="body2" color="text.secondary">Пока нет открытых фактов.</Typography>
+                <Typography variant="body2" color="text.secondary">No discovered facts yet.</Typography>
               ) : null}
               {(snapshot?.knownFacts ?? []).map((fact) => (
-                <Typography key={fact} variant="body2">• {fact}</Typography>
+                <Typography key={fact} variant="body2">- {fact}</Typography>
               ))}
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Цели">
+          <SectionCard title="Objectives">
             <Stack spacing={0.5}>
               {(snapshot?.objectives ?? []).length === 0 ? (
-                <Typography variant="body2" color="text.secondary">Цели для этого квеста не заданы.</Typography>
+                <Typography variant="body2" color="text.secondary">No objectives are defined for this quest.</Typography>
               ) : renderObjectives(snapshot?.objectives ?? [])}
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Состояния объектов">
+          <SectionCard title="Object States">
             <Stack spacing={0.5}>
               {Object.keys(snapshot?.objectStates ?? {}).length === 0 ? (
-                <Typography variant="body2" color="text.secondary">Нет изменений состояний объектов.</Typography>
+                <Typography variant="body2" color="text.secondary">No object state changes.</Typography>
               ) : null}
               {Object.entries(snapshot?.objectStates ?? {}).map(([key, value]) => (
-                <Typography key={key} variant="body2">{`• ${key}: ${value}`}</Typography>
+                <Typography key={key} variant="body2">{`- ${key}: ${value}`}</Typography>
               ))}
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Состояния персонажей">
+          <SectionCard title="Character States">
             <Stack spacing={0.5}>
               {Object.keys(snapshot?.characterStates ?? {}).length === 0 ? (
-                <Typography variant="body2" color="text.secondary">Нет изменений состояний персонажей.</Typography>
+                <Typography variant="body2" color="text.secondary">No character state changes.</Typography>
               ) : null}
               {Object.entries(snapshot?.characterStates ?? {}).map(([key, value]) => (
-                <Typography key={key} variant="body2">{`• ${key}: ${value}`}</Typography>
+                <Typography key={key} variant="body2">{`- ${key}: ${value}`}</Typography>
               ))}
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Переходы">
+          <SectionCard title="Transitions">
             <Stack spacing={1}>
               {(snapshot?.exits ?? []).map((exit, index) => (
                 <Button key={`${exit.actionText}-${index}`} variant="outlined" onClick={() => void move(exit.targetLocationId)} disabled={pending || !exit.targetLocationId}>
@@ -433,24 +433,24 @@ export function TextRuntimeQuestPage() {
             </Stack>
           </SectionCard>
 
-          <SectionCard title="Предметы и NPC">
+          <SectionCard title="Items and NPCs">
             <Stack spacing={1}>
               {(snapshot?.items ?? []).map((item) => (
                 <Stack direction="row" spacing={1} key={item.id}>
-                  <Button size="small" variant="text" onClick={() => void take(item.id)} disabled={pending}>Взять: {item.name || item.id}</Button>
-                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(item.id)} disabled={pending}>Осмотреть</Button>
+                  <Button size="small" variant="text" onClick={() => void take(item.id)} disabled={pending}>Take: {item.name || item.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(item.id)} disabled={pending}>Inspect</Button>
                 </Stack>
               ))}
               {(snapshot?.npcs ?? []).map((npc) => (
                 <Stack direction="row" spacing={1} key={npc.id}>
-                  <Button size="small" variant="contained" onClick={() => void interact(npc.id)} disabled={pending}>Поговорить: {npc.id}</Button>
-                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(npc.id)} disabled={pending}>Осмотреть</Button>
+                  <Button size="small" variant="contained" onClick={() => void interact(npc.id)} disabled={pending}>Talk: {npc.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(npc.id)} disabled={pending}>Inspect</Button>
                 </Stack>
               ))}
               {(snapshot?.objects ?? []).map((worldObject) => (
                 <Stack direction="row" spacing={1} key={worldObject.id}>
-                  <Button size="small" variant="outlined" onClick={() => void interact(worldObject.id)} disabled={pending}>Взаимодействовать: {worldObject.id}</Button>
-                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(worldObject.id)} disabled={pending}>Осмотреть</Button>
+                  <Button size="small" variant="outlined" onClick={() => void interact(worldObject.id)} disabled={pending}>Interact: {worldObject.id}</Button>
+                  <Button size="small" variant="outlined" onClick={() => void inspectTarget(worldObject.id)} disabled={pending}>Inspect</Button>
                 </Stack>
               ))}
             </Stack>
@@ -460,3 +460,4 @@ export function TextRuntimeQuestPage() {
     </Stack>
   );
 }
+

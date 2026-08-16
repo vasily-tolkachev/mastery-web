@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+﻿import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { addWorkspaceNodeAction, generateWorkspaceNodeActions } from '../api/nodeGeneratorApi';
@@ -39,7 +39,7 @@ export function NodeGeneratorFirstSceneActionsPage() {
         setProjectCache(updated);
       } catch (e) {
         if (cancelled) return;
-        setLocalError(e instanceof Error ? e.message : 'Не удалось сгенерировать действия');
+        setLocalError(e instanceof Error ? e.message : 'Failed to generate actions');
       } finally {
         if (cancelled) return;
         setAutoGenerating(false);
@@ -60,13 +60,13 @@ export function NodeGeneratorFirstSceneActionsPage() {
       setProjectCache(updated);
       setActionDraft('');
     } catch (e) {
-      setLocalError(e instanceof Error ? e.message : 'Не удалось добавить действие');
+      setLocalError(e instanceof Error ? e.message : 'Failed to add action');
     }
   };
 
-  if (isLoading) return <LoadingState message="Загрузка сцены..." />;
-  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить сцену'}</Alert>;
-  if (!project || !scene) return <Alert severity="error">Сцена не найдена</Alert>;
+  if (isLoading) return <LoadingState message="Loading scene..." />;
+  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Failed to load scene'}</Alert>;
+  if (!project || !scene) return <Alert severity="error">Scene not found</Alert>;
 
   const generatedActions = (scene.generatedActionsDraft?.length
     ? scene.generatedActionsDraft
@@ -80,23 +80,23 @@ export function NodeGeneratorFirstSceneActionsPage() {
 
       <Breadcrumbs aria-label="breadcrumb">
         <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
-          Все квесты
+          All quests
         </MuiLink>
         <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
           {project.name}
         </MuiLink>
-        <Typography color="text.primary">Действия первой сцены</Typography>
+        <Typography color="text.primary">First Scene Actions</Typography>
       </Breadcrumbs>
 
-      <SectionCard title="Описание сцены">
-        <Typography variant="body2">{scene.stateDescription || scene.actionDescription || 'Описание не задано.'}</Typography>
+      <SectionCard title="Scene Description">
+        <Typography variant="body2">{scene.stateDescription || scene.actionDescription || 'Description is not set.'}</Typography>
       </SectionCard>
 
-      <SectionCard title="Варианты действий (ИИ)">
+      <SectionCard title="Action Ideas (AI)">
         <Stack spacing={1}>
-          {autoGenerating ? <Typography variant="body2" color="text.secondary">Генерация действий...</Typography> : null}
+          {autoGenerating ? <Typography variant="body2" color="text.secondary">Generating actions...</Typography> : null}
           {!autoGenerating && !generatedActions.length ? (
-            <Typography variant="body2" color="text.secondary">Варианты пока не сгенерированы.</Typography>
+            <Typography variant="body2" color="text.secondary">No generated actions yet.</Typography>
           ) : null}
           {generatedActions.map((item, index) => (
             <Box
@@ -115,26 +115,26 @@ export function NodeGeneratorFirstSceneActionsPage() {
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Добавить действие">
+      <SectionCard title="Add Action">
         <Stack spacing={1}>
           <TextField
-            label="Текст действия"
+            label="Action text"
             value={actionDraft}
             onChange={(e) => setActionDraft(e.target.value)}
             fullWidth
             size="small"
           />
           <Button variant="contained" onClick={() => void handleAddAction()} disabled={!actionDraft.trim()}>
-            Добавить действие
+            Add Action
           </Button>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Сохраненные действия">
+      <SectionCard title="Saved Actions">
         <Stack spacing={0.75}>
-          {!savedActions.length ? <Typography variant="body2" color="text.secondary">Пока нет сохраненных действий.</Typography> : null}
+          {!savedActions.length ? <Typography variant="body2" color="text.secondary">No saved actions yet.</Typography> : null}
           {savedActions.map((action) => (
-            <Typography key={action.id} variant="body2">• {action.text}</Typography>
+            <Typography key={action.id} variant="body2">- {action.text}</Typography>
           ))}
         </Stack>
       </SectionCard>
@@ -143,8 +143,9 @@ export function NodeGeneratorFirstSceneActionsPage() {
         variant="contained"
         onClick={() => navigate(`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(scene.id)}`)}
       >
-        Готово
+        Done
       </Button>
     </Stack>
   );
 }
+

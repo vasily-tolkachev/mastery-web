@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, IconButton, Link as MuiLink, Stack, Tooltip, Typography } from '@mui/material';
+﻿import { Alert, Box, Breadcrumbs, Button, IconButton, Link as MuiLink, Stack, Tooltip, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -74,9 +74,9 @@ export function NodeGeneratorScenePage() {
     );
   };
 
-  if (isLoading) return <LoadingState message="Загрузка сцены..." />;
-  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить сцену'}</Alert>;
-  if (!project) return <Alert severity="error">Проект не найден</Alert>;
+  if (isLoading) return <LoadingState message="Loading scene..." />;
+  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Failed to load scene'}</Alert>;
+  if (!project) return <Alert severity="error">Project not found</Alert>;
 
   const nodes = project.workspace?.nodes ?? [];
   const scene: WorkspaceNode | null = currentScene ?? nodes[0] ?? null;
@@ -85,13 +85,13 @@ export function NodeGeneratorScenePage() {
     return (
       <Stack spacing={2}>
         <Breadcrumbs aria-label="breadcrumb">
-          <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">Все квесты</MuiLink>
+          <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">All quests</MuiLink>
           <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">{project.name}</MuiLink>
-          <Typography color="text.primary">Сцены</Typography>
+          <Typography color="text.primary">Scenes</Typography>
         </Breadcrumbs>
-        <SectionCard title="Сцены">
-          <Typography variant="body2" color="text.secondary">Сцен пока нет.</Typography>
-          <Button variant="contained" onClick={() => void handleCreateScene()} sx={{ mt: 1 }}>Создать первую сцену</Button>
+        <SectionCard title="Scenes">
+          <Typography variant="body2" color="text.secondary">No scenes yet.</Typography>
+          <Button variant="contained" onClick={() => void handleCreateScene()} sx={{ mt: 1 }}>Create First Scene</Button>
         </SectionCard>
       </Stack>
     );
@@ -103,13 +103,13 @@ export function NodeGeneratorScenePage() {
   return (
     <Stack spacing={2}>
       <Breadcrumbs aria-label="breadcrumb">
-        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">Все квесты</MuiLink>
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">All quests</MuiLink>
         <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">{project.name}</MuiLink>
-        <Typography color="text.primary">Сцена {scene.id}</Typography>
+        <Typography color="text.primary">Scene {scene.id}</Typography>
       </Breadcrumbs>
 
       <Stack spacing={2}>
-          <SectionCard title="Локальный граф">
+          <SectionCard title="Local Graph">
             <LocalSceneGraph
               projectNodes={nodes}
               sceneId={scene.id}
@@ -119,38 +119,38 @@ export function NodeGeneratorScenePage() {
             />
         </SectionCard>
 
-        <SectionCard title={`Сцена ${scene.id}`}>
+        <SectionCard title={`Scene ${scene.id}`}>
           <Stack spacing={1.25}>
-            <Typography variant="subtitle2">В эту сцену можно попасть из</Typography>
+            <Typography variant="subtitle2">You can reach this scene from</Typography>
             <Stack spacing={0.5}>
-              {incoming.length === 0 ? <Typography variant="body2" color="text.secondary">Нет входящих переходов.</Typography> : null}
+              {incoming.length === 0 ? <Typography variant="body2" color="text.secondary">No incoming transitions.</Typography> : null}
               {incoming.map((item, index) => (
                 <Typography key={`${item.nodeId}-${index}`} variant="body2">
-                  • <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}
+                  - <MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> - {item.actionText}
                 </Typography>
               ))}
             </Stack>
 
             <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
-            <Typography variant="subtitle2">Описание</Typography>
+            <Typography variant="subtitle2">Description</Typography>
             <Typography variant="body2">{(scene.stateDescription || scene.actionDescription || '...').trim() || '...'}</Typography>
 
             <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
-            <Typography variant="subtitle2">Из этой сцены можно перейти в</Typography>
+            <Typography variant="subtitle2">From this scene you can go to</Typography>
             <Stack spacing={0.5}>
-              {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">Нет исходящих переходов.</Typography> : null}
+              {outgoing.length === 0 ? <Typography variant="body2" color="text.secondary">No outgoing transitions.</Typography> : null}
               {outgoing.map((item, index) => (
                 <Stack key={`${item.actionId}-${index}`} direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                   <Typography variant="body2">
-                  • {item.nodeId ? (
-                    <><MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> — {item.actionText}</>
+                  - {item.nodeId ? (
+                    <><MuiLink component={Link} to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(item.nodeId)}`} underline="hover">{item.nodeId}</MuiLink> - {item.actionText}</>
                   ) : (
-                    <>Конец — {item.actionText}</>
+                    <>End - {item.actionText}</>
                   )}
                   </Typography>
                   {!item.nodeId ? (
                     <Button size="small" variant="outlined" onClick={() => void handleCreateSceneFromAction(item.actionId)}>
-                      Создать сцену
+                      Create Scene
                     </Button>
                   ) : null}
                 </Stack>
@@ -158,8 +158,8 @@ export function NodeGeneratorScenePage() {
             </Stack>
 
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-              <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/edit`}>Редактирование</Button>
-              <Button variant="outlined" onClick={() => void handleDeleteScene()}>Удалить сцену</Button>
+              <Button variant="outlined" component={Link} to={`/node-generator/projects/${project.id}/scenes/${scene.id}/edit`}>Edit</Button>
+              <Button variant="outlined" onClick={() => void handleDeleteScene()}>Delete Scene</Button>
             </Stack>
           </Stack>
         </SectionCard>
@@ -205,7 +205,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
       const sourceActionId = (node.sourceActionId ?? '').trim().toUpperCase();
       if (!targetId || !sourceId) return;
       const sourceNode = byId.get(sourceId.toUpperCase());
-      const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? 'Переход';
+      const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? 'Transition';
       rawEdges.push({ sourceId, targetId, actionText });
     });
 
@@ -256,7 +256,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
         const isCenter = key === centerKey;
         return {
           id: `scene:${originalId}`,
-          data: { label: `Сцена ${originalId}`, targetSceneId: originalId },
+          data: { label: `Scene ${originalId}`, targetSceneId: originalId },
           position: { x: 0, y: 0 },
           sourcePosition: Position.Bottom,
           targetPosition: Position.Top,
@@ -333,7 +333,7 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
         const nodeId = `out:${item.nodeId ?? 'end'}:${index}`;
         flowNodes.push({
           id: nodeId,
-          data: { label: item.nodeId ?? 'Конец', targetSceneId: item.nodeId ?? null },
+          data: { label: item.nodeId ?? 'End', targetSceneId: item.nodeId ?? null },
           position: { x: 0, y: 0 },
           sourcePosition: Position.Top,
           targetPosition: Position.Top,
@@ -455,19 +455,19 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
   return (
     <Stack spacing={1}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="body2" color="text.secondary">Глубина</Typography>
+        <Typography variant="body2" color="text.secondary">Depth</Typography>
         <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-          <Tooltip title="Ближе">
+          <Tooltip title="Closer">
             <IconButton
               size="small"
               onClick={() => setDepth((prev) => Math.max(1, prev - 1))}
               sx={{ width: 22, height: 22, border: 1, borderColor: 'divider', borderRadius: 1 }}
             >
-              <Typography variant="caption">−</Typography>
+              <Typography variant="caption">-</Typography>
             </IconButton>
           </Tooltip>
           <Typography variant="caption" sx={{ minWidth: 20, textAlign: 'center', color: 'text.secondary' }}>{depth}</Typography>
-          <Tooltip title="Дальше">
+          <Tooltip title="Farther">
             <IconButton
               size="small"
               onClick={() => setDepth((prev) => prev + 1)}
@@ -476,13 +476,13 @@ function LocalSceneGraph({ projectNodes, sceneId, incoming, outgoing, onSelectSc
               <Typography variant="caption">+</Typography>
             </IconButton>
           </Tooltip>
-          <Tooltip title="Все доступные">
+          <Tooltip title="Show all">
             <IconButton
               size="small"
               onClick={() => setDepth(100)}
               sx={{ width: 22, height: 22, border: 1, borderColor: 'divider', borderRadius: 1 }}
             >
-              <Typography variant="caption">∞</Typography>
+              <Typography variant="caption">All</Typography>
             </IconButton>
           </Tooltip>
         </Stack>
@@ -545,7 +545,7 @@ function collectIncoming(nodes: WorkspaceNode[], sceneId: string): Array<{ nodeI
       const sourceId = (node.sourceNodeId ?? '').trim();
       const sourceActionId = (node.sourceActionId ?? '').trim().toUpperCase();
       const sourceNode = nodes.find((candidate) => normalizeNodeId(candidate.id) === normalizeNodeId(sourceId));
-      const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? 'Переход';
+      const actionText = normalizeActions(sourceNode).find((action) => action.id.toUpperCase() === sourceActionId)?.text ?? 'Transition';
       return { nodeId: sourceId, actionText };
     })
     .filter((item) => item.nodeId.length > 0);
@@ -603,3 +603,4 @@ function readSavedGraphDepth(): number {
     return 3;
   }
 }
+

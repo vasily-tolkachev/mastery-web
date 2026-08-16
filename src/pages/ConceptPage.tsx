@@ -146,34 +146,34 @@ export function ConceptPage() {
   return (
     <Stack spacing={2}>
       <PageHeader
-        title={concept?.title ?? 'Концепт'}
-        subtitle={`${programQuery.data?.title ?? 'Программа'} -> ${concept?.title ?? 'Неизвестный концепт'}`}
+        title={concept?.title ?? 'Concept'}
+        subtitle={`${programQuery.data?.title ?? 'Program'} -> ${concept?.title ?? 'Unknown concept'}`}
       />
 
-      {loading ? <LoadingState message="Загрузка концепта..." /> : null}
+      {loading ? <LoadingState message="Loading concept..." /> : null}
       {error ? (
-        <ErrorState message={error instanceof Error ? error.message : 'Непредвиденная ошибка'} />
+        <ErrorState message={error instanceof Error ? error.message : 'Unexpected error'} />
       ) : null}
       {generationError ? <ErrorState message={generationError} /> : null}
 
       {!loading && !error && !concept ? (
-        <EmptyState message="Концепт не найден в текущей программе." />
+        <EmptyState message="Concept not found in the current program." />
       ) : null}
 
       {concept ? (
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, lg: 8 }}>
             <Stack spacing={2}>
-              <SectionCard title="Описание">
-                <InfoCard label="Кратко" value={concept.description || 'Описание пока отсутствует.'} />
-                <InfoCard label="Сложность" value={concept.difficulty || 'Неизвестно'} />
+              <SectionCard title="Description">
+                <InfoCard label="Summary" value={concept.description || 'Description is not available yet.'} />
+                <InfoCard label="Difficulty" value={concept.difficulty || 'Unknown'} />
                 <InfoCard
-                  label="Оценка времени"
-                  value={`${Math.max(0, concept.estimatedTimeMinutes)} мин`}
+                  label="Estimated Time"
+                  value={`${Math.max(0, concept.estimatedTimeMinutes)} min`}
                 />
               </SectionCard>
 
-              <SectionCard title="Микроконцепты">
+              <SectionCard title="Micro Concepts">
                 <Stack spacing={1}>
                   {concept.microConcepts.map((micro, index) => {
                     const id = micro.microConceptId;
@@ -187,7 +187,7 @@ export function ConceptPage() {
                         spacing={1}
                         sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
                       >
-                        <Typography variant="body2">{`Шаг ${index + 1}: ${micro.title}`}</Typography>
+                        <Typography variant="body2">{`Step ${index + 1}: ${micro.title}`}</Typography>
                         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                           <Typography variant="caption" color="text.secondary">{statusLabel}</Typography>
                           <Button
@@ -260,19 +260,19 @@ export function ConceptPage() {
 
           <Grid size={{ xs: 12, lg: 4 }}>
             <Stack spacing={2}>
-              <SectionCard title="Прогресс">
-                <InfoCard label="Микроконцепты" value={`${completedMicro} / ${totalMicro}`} />
+              <SectionCard title="Progress">
+                <InfoCard label="Micro Concepts" value={`${completedMicro} / ${totalMicro}`} />
               </SectionCard>
 
-              <SectionCard title="Предпосылки">
+              <SectionCard title="Prerequisites">
                 {(concept.prerequisites.length ? concept.prerequisites : prerequisites).length ? (
                   <Stack spacing={1}>
                     {(concept.prerequisites.length ? concept.prerequisites : prerequisites).map((title) => (
-                      <InfoCard key={title} label="Требуется" value={title} />
+                      <InfoCard key={title} label="Required" value={title} />
                     ))}
                   </Stack>
                 ) : (
-                  <EmptyState message="Для этого концепта нет обязательных предпосылок." />
+                  <EmptyState message="No prerequisites are required for this concept." />
                 )}
               </SectionCard>
             </Stack>

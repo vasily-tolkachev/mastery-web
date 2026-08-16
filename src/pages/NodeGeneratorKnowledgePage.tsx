@@ -1,4 +1,4 @@
-import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+﻿import { Alert, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { addWorkspaceGlobalKnowledge, removeWorkspaceGlobalKnowledge } from '../api/nodeGeneratorApi';
@@ -11,9 +11,9 @@ export function NodeGeneratorKnowledgePage() {
   const setProjectCache = useSetNodeGeneratorProjectCache();
   const [knowledgeDraft, setKnowledgeDraft] = useState('');
 
-  if (isLoading) return <LoadingState message="Загрузка знаний..." />;
-  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Не удалось загрузить знания'}</Alert>;
-  if (!project) return <Alert severity="error">Проект не найден</Alert>;
+  if (isLoading) return <LoadingState message="Loading knowledge..." />;
+  if (isError) return <Alert severity="error">{error instanceof Error ? error.message : 'Failed to load knowledge'}</Alert>;
+  if (!project) return <Alert severity="error">Project not found</Alert>;
 
   const items = project.workspace?.globalKnowledge ?? [];
 
@@ -21,18 +21,18 @@ export function NodeGeneratorKnowledgePage() {
     <Stack spacing={2}>
       <Breadcrumbs aria-label="breadcrumb">
         <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
-          Все квесты
+          All quests
         </MuiLink>
         <MuiLink component={Link} to={`/node-generator/projects/${project.id}`} underline="hover" color="inherit">
           {project.name}
         </MuiLink>
-        <Typography color="text.primary">Глобальные знания</Typography>
+        <Typography color="text.primary">Global Knowledge</Typography>
       </Breadcrumbs>
 
-      <SectionCard title="Глобальные знания">
+      <SectionCard title="Global Knowledge">
         <Stack spacing={1}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-            <TextField label="+ Добавить знание" size="small" value={knowledgeDraft} onChange={(e) => setKnowledgeDraft(e.target.value)} fullWidth />
+            <TextField label="+ Add knowledge" size="small" value={knowledgeDraft} onChange={(e) => setKnowledgeDraft(e.target.value)} fullWidth />
             <Button
               variant="contained"
               disabled={!knowledgeDraft.trim()}
@@ -42,7 +42,7 @@ export function NodeGeneratorKnowledgePage() {
                 setKnowledgeDraft('');
               }}
             >
-              Добавить
+              Add
             </Button>
           </Stack>
           {items.map((item, index) => (
@@ -56,13 +56,14 @@ export function NodeGeneratorKnowledgePage() {
                   setProjectCache(updated);
                 }}
               >
-                Удалить
+                Delete
               </Button>
             </Stack>
           ))}
-          {!items.length ? <Typography variant="body2" color="text.secondary">Список знаний пуст.</Typography> : null}
+          {!items.length ? <Typography variant="body2" color="text.secondary">Knowledge list is empty.</Typography> : null}
         </Stack>
       </SectionCard>
     </Stack>
   );
 }
+

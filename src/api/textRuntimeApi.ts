@@ -1,4 +1,4 @@
-import { authFetch } from './http';
+﻿import { authFetch } from './http';
 
 export type RuntimeItem = {
   id: string;
@@ -137,7 +137,7 @@ async function toRuntimeError(response: Response, fallback: string): Promise<Err
 
 export async function listTextRuntimeQuests(): Promise<RuntimeQuestSummary[]> {
   const response = await authFetch('/api/text-runtime/quests');
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось загрузить список квестов');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to load quest list');
   const raw = await response.json();
   if (!Array.isArray(raw)) return [];
   return raw.map((item) => ({
@@ -152,7 +152,7 @@ export async function startTextRuntimeQuest(questId: string): Promise<RuntimeSna
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось запустить квест');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to start quest');
   return await response.json() as RuntimeSnapshot;
 }
 
@@ -162,13 +162,13 @@ export async function importTextRuntimeQuest(payload: RuntimeQuestImportPayload)
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!response.ok) throw await toRuntimeError(response, 'ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¸Ð¼Ð¿Ð¾Ñ€Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ ÐºÐ²ÐµÑÑ‚');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to import quest');
   return await response.json() as RuntimeQuestSummary;
 }
 
 export async function inspectTextRuntime(sessionId: string): Promise<RuntimeSnapshot> {
   const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/inspect`);
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось загрузить состояние');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to load state');
   return await response.json() as RuntimeSnapshot;
 }
 
@@ -178,7 +178,7 @@ export async function moveTextRuntime(sessionId: string, locationId: string): Pr
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ locationId }),
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Переход недоступен');
+  if (!response.ok) throw await toRuntimeError(response, 'Transition is unavailable');
   return await response.json() as RuntimeSnapshot;
 }
 
@@ -188,7 +188,7 @@ export async function takeTextRuntime(sessionId: string, itemId: string): Promis
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ itemId }),
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось взять предмет');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to take item');
   return await response.json() as RuntimeSnapshot;
 }
 
@@ -198,7 +198,7 @@ export async function useTextRuntime(sessionId: string, itemId: string, targetId
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ itemId, targetId }),
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось использовать предмет');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to use item');
   return await response.json() as RuntimeSnapshot;
 }
 
@@ -208,7 +208,7 @@ export async function interactTextRuntime(sessionId: string, targetId: string): 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ targetId }),
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось выполнить взаимодействие');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to interact');
   return await response.json() as RuntimeActionResult;
 }
 
@@ -218,7 +218,7 @@ export async function executeActionTextRuntime(sessionId: string, actionId: stri
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ actionId }),
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось выполнить действие');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to execute action');
   return await response.json() as RuntimeSnapshot;
 }
 
@@ -228,7 +228,7 @@ export async function inspectTargetTextRuntime(sessionId: string, targetId: stri
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ targetId }),
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось осмотреть цель');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to inspect target');
   const payload = await response.json() as { description?: string };
   return payload.description ?? '';
 }
@@ -238,7 +238,7 @@ export async function generateSceneTextRuntime(sessionId: string): Promise<Runti
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось сгенерировать сцену');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to generate scene');
   return await response.json() as RuntimeGenerationStatus;
 }
 
@@ -247,13 +247,13 @@ export async function generateActionsTextRuntime(sessionId: string): Promise<Run
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось сгенерировать действия');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to generate actions');
   return await response.json() as RuntimeGenerationStatus;
 }
 
 export async function generationStatusTextRuntime(sessionId: string): Promise<RuntimeGenerationStatus> {
   const response = await authFetch(`/api/text-runtime/sessions/${sessionId}/generation-status`);
-  if (!response.ok) throw await toRuntimeError(response, 'Не удалось получить статус генерации');
+  if (!response.ok) throw await toRuntimeError(response, 'Failed to fetch generation status');
   return await response.json() as RuntimeGenerationStatus;
 }
 export async function exportTextRuntimeQuest(questId: string): Promise<void> {
@@ -269,3 +269,4 @@ export async function exportTextRuntimeQuest(questId: string): Promise<void> {
   link.remove();
   window.URL.revokeObjectURL(url);
 }
+

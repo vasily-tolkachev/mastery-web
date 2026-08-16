@@ -1,4 +1,4 @@
-import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
+﻿import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import FileUploadRoundedIcon from '@mui/icons-material/FileUploadRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
@@ -34,7 +34,7 @@ export function QuestsPage() {
       setQuests(questList);
       setSessions(sessionList);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить квесты');
+      setError(e instanceof Error ? e.message : 'Failed to load quests');
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export function QuestsPage() {
       setShowCatalog(false);
       setSessions(await getMyQuestSessions());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось начать квест');
+      setError(e instanceof Error ? e.message : 'Failed to start quest');
     } finally {
       setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
@@ -72,7 +72,7 @@ export function QuestsPage() {
       setGame(nextGame);
       setSessions(await getMyQuestSessions());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось выбрать действие');
+      setError(e instanceof Error ? e.message : 'Failed to choose action');
     } finally {
       setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
@@ -90,7 +90,7 @@ export function QuestsPage() {
       setGame(response.game);
       setShowCatalog(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось продолжить сессию');
+      setError(e instanceof Error ? e.message : 'Failed to resume session');
     } finally {
       setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
@@ -111,7 +111,7 @@ export function QuestsPage() {
       setGame(response.game);
       setSessions(await getMyQuestSessions());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось перезапустить квест');
+      setError(e instanceof Error ? e.message : 'Failed to restart quest');
     } finally {
       setPendingAction((prev) => (prev === actionKey ? null : prev));
     }
@@ -125,26 +125,26 @@ export function QuestsPage() {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      setUploadMessage('Сначала выберите файл .quest.');
+      setUploadMessage('Please select a .quest file first.');
       return;
     }
     try {
       setUploading(true);
       setUploadMessage(null);
       const uploaded = await uploadQuestFile(selectedFile);
-      setUploadMessage(`Загружено: ${uploaded.title} (${uploaded.id})`);
+      setUploadMessage(`Uploaded: ${uploaded.title} (${uploaded.id})`);
       setSelectedFile(null);
       await loadQuests();
       setShowCatalog(true);
     } catch (e) {
-      setUploadMessage(e instanceof Error ? e.message : 'Не удалось загрузить квест');
+      setUploadMessage(e instanceof Error ? e.message : 'Failed to upload quest');
     } finally {
       setUploading(false);
     }
   };
 
   if (loading) {
-    return <LoadingState message="Загрузка квестов..." />;
+    return <LoadingState message="Loading quests..." />;
   }
 
   return (
@@ -152,8 +152,8 @@ export function QuestsPage() {
       {error ? <ErrorState message={error} /> : null}
 
       {!game || showCatalog ? (
-        <SectionCard title="Доступные квесты">
-          {!quests.length ? <EmptyState message="Нет доступных квестов." /> : null}
+        <SectionCard title="Available Quests">
+          {!quests.length ? <EmptyState message="No quests available." /> : null}
           <Stack spacing={1.5}>
             {quests.map((quest) => (
               <Box
@@ -177,7 +177,7 @@ export function QuestsPage() {
                     fullWidth
                     sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                   >
-                    Начать
+                    Start
                   </Button>
                 </Stack>
               </Box>
@@ -220,7 +220,7 @@ export function QuestsPage() {
                   ))}
                   {!game.options.length ? (
                     <Typography variant="body2" color="text.secondary">
-                      Квест завершён.
+                      Quest completed.
                     </Typography>
                   ) : null}
                 </Stack>
@@ -234,10 +234,10 @@ export function QuestsPage() {
                     fullWidth
                     sx={{ minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                   >
-                    Перезапустить
+                    Restart
                   </Button>
                   <Button variant="text" onClick={() => setShowCatalog(true)} fullWidth sx={{ minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}>
-                    К списку квестов
+                    Back to quest list
                   </Button>
                 </Stack>
               </Stack>
@@ -248,7 +248,7 @@ export function QuestsPage() {
                 <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: { xs: 1.75, md: 1.5 } }}>
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
                     <Inventory2RoundedIcon fontSize="small" color="primary" />
-                    <Typography variant="subtitle2">Инвентарь</Typography>
+                    <Typography variant="subtitle2">Inventory</Typography>
                   </Stack>
                   <Divider sx={{ mb: 1 }} />
                   {game.inventory.length ? (
@@ -261,7 +261,7 @@ export function QuestsPage() {
                     </Stack>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
-                      Пусто
+                      Empty
                     </Typography>
                   )}
                 </Box>
@@ -269,7 +269,7 @@ export function QuestsPage() {
                 <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: { xs: 1.75, md: 1.5 } }}>
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
                     <MemoryRoundedIcon fontSize="small" color="primary" />
-                    <Typography variant="subtitle2">Переменные</Typography>
+                    <Typography variant="subtitle2">Variables</Typography>
                   </Stack>
                   <Divider sx={{ mb: 1 }} />
                   {Object.keys(game.variables).length ? (
@@ -284,7 +284,7 @@ export function QuestsPage() {
                     </Stack>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
-                      Нет переменных
+                      No variables
                     </Typography>
                   )}
                 </Box>
@@ -295,13 +295,13 @@ export function QuestsPage() {
       )}
 
       {!game || showCatalog ? (
-        <SectionCard title="Мои сессии квестов">
+        <SectionCard title="My Quest Sessions">
           <Accordion expanded={sessionsExpanded} onChange={(_, expanded) => setSessionsExpanded(expanded)} sx={{ boxShadow: 'none', bgcolor: 'transparent' }}>
             <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
-              <Typography variant="subtitle1">Показать сессии ({sessions.length})</Typography>
+              <Typography variant="subtitle1">Show sessions ({sessions.length})</Typography>
             </AccordionSummary>
             <AccordionDetails sx={{ px: 0 }}>
-              {!sessions.length ? <EmptyState message="Сессий квестов пока нет." /> : null}
+              {!sessions.length ? <EmptyState message="No quest sessions yet." /> : null}
               <Stack spacing={1.5}>
                 {sessions.map((session) => (
                   <Accordion key={session.sessionId} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'transparent' }}>
@@ -311,18 +311,18 @@ export function QuestsPage() {
                           {session.questTitle || session.questId}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-                          {session.status} • {session.sessionId}
+                          {session.status} | {session.sessionId}
                         </Typography>
                       </Stack>
                     </AccordionSummary>
                     <AccordionDetails>
                       <Stack spacing={0.75}>
-                        <Typography variant="body2">Текущий узел: {session.gameState.currentNodeId}</Typography>
-                        <Typography variant="body2">Факты: {session.gameState.facts.join(', ') || '-'}</Typography>
-                        <Typography variant="body2">Инвентарь: {session.gameState.inventory.join(', ') || '-'}</Typography>
-                        <Typography variant="body2">Посещённые узлы: {session.gameState.visitedNodes.join(', ') || '-'}</Typography>
-                        <Typography variant="body2">История переходов: {session.gameState.navigationHistory.join(' -> ') || '-'}</Typography>
-                        <Typography variant="body2">Переменные:</Typography>
+                        <Typography variant="body2">Current node: {session.gameState.currentNodeId}</Typography>
+                        <Typography variant="body2">Facts: {session.gameState.facts.join(', ') || '-'}</Typography>
+                        <Typography variant="body2">Inventory: {session.gameState.inventory.join(', ') || '-'}</Typography>
+                        <Typography variant="body2">Visited nodes: {session.gameState.visitedNodes.join(', ') || '-'}</Typography>
+                        <Typography variant="body2">Navigation history: {session.gameState.navigationHistory.join(' -> ') || '-'}</Typography>
+                        <Typography variant="body2">Variables:</Typography>
                         <Box
                           component="pre"
                           sx={{
@@ -347,7 +347,7 @@ export function QuestsPage() {
                             fullWidth
                             sx={{ maxWidth: { sm: 160 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
                           >
-                            Продолжить
+                            Continue
                           </Button>
                         </Stack>
                       </Stack>
@@ -361,11 +361,11 @@ export function QuestsPage() {
       ) : null}
 
       {!game || showCatalog ? (
-        <SectionCard title="Загрузка файла квеста">
+        <SectionCard title="Upload Quest File">
           <Stack spacing={1.5}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
               <Button variant="outlined" component="label" disabled={uploading} fullWidth sx={{ maxWidth: { sm: 220 }, minHeight: { xs: 60, sm: 56 } }}>
-                Выбрать .quest
+                Choose .quest
                 <input hidden type="file" accept=".quest,text/plain" onChange={handleFileChange} />
               </Button>
               <Button
@@ -376,10 +376,10 @@ export function QuestsPage() {
                 fullWidth
                 sx={{ maxWidth: { sm: 180 }, minHeight: { xs: 60, sm: 56 }, fontSize: { xs: '1.05rem', md: '1rem' } }}
               >
-                Загрузить
+                Upload
               </Button>
               <Typography variant="body1" color="text.secondary" sx={{ overflowWrap: 'anywhere', fontSize: { xs: '1.1rem', sm: '0.95rem' } }}>
-                {selectedFile ? selectedFile.name : 'Файл не выбран'}
+                {selectedFile ? selectedFile.name : 'No file selected'}
               </Typography>
             </Stack>
             {uploadMessage ? (
@@ -393,3 +393,4 @@ export function QuestsPage() {
     </Stack>
   );
 }
+

@@ -1,4 +1,4 @@
-import { authFetch } from './http';
+﻿import { authFetch } from './http';
 import type { NodeGeneratorProject, StagePromptPreview, WorkspaceNode } from '../types/nodeGenerator';
 
 export type PromptOverride = {
@@ -36,13 +36,13 @@ export async function createNodeGeneratorProject(name: string, questStyle: strin
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, questStyle }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось создать проект');
+  if (!response.ok) throw await toError(response, 'Failed to create project');
   return normalizeProject(await response.json());
 }
 
 export async function getNodeGeneratorProjects(): Promise<NodeGeneratorProject[]> {
   const response = await authFetch('/api/node-generator/projects');
-  if (!response.ok) throw await toError(response, 'Не удалось загрузить проекты');
+  if (!response.ok) throw await toError(response, 'Failed to load projects');
   const raw = await response.json();
   if (!Array.isArray(raw)) return [];
   return raw.map(normalizeProject);
@@ -50,7 +50,7 @@ export async function getNodeGeneratorProjects(): Promise<NodeGeneratorProject[]
 
 export async function getNodeGeneratorProject(id: string): Promise<NodeGeneratorProject> {
   const response = await authFetch(`/api/node-generator/projects/${id}`);
-  if (!response.ok) throw await toError(response, 'Не удалось загрузить проект');
+  if (!response.ok) throw await toError(response, 'Failed to load project');
   return normalizeProject(await response.json());
 }
 
@@ -60,7 +60,7 @@ export async function renameNodeGeneratorProject(projectId: string, name: string
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось переименовать проект');
+  if (!response.ok) throw await toError(response, 'Failed to rename project');
   return normalizeProject(await response.json());
 }
 
@@ -69,7 +69,7 @@ export async function deleteNodeGeneratorProject(projectId: string): Promise<voi
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось удалить проект');
+  if (!response.ok) throw await toError(response, 'Failed to delete project');
 }
 
 export async function createWorkspaceNode(projectId: string, sourceNodeId?: string, sourceActionId?: string): Promise<NodeGeneratorProject> {
@@ -78,7 +78,7 @@ export async function createWorkspaceNode(projectId: string, sourceNodeId?: stri
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sourceNodeId, sourceActionId }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось создать нод');
+  if (!response.ok) throw await toError(response, 'Failed to create node');
   return normalizeProject(await response.json());
 }
 
@@ -87,7 +87,7 @@ export async function deleteWorkspaceNode(projectId: string, nodeId: string): Pr
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось удалить нод');
+  if (!response.ok) throw await toError(response, 'Failed to delete node');
   return normalizeProject(await response.json());
 }
 
@@ -97,7 +97,7 @@ export async function updateWorkspaceNodeDescription(projectId: string, nodeId: 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ actionDescription, stateDescription }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось обновить описание');
+  if (!response.ok) throw await toError(response, 'Failed to update description');
   return normalizeProject(await response.json());
 }
 
@@ -107,7 +107,7 @@ export async function addWorkspaceNodeAction(projectId: string, nodeId: string, 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось добавить действие');
+  if (!response.ok) throw await toError(response, 'Failed to add action');
   return normalizeProject(await response.json());
 }
 
@@ -116,7 +116,7 @@ export async function deleteWorkspaceNodeAction(projectId: string, nodeId: strin
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось удалить действие');
+  if (!response.ok) throw await toError(response, 'Failed to delete action');
   return normalizeProject(await response.json());
 }
 
@@ -125,7 +125,7 @@ export async function createNextWorkspaceNode(projectId: string, nodeId: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось создать следующий нод');
+  if (!response.ok) throw await toError(response, 'Failed to create next node');
   return normalizeProject(await response.json());
 }
 
@@ -134,7 +134,7 @@ export async function previewWorkspaceNodeDescriptionPrompt(projectId: string, n
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось получить превью prompt');
+  if (!response.ok) throw await toError(response, 'Failed to preview prompt');
   const raw = (await response.json()) as Record<string, unknown>;
   return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
 }
@@ -145,7 +145,7 @@ export async function generateWorkspaceNodeDescription(projectId: string, nodeId
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(promptOverride ?? {}),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось сгенерировать описание');
+  if (!response.ok) throw await toError(response, 'Failed to generate description');
   return normalizeProject(await response.json());
 }
 
@@ -154,7 +154,7 @@ export async function previewWorkspaceNodeKnowledgePrompt(projectId: string, nod
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось получить превью prompt');
+  if (!response.ok) throw await toError(response, 'Failed to preview prompt');
   const raw = (await response.json()) as Record<string, unknown>;
   return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
 }
@@ -165,7 +165,7 @@ export async function extractWorkspaceNodeKnowledge(projectId: string, nodeId: s
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(promptOverride ?? {}),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось извлечь знания');
+  if (!response.ok) throw await toError(response, 'Failed to extract knowledge');
   return normalizeProject(await response.json());
 }
 
@@ -174,7 +174,7 @@ export async function previewWorkspaceNodeActionsPrompt(projectId: string, nodeI
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось получить превью prompt');
+  if (!response.ok) throw await toError(response, 'Failed to preview prompt');
   const raw = (await response.json()) as Record<string, unknown>;
   return { systemPrompt: String(raw.systemPrompt ?? ''), userPrompt: String(raw.userPrompt ?? '') };
 }
@@ -185,7 +185,7 @@ export async function generateWorkspaceNodeActions(projectId: string, nodeId: st
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(promptOverride ?? {}),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось сгенерировать действия');
+  if (!response.ok) throw await toError(response, 'Failed to generate actions');
   return normalizeProject(await response.json());
 }
 
@@ -195,7 +195,7 @@ export async function addWorkspaceGlobalKnowledge(projectId: string, text: strin
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось добавить знание');
+  if (!response.ok) throw await toError(response, 'Failed to add knowledge');
   return normalizeProject(await response.json());
 }
 
@@ -205,7 +205,7 @@ export async function removeWorkspaceGlobalKnowledge(projectId: string, text: st
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось удалить знание');
+  if (!response.ok) throw await toError(response, 'Failed to remove knowledge');
   return normalizeProject(await response.json());
 }
 
@@ -215,7 +215,7 @@ export async function addNodeKnowledgeToGlobal(projectId: string, nodeId: string
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось перенести знание');
+  if (!response.ok) throw await toError(response, 'Failed to move knowledge');
   return normalizeProject(await response.json());
 }
 
@@ -225,7 +225,7 @@ export async function runWorkspaceExpansion(projectId: string, knowledge: string
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ knowledge }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось запустить обновление');
+  if (!response.ok) throw await toError(response, 'Failed to run update');
   return normalizeProject(await response.json());
 }
 
@@ -234,7 +234,7 @@ export async function acceptWorkspaceExpansionSuggestion(projectId: string, sugg
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось принять предложение');
+  if (!response.ok) throw await toError(response, 'Failed to accept suggestion');
   return normalizeProject(await response.json());
 }
 
@@ -243,13 +243,13 @@ export async function dismissWorkspaceExpansionSuggestion(projectId: string, sug
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось отклонить предложение');
+  if (!response.ok) throw await toError(response, 'Failed to dismiss suggestion');
   return normalizeProject(await response.json());
 }
 
 export async function exportProjectJson(projectId: string): Promise<unknown> {
   const response = await authFetch(`/api/node-generator/projects/${projectId}/export-json`);
-  if (!response.ok) throw await toError(response, 'Не удалось экспортировать JSON');
+  if (!response.ok) throw await toError(response, 'Failed to export JSON');
   return await response.json();
 }
 
@@ -259,7 +259,7 @@ export async function importProjectJson(projectId: string, snapshotJson: unknown
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ snapshotJson }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось импортировать JSON');
+  if (!response.ok) throw await toError(response, 'Failed to import JSON');
   return normalizeProject(await response.json());
 }
 
@@ -269,7 +269,7 @@ export async function importNodeGeneratorProjectJson(snapshotJson: unknown): Pro
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ snapshotJson }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось импортировать проект из JSON');
+  if (!response.ok) throw await toError(response, 'Failed to import project from JSON');
   return normalizeProject(await response.json());
 }
 
@@ -278,7 +278,7 @@ export async function createQuestFromNodeGeneratorProject(projectId: string): Pr
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!response.ok) throw await toError(response, 'Не удалось создать квест из проекта');
+  if (!response.ok) throw await toError(response, 'Failed to create quest from project');
   const raw = (await response.json()) as Record<string, unknown>;
   return {
     id: String(raw.id ?? ''),
@@ -292,7 +292,7 @@ export async function generateFirstSceneIdeas(prompt: string): Promise<FirstScen
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt }),
   });
-  if (!response.ok) throw await toError(response, 'Не удалось сгенерировать варианты');
+  if (!response.ok) throw await toError(response, 'Failed to generate ideas');
   const raw = (await response.json()) as Record<string, unknown>;
   const ideasRaw = Array.isArray(raw.ideas) ? raw.ideas : [];
   return ideasRaw
@@ -314,7 +314,7 @@ export async function generateNextSceneIdeas(projectId: string, nodeId: string, 
       headers: { 'Content-Type': 'application/json' },
     },
   );
-  if (!response.ok) throw await toError(response, 'Не удалось сгенерировать варианты следующей сцены');
+  if (!response.ok) throw await toError(response, 'Failed to generate next-scene ideas');
   const raw = (await response.json()) as Record<string, unknown>;
   const ideasRaw = Array.isArray(raw.ideas) ? raw.ideas : [];
   return ideasRaw
@@ -442,3 +442,4 @@ function normalizeGeneratedActionsDraft(value: unknown): string[] {
     })
     .filter((item) => item.length > 0);
 }
+

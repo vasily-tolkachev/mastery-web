@@ -1,4 +1,4 @@
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+﻿import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useState } from 'react';
@@ -42,7 +42,7 @@ export function NodeGeneratorProjectsPage() {
       clearUiError();
       setProjects(await getNodeGeneratorProjects());
     } catch (e) {
-      applyUiError(e, 'Не удалось загрузить проекты');
+      applyUiError(e, 'Failed to load projects');
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export function NodeGeneratorProjectsPage() {
       const imported = await importNodeGeneratorProjectJson(parsed);
       navigate(toProjectHomePath(imported));
     } catch (e) {
-      applyUiError(e, 'Не удалось импортировать JSON');
+      applyUiError(e, 'Failed to import JSON');
     }
   };
 
@@ -74,7 +74,7 @@ export function NodeGeneratorProjectsPage() {
       await loadProjects();
       setProjectToDelete(null);
     } catch (e) {
-      applyUiError(e, 'Не удалось удалить квест');
+      applyUiError(e, 'Failed to delete quest');
     }
   };
 
@@ -91,17 +91,17 @@ export function NodeGeneratorProjectsPage() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      applyUiError(e, 'Не удалось экспортировать квест');
+      applyUiError(e, 'Failed to export quest');
     }
   };
 
-  if (loading) return <LoadingState message="Загрузка квестов..." />;
+  if (loading) return <LoadingState message="Loading quests..." />;
 
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
       {validationErrors.length ? (
-        <SectionCard title="Ошибки валидации">
+        <SectionCard title="Validation errors">
           <Stack spacing={0.5}>
             {validationErrors.map((item, index) => (
               <Typography key={`${index}-${item}`} variant="body2" color="error">
@@ -112,19 +112,19 @@ export function NodeGeneratorProjectsPage() {
         </SectionCard>
       ) : null}
 
-      <SectionCard title="Конструктор квестов">
+      <SectionCard title="Quest Builder">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-          <Button variant="contained" onClick={() => navigate('/node-generator/new')}>+ Создать квест</Button>
+          <Button variant="contained" onClick={() => navigate('/node-generator/new')}>+ Create Quest</Button>
           <Button variant="outlined" component="label">
-            Импортировать квест
+            Import Quest
             <input hidden type="file" accept=".json,application/json" onChange={(event) => void handleImportJsonFile(event)} />
           </Button>
-          <Button variant="text" onClick={() => void loadProjects()}>Обновить список</Button>
+          <Button variant="text" onClick={() => void loadProjects()}>Refresh List</Button>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Мои квесты">
-        {!projects.length ? <EmptyState message="Пока нет квестов." /> : null}
+      <SectionCard title="My Quests">
+        {!projects.length ? <EmptyState message="No quests yet." /> : null}
         <Stack spacing={1}>
           {projects.map((project) => (
             <Stack key={project.id} direction="row" spacing={1} sx={{ alignItems: 'stretch' }}>
@@ -141,7 +141,7 @@ export function NodeGeneratorProjectsPage() {
                     borderRadius: 1,
                   }}
                 >
-                  <Typography variant="subtitle1" noWrap>📖 {project.name}</Typography>
+                  <Typography variant="subtitle1" noWrap>ðŸ“– {project.name}</Typography>
                 </Button>
               </Box>
 
@@ -149,7 +149,7 @@ export function NodeGeneratorProjectsPage() {
                 <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
                   <IconButton
                     size="small"
-                    aria-label="Экспорт"
+                    aria-label="Export"
                     onClick={() => void handleExportProject(project)}
                     sx={{ width: 34, height: 34, p: 0 }}
                   >
@@ -160,7 +160,7 @@ export function NodeGeneratorProjectsPage() {
                   <IconButton
                     size="small"
                     color="error"
-                    aria-label="Удалить"
+                    aria-label="Delete"
                     onClick={() => setProjectToDelete(project)}
                     sx={{ width: 34, height: 34, p: 0 }}
                   >
@@ -174,16 +174,16 @@ export function NodeGeneratorProjectsPage() {
       </SectionCard>
 
       <Dialog open={Boolean(projectToDelete)} onClose={() => setProjectToDelete(null)} fullWidth maxWidth="xs">
-        <DialogTitle>Удалить квест?</DialogTitle>
+        <DialogTitle>Delete quest?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            {projectToDelete ? `Квест "${projectToDelete.name}" будет удален без возможности восстановления.` : ''}
+            {projectToDelete ? `Quest "${projectToDelete.name}" will be deleted permanently.` : ''}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setProjectToDelete(null)}>Отмена</Button>
+          <Button onClick={() => setProjectToDelete(null)}>Cancel</Button>
           <Button color="error" variant="contained" onClick={() => void handleConfirmDeleteProject()}>
-            Удалить
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
@@ -194,3 +194,4 @@ export function NodeGeneratorProjectsPage() {
 function toProjectHomePath(project: NodeGeneratorProject): string {
   return `/node-generator/projects/${project.id}`;
 }
+

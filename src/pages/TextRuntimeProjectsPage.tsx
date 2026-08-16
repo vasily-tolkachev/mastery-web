@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Stack, Typography } from '@mui/material';
+﻿import { Alert, Box, Breadcrumbs, Button, Stack, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -25,7 +25,7 @@ export function TextRuntimeProjectsPage() {
         setQuests(loaded);
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Не удалось загрузить квесты');
+        setError(e instanceof Error ? e.message : 'Failed to load quests');
       } finally {
         if (cancelled) return;
         setIsLoading(false);
@@ -49,27 +49,27 @@ export function TextRuntimeProjectsPage() {
       const loaded = await listTextRuntimeQuests();
       setQuests(loaded);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось импортировать квест');
+      setError(e instanceof Error ? e.message : 'Failed to import quest');
     }
   };
 
-  if (isLoading) return <LoadingState message="Загрузка квестов..." />;
+  if (isLoading) return <LoadingState message="Loading quests..." />;
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
     <Stack spacing={2}>
       <Breadcrumbs aria-label="breadcrumb">
-        <Typography color="text.primary">Текстовый режим</Typography>
+        <Typography color="text.primary">Text Runtime</Typography>
       </Breadcrumbs>
 
-      <SectionCard title="Выберите квест">
+      <SectionCard title="Choose a quest">
         <Stack spacing={1}>
           <Button variant="outlined" component="label" size="small">
-            Импорт JSON
+            Import JSON
             <input hidden type="file" accept="application/json,.json" onChange={(e) => void onImport(e)} />
           </Button>
           {(quests ?? []).length === 0 ? (
-            <Typography variant="body2" color="text.secondary">Нет квестов.</Typography>
+            <Typography variant="body2" color="text.secondary">No quests yet.</Typography>
           ) : null}
           {(quests ?? []).map((quest) => (
             <Box
@@ -97,3 +97,4 @@ export function TextRuntimeProjectsPage() {
     </Stack>
   );
 }
+

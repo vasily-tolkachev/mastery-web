@@ -49,68 +49,68 @@ export function SettingsPage() {
 
   return (
     <Stack spacing={2}>
-      <PageHeader title="Настройки" subtitle="Параметры приложения и профиль." />
-      <SectionCard title="Параметры">
+      <PageHeader title="Settings" subtitle="Application preferences and profile." />
+      <SectionCard title="Preferences">
         <Stack spacing={1.5}>
-          <Typography variant="subtitle2">Профиль</Typography>
+          <Typography variant="subtitle2">Profile</Typography>
           {profileQuery.error ? (
             <Alert severity="error">
-              {profileQuery.error instanceof Error ? profileQuery.error.message : 'Не удалось загрузить профиль'}
+              {profileQuery.error instanceof Error ? profileQuery.error.message : 'Failed to load profile'}
             </Alert>
           ) : null}
           {authProfileQuery.error ? (
             <Alert severity="error">
-              {authProfileQuery.error instanceof Error ? authProfileQuery.error.message : 'Не удалось загрузить профиль авторизации'}
+              {authProfileQuery.error instanceof Error ? authProfileQuery.error.message : 'Failed to load auth profile'}
             </Alert>
           ) : null}
           {updateProfileMutation.error ? (
             <Alert severity="error">
-              {updateProfileMutation.error instanceof Error ? updateProfileMutation.error.message : 'Не удалось обновить профиль'}
+              {updateProfileMutation.error instanceof Error ? updateProfileMutation.error.message : 'Failed to update profile'}
             </Alert>
           ) : null}
           {syncUpdateProfileMutation.error ? (
             <Alert severity="error">
-              {syncUpdateProfileMutation.error instanceof Error ? syncUpdateProfileMutation.error.message : 'Не удалось обновить профиль'}
+              {syncUpdateProfileMutation.error instanceof Error ? syncUpdateProfileMutation.error.message : 'Failed to update profile'}
             </Alert>
           ) : null}
           {syncUpdateProfileMutation.isSuccess ? (
-            <Alert severity="success">Профиль обновлён.</Alert>
+            <Alert severity="success">Profile updated.</Alert>
           ) : null}
           <TextField
-            label="Отображаемое имя"
+            label="Display Name"
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
-            placeholder="Ученик"
+            placeholder="Learner"
             disabled={profileQuery.isLoading || syncUpdateProfileMutation.isPending}
           />
           <TextField
-            label="Почта"
+            label="Email"
             value={authProfileQuery.data?.email ?? ''}
             disabled
           />
           <TextField
-            label="Дата регистрации"
+            label="Created At"
             value={authProfileQuery.data?.createdAt ? new Date(authProfileQuery.data.createdAt).toLocaleString() : ''}
             disabled
           />
           <TextField
-            label="Обновлено"
+            label="Updated At"
             value={profileQuery.data?.updatedAt ? new Date(profileQuery.data.updatedAt).toLocaleString() : ''}
             disabled
           />
           <Stack direction="row" spacing={1}>
             <ActionButton
-              aria-label="Сохранить профиль"
+              aria-label="Save profile"
               onClick={() => void handleSaveProfile()}
               disabled={!displayName.trim() || syncUpdateProfileMutation.isPending}
             >
-              Сохранить
+              Save
             </ActionButton>
           </Stack>
         </Stack>
         <Stack direction="row" sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
           <Button variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon fontSize="small" />} onClick={handleLogout}>
-            Выйти
+            Sign Out
           </Button>
         </Stack>
       </SectionCard>

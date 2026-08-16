@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+﻿import { Alert, Box, Breadcrumbs, Button, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestError, createQuestFromNodeGeneratorProject, renameNodeGeneratorProject } from '../api/nodeGeneratorApi';
@@ -55,7 +55,7 @@ export function NodeGeneratorProjectHomePage() {
       setProjectCache(updated);
       setRenameDraft(updated.name);
     } catch (e) {
-      applyUiError(e, 'Не удалось сохранить название');
+      applyUiError(e, 'Failed to save name');
       setRenameDraft(project.name);
     }
   };
@@ -68,21 +68,21 @@ export function NodeGeneratorProjectHomePage() {
       await createQuestFromNodeGeneratorProject(project.id);
       navigate('/quests');
     } catch (e) {
-      applyUiError(e, 'Не удалось создать квест');
+      applyUiError(e, 'Failed to create quest');
     } finally {
       setCreateQuestPending(false);
     }
   };
 
-  if (isLoading) return <LoadingState message="Загрузка квеста..." />;
-  if (isError) return <Alert severity="error">{projectError instanceof Error ? projectError.message : 'Не удалось загрузить проект'}</Alert>;
-  if (!project) return <Alert severity="error">Проект не найден</Alert>;
+  if (isLoading) return <LoadingState message="Loading quest..." />;
+  if (isError) return <Alert severity="error">{projectError instanceof Error ? projectError.message : 'Failed to load project'}</Alert>;
+  if (!project) return <Alert severity="error">Project not found</Alert>;
 
   return (
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
       {validationErrors.length ? (
-        <SectionCard title="Ошибки валидации">
+        <SectionCard title="Validation errors">
           <Stack spacing={0.5}>
             {validationErrors.map((item, index) => (
               <Typography key={`${index}-${item}`} variant="body2" color="error">
@@ -95,37 +95,37 @@ export function NodeGeneratorProjectHomePage() {
 
       <Breadcrumbs aria-label="breadcrumb">
         <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">
-          Все квесты
+          All quests
         </MuiLink>
         <Typography color="text.primary">{project.name}</Typography>
       </Breadcrumbs>
 
-      <SectionCard title="Профиль квеста">
+      <SectionCard title="Quest Profile">
         <Stack spacing={1.5}>
           <TextField
-            label="Название квеста"
+            label="Quest name"
             value={renameDraft}
             onChange={(e) => setRenameDraft(e.target.value)}
             onBlur={() => void handleRenameOnBlur()}
             fullWidth
           />
-          <Typography variant="body2">Сцен: {sceneCount}</Typography>
-          <Typography variant="body2">Действий: {actionsCount}</Typography>
-          <Typography variant="body2">Знаний: {knowledgeCount}</Typography>
+          <Typography variant="body2">Scenes: {sceneCount}</Typography>
+          <Typography variant="body2">Actions: {actionsCount}</Typography>
+          <Typography variant="body2">Knowledge entries: {knowledgeCount}</Typography>
         </Stack>
       </SectionCard>
 
-      <SectionCard title="Разделы квеста">
+      <SectionCard title="Quest Sections">
         <Stack spacing={1}>
           <Button variant="contained" onClick={() => void handleCreateQuest()} disabled={createQuestPending}>
-            Создать квест из текущих данных
+            Create Quest from Current Data
           </Button>
           <NavCard
-            title="Продолжить работу"
+            title="Continue Editing"
             to={`/node-generator/projects/${project.id}/scenes/${encodeURIComponent(firstSceneId)}`}
           />
-          <NavCard title="Глобальные знания" to={`/node-generator/projects/${project.id}/knowledge`} />
-          <NavCard title="Проверка изменений" to={`/node-generator/projects/${project.id}/expansion`} disabled />
+          <NavCard title="Global Knowledge" to={`/node-generator/projects/${project.id}/knowledge`} />
+          <NavCard title="Change Review" to={`/node-generator/projects/${project.id}/expansion`} disabled />
         </Stack>
       </SectionCard>
     </Stack>
@@ -177,3 +177,4 @@ function NavCard({ title, to, disabled = false }: NavCardProps) {
     </Box>
   );
 }
+

@@ -1,4 +1,4 @@
-import { Alert, Box, Breadcrumbs, Button, CircularProgress, Link as MuiLink, Stack, Step, StepButton, Stepper, TextField, Typography } from '@mui/material';
+﻿import { Alert, Box, Breadcrumbs, Button, CircularProgress, Link as MuiLink, Stack, Step, StepButton, Stepper, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -34,7 +34,7 @@ type SceneFlowStrategy = {
   showPreviousContext: boolean;
 };
 
-const STEPS = ['Описание', 'Действия', 'Готово'];
+const STEPS = ['Description', 'Actions', 'Done'];
 
 export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId, actionId }: Props) {
   const navigate = useNavigate();
@@ -42,9 +42,9 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
   const { data: contextProject } = useNodeGeneratorProject(mode === 'first' ? '' : (projectId ?? ''));
 
   const strategy: SceneFlowStrategy = useMemo(() => {
-    if (mode === 'first') return { breadcrumbTitle: 'Новый квест', sceneFieldLabel: 'Описание первой сцены', showIdeas: true, showPreviousContext: false };
-    if (mode === 'next') return { breadcrumbTitle: 'Новая сцена', sceneFieldLabel: 'Описание новой сцены', showIdeas: true, showPreviousContext: true };
-    return { breadcrumbTitle: 'Редактирование сцены', sceneFieldLabel: 'Описание сцены', showIdeas: false, showPreviousContext: false };
+    if (mode === 'first') return { breadcrumbTitle: 'New Quest', sceneFieldLabel: 'First scene description', showIdeas: true, showPreviousContext: false };
+    if (mode === 'next') return { breadcrumbTitle: 'New Scene', sceneFieldLabel: 'New scene description', showIdeas: true, showPreviousContext: true };
+    return { breadcrumbTitle: 'Edit Scene', sceneFieldLabel: 'Scene description', showIdeas: false, showPreviousContext: false };
   }, [mode]);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -94,7 +94,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
           : await generateNextSceneIdeas(projectId ?? '', sceneId ?? '', actionId ?? '');
         if (!cancelled) setIdeas(list);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Не удалось загрузить варианты сцены');
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load scene ideas');
       } finally {
         if (!cancelled) setLoadingIdeas(false);
       }
@@ -119,7 +119,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     const withNode = await createWorkspaceNode(project.id);
     setProjectCache(withNode);
     const node = withNode.workspace?.nodes[withNode.workspace.nodes.length - 1];
-    if (!node) throw new Error('Не удалось создать первую сцену');
+    if (!node) throw new Error('Failed to create first scene');
     return { projectId: withNode.id, nodeId: node.id };
   };
 
@@ -128,12 +128,12 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
     setProjectCache(updated);
     const node = updated.workspace?.nodes.find((item) => item.sourceNodeId === (sceneId ?? '') && item.sourceActionId === (actionId ?? ''))
       ?? updated.workspace?.nodes[updated.workspace.nodes.length - 1];
-    if (!node) throw new Error('Не удалось создать новую сцену');
+    if (!node) throw new Error('Failed to create new scene');
     return { projectId: updated.id, nodeId: node.id };
   };
 
   const ensureSceneForEdit = async () => {
-    if (!(projectId ?? '').trim() || !(sceneId ?? '').trim()) throw new Error('Сцена для редактирования не найдена');
+    if (!(projectId ?? '').trim() || !(sceneId ?? '').trim()) throw new Error('Scene to edit was not found');
     return { projectId: projectId ?? '', nodeId: sceneId ?? '' };
   };
 
@@ -159,7 +159,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       setMaxUnlockedStep(2);
       setStep(2);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сохранить описание сцены');
+      setError(e instanceof Error ? e.message : 'Failed to save scene description');
     } finally {
       setSavingScene(false);
     }
@@ -180,7 +180,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
         setSavedActions(node?.actions.filter((item) => (item.text ?? '').trim().length > 0) ?? []);
         setActionsGeneratedOnce(true);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Не удалось сгенерировать действия');
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to generate actions');
       } finally {
         if (!cancelled) setActionsLoading(false);
       }
@@ -203,7 +203,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       if (fromGenerated) setGeneratedActions((prev) => prev.filter((item) => item !== text));
       setActionDraft('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось добавить действие');
+      setError(e instanceof Error ? e.message : 'Failed to add action');
     } finally {
       setAddingAction(false);
     }
@@ -218,7 +218,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       const node = updated.workspace?.nodes.find((item) => item.id.toUpperCase() === currentNodeId.toUpperCase());
       setSavedActions(node?.actions.filter((item) => (item.text ?? '').trim().length > 0) ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось удалить действие');
+      setError(e instanceof Error ? e.message : 'Failed to delete action');
     }
   };
 
@@ -241,11 +241,11 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Breadcrumbs aria-label="breadcrumb">
-        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">Все квесты</MuiLink>
+        <MuiLink component={Link} to="/node-generator" underline="hover" color="inherit">All quests</MuiLink>
         <Typography color="text.primary">{strategy.breadcrumbTitle}</Typography>
       </Breadcrumbs>
 
-      <SectionCard title={`Создание сцены ${currentNodeId || 'N1'}`}>
+      <SectionCard title={`Create scene ${currentNodeId || 'N1'}`}>
         <Stepper activeStep={step - 1} alternativeLabel nonLinear>
           {STEPS.map((label, index) => (
             <Step key={label}>
@@ -256,15 +256,15 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
       </SectionCard>
 
       {step === 1 ? (
-        <SectionCard title="Шаг 1. Описание сцены">
+        <SectionCard title="Step 1. Scene Description">
           <Stack spacing={1.5}>
             {strategy.showPreviousContext ? (
               <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-                <Typography variant="subtitle2">Контекст предыдущего шага</Typography>
-                <Typography variant="body2" color="text.secondary">Предыдущая сцена</Typography>
-                <Typography variant="body2">{previousScene?.stateDescription || previousScene?.actionDescription || 'Описание недоступно.'}</Typography>
-                <Typography variant="body2" color="text.secondary">Выбранное действие</Typography>
-                <Typography variant="body2">{previousActionText || 'Действие недоступно.'}</Typography>
+                <Typography variant="subtitle2">Previous step context</Typography>
+                <Typography variant="body2" color="text.secondary">Previous scene</Typography>
+                <Typography variant="body2">{previousScene?.stateDescription || previousScene?.actionDescription || 'Description is unavailable.'}</Typography>
+                <Typography variant="body2" color="text.secondary">Selected action</Typography>
+                <Typography variant="body2">{previousActionText || 'Action is unavailable.'}</Typography>
               </Box>
             ) : null}
 
@@ -272,8 +272,8 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
 
             {strategy.showIdeas ? (
               <Stack spacing={1}>
-                <Typography variant="body2" color="text.secondary">Варианты от ИИ</Typography>
-                {loadingIdeas ? <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}><CircularProgress size={16} /><Typography variant="body2" color="primary.main">Генерация вариантов...</Typography></Stack> : null}
+                <Typography variant="body2" color="text.secondary">AI suggestions</Typography>
+                {loadingIdeas ? <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}><CircularProgress size={16} /><Typography variant="body2" color="primary.main">Generating suggestions...</Typography></Stack> : null}
                 {ideas.map((item, index) => (
                   <Box key={`${index}-${item.title}`} role="button" tabIndex={0} onClick={() => { setSelectedIdeaIndex(index); setSceneText(item.scenarioText); }} sx={{ border: 1, borderColor: selectedIdeaIndex === index ? 'primary.main' : 'primary.light', borderRadius: 1, p: 1, cursor: 'pointer', bgcolor: selectedIdeaIndex === index ? 'action.selected' : 'background.paper' }}>
                     <Typography variant="subtitle2">{item.title}</Typography>
@@ -284,20 +284,20 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
             ) : null}
 
             <Button variant="contained" onClick={() => void handleContinueFromStep1()} disabled={!sceneText.trim() || savingScene}>
-              {savingScene ? 'Сохранение...' : 'Далее к действиям'}
+              {savingScene ? 'Saving...' : 'Continue to Actions'}
             </Button>
           </Stack>
         </SectionCard>
       ) : null}
 
       {step === 2 ? (
-        <SectionCard title="Шаг 2. Действия">
+        <SectionCard title="Step 2. Actions">
           <Stack spacing={1.5}>
             <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-              <Typography variant="subtitle2">Выбранное описание сцены</Typography>
-              <Typography variant="body2" color="text.secondary">{sceneText.trim() || 'Описание не выбрано.'}</Typography>
+              <Typography variant="subtitle2">Selected scene description</Typography>
+              <Typography variant="body2" color="text.secondary">{sceneText.trim() || 'No description selected.'}</Typography>
             </Box>
-            {actionsLoading ? <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}><CircularProgress size={16} /><Typography variant="body2" color="primary.main">Генерация действий...</Typography></Stack> : null}
+            {actionsLoading ? <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}><CircularProgress size={16} /><Typography variant="body2" color="primary.main">Generating actions...</Typography></Stack> : null}
             <Stack spacing={1}>
               {availableGeneratedActions.map((item, index) => (
                 <Box key={`${index}-${item}`} role="button" tabIndex={0} onClick={() => void handleAddAction(item, true)} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1, cursor: 'pointer' }}>
@@ -307,7 +307,7 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
             </Stack>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <TextField
-                label="Добавить действие вручную"
+                label="Add action manually"
                 value={actionDraft}
                 onChange={(e) => setActionDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -321,24 +321,24 @@ export function NodeGeneratorSceneDescriptionStepPage({ mode, projectId, sceneId
               />
             </Stack>
             <Stack spacing={0.5}>
-              <Typography variant="body2" color="text.secondary">Добавленные действия</Typography>
+              <Typography variant="body2" color="text.secondary">Added actions</Typography>
               {savedActions.map((item) => (
                 <Stack key={item.id} direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">• {item.text}</Typography>
-                  <Button size="small" color="error" variant="text" onClick={() => void handleDeleteAction(item.id)}>Удалить</Button>
+                  <Typography variant="body2">- {item.text}</Typography>
+                  <Button size="small" color="error" variant="text" onClick={() => void handleDeleteAction(item.id)}>Delete</Button>
                 </Stack>
               ))}
             </Stack>
-            <Button variant="contained" onClick={() => void handleFinishStep2()} disabled={!currentProjectId || !currentNodeId || addingAction}>Готово</Button>
+            <Button variant="contained" onClick={() => void handleFinishStep2()} disabled={!currentProjectId || !currentNodeId || addingAction}>Done</Button>
           </Stack>
         </SectionCard>
       ) : null}
 
       {step === 3 ? (
-        <SectionCard title="Шаг 3. Готово">
+        <SectionCard title="Step 3. Done">
           <Stack spacing={1}>
-            <Typography variant="body2">Сцена готова.</Typography>
-            <Button variant="contained" onClick={() => navigate(`/node-generator/projects/${currentProjectId}/scenes/${encodeURIComponent(currentNodeId)}`)} disabled={!currentProjectId || !currentNodeId}>Открыть сцену</Button>
+            <Typography variant="body2">Scene is ready.</Typography>
+            <Button variant="contained" onClick={() => navigate(`/node-generator/projects/${currentProjectId}/scenes/${encodeURIComponent(currentNodeId)}`)} disabled={!currentProjectId || !currentNodeId}>Open Scene</Button>
           </Stack>
         </SectionCard>
       ) : null}
@@ -350,6 +350,7 @@ function buildProjectName(sceneText: string, selectedIdeaIndex: number | null, i
   const ideaTitle = selectedIdeaIndex != null ? (ideas[selectedIdeaIndex]?.title ?? '').trim() : '';
   if (ideaTitle) return ideaTitle;
   const firstLine = sceneText.split('\n').map((line) => line.trim()).find((line) => line.length > 0) ?? '';
-  if (!firstLine) return 'Новый квест';
+  if (!firstLine) return 'New Quest';
   return firstLine.length > 48 ? `${firstLine.slice(0, 48).trim()}...` : firstLine;
 }
+

@@ -34,7 +34,7 @@ function loadGoogleScript(): Promise<void> {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Не удалось загрузить Google Identity script'));
+    script.onerror = () => reject(new Error('Failed to load Google Identity script'));
     document.head.appendChild(script);
   });
 }
@@ -47,7 +47,7 @@ async function waitForGoogleIdentitySdk(timeoutMs = 5000): Promise<void> {
     }
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  throw new Error('Google Identity SDK недоступен.');
+  throw new Error('Google Identity SDK is unavailable.');
 }
 
 export function LoginPage() {
@@ -61,14 +61,14 @@ export function LoginPage() {
         await loginWithGoogle(credential);
         navigate('/node-generator', { replace: true });
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Не удалось войти');
+        setError(e instanceof Error ? e.message : 'Failed to sign in');
       }
     };
 
     const mount = async () => {
       setError(null);
       if (!GOOGLE_CLIENT_ID) {
-        setError('Отсутствует GOOGLE_CLIENT_ID в переменных окружения фронтенда.');
+        setError('Missing GOOGLE_CLIENT_ID in frontend environment variables.');
         return;
       }
       try {
@@ -76,7 +76,7 @@ export function LoginPage() {
         await waitForGoogleIdentitySdk();
         const target = document.getElementById('google-signin-button');
         if (!target || !window.google?.accounts?.id) {
-          setError('Google Identity SDK недоступен.');
+          setError('Google Identity SDK is unavailable.');
           return;
         }
         if (!googleInitialized) {
@@ -99,7 +99,7 @@ export function LoginPage() {
           shape: 'rectangular',
         });
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Не удалось инициализировать вход через Google');
+        setError(e instanceof Error ? e.message : 'Failed to initialize Google sign-in');
       }
     };
     void mount();
@@ -111,14 +111,14 @@ export function LoginPage() {
   return (
     <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', p: 2, backgroundColor: '#f3f4f6' }}>
       <Stack spacing={2} sx={{ width: '100%', maxWidth: 420, p: 3, border: 1, borderColor: 'divider', backgroundColor: '#fff' }}>
-        <Typography variant="h5">Вход</Typography>
+        <Typography variant="h5">Sign In</Typography>
         <Typography variant="body2" color="text.secondary">
-          Войдите через Google для доступа к Mastery.
+          Sign in with Google to access Mastery.
         </Typography>
         {error ? <Alert severity="error">{error}</Alert> : null}
         <Box id="google-signin-button" sx={{ minHeight: 42 }} />
         <Button variant="text" onClick={() => navigate('/node-generator', { replace: true })}>
-          Продолжить без входа
+          Continue without signing in
         </Button>
       </Stack>
     </Box>
